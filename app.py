@@ -1,12 +1,13 @@
-from flask import Flask, request
-from bson.objectid import ObjectId
-from pymongo import Connection
 import gridfs
 import json
 import functools
-from hashlib import sha1
-from settings import TOKENS
+from flask import Flask, request
+from bson.objectid import ObjectId
+from pymongo import Connection
 from pymongo.errors import InvalidId
+
+
+from settings import TOKENS, GFS_HOST, GFS_PORT
 
 
 app = Flask(__name__)
@@ -79,19 +80,10 @@ def get_file_info(id=None):
         #InvalidId
         file = fs.get(ObjectId(id))
         return json.dumps({'status': 'ok', 'information': {'name': file.name,
-            'size': file.length, 'mimetype': file.content_type}})
+            'size': file.length, 'mimetype': file.content_type,
+            'uri': 'http://%s:%s/%s' % (GFS_HOST, GFS_PORT, id)}})
     except InvalidId:
         return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
-
-
-@app.route('/file/<hash_token>/<id_file>')
-def get_file(hash_token, id_file):
-    token = request.headers.get("Token", "")
-    user = get_or_create_user(token)
-    file = fs.get(ObjectId(id_file))
-    if sha1(token).hexdigest() == hash_token and file.user_id == user["_id"]:
-        return '%s' % file.filename
-    return 'Permission denied', 401
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
