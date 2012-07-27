@@ -64,8 +64,7 @@ def index():
     if file:
         filename = convert_to_filename(file.filename)
         new_file = fs.put(file.read(), user_id=request.user["_id"],
-            filename=filename, mimetype=file.content_type)
-        print file.__dict__
+            filename=filename, content_type=file.content_type)
         return json.dumps({'status': 'ok', 'id': new_file.__repr__()})
     else:
         return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
@@ -78,11 +77,10 @@ def get_file_info(id=None):
         return json.dumps({'status': 'error', 'msg': 'not implemented'}), 501
     try:
         #InvalidId
-        file = db['fs.files'].find_one({"_id": ObjectId(id)})
-        #AttributeError
-        return json.dumps({'status': 'ok', 'information': {'name': file.get('filename', ''),
-            'size': file.get('length', ''), 'mimetype': file.get('mimetype', '')}})
-    except (InvalidId, AttributeError):
+        file = fs.get(ObjectId(id))
+        return json.dumps({'status': 'ok', 'information': {'name': file.name,
+            'size': file.length, 'mimetype': file.content_type}})
+    except InvalidId:
         return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
 
