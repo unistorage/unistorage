@@ -4,16 +4,17 @@ import functools
 from flask import Flask, request
 from bson.objectid import ObjectId
 from pymongo import Connection
-from pymongo.errors import InvalidId
-
-
+from pymongo.errors import InvalidId, AutoReconnect
 from settings import *
 
+TOKENS = []
+#try import real TOKENS list from tokens.py
+try:
+    from tokens import *
+except ImportError:
+    pass
 
 app = Flask(__name__)
-db = Connection('localhost', 27017)['test_base']
-fs = gridfs.GridFS(db)
-
 
 def get_or_create_user(token):
     def check_token(token):
@@ -90,4 +91,10 @@ def get_file_info(id=None):
         return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    try:
+        db = Connection(MONGO_HOST, MONGO_PORT)[MONGO_DB_NAME]
+    except AutoReconnect:
+        print 'Failed to connect to mongodb'
+    else:
+        fs = gridfs.GridFS(db)
+        app.run(host='0.0.0.0', debug=True)
