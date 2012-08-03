@@ -7,7 +7,7 @@ from pymongo import Connection
 from pymongo.errors import InvalidId
 
 
-from settings import TOKENS, GFS_HOST, GFS_PORT
+from settings import *
 
 
 app = Flask(__name__)
@@ -79,9 +79,13 @@ def get_file_info(id=None):
     try:
         #InvalidId
         file = fs.get(ObjectId(id))
+        try:
+            uri = 'http://%s:%s/%s' % (GFS_HOST, GFS_PORT, id)
+        except NameError:
+            uri = 'http://%s/%s' % (GFS_HOST, id)
         return json.dumps({'status': 'ok', 'information': {'name': file.name,
             'size': file.length, 'mimetype': file.content_type,
-            'uri': 'http://%s:%s/%s' % (GFS_HOST, GFS_PORT, id)}})
+            'uri': uri}})
     except InvalidId:
         return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
