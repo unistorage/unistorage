@@ -66,7 +66,7 @@ def index():
         filename = convert_to_filename(file.filename)
         new_file = fs.put(file.read(), user_id=request.user["_id"],
             filename=filename, content_type=file.content_type)
-        return json.dumps({'status': 'ok', 'id': new_file.__repr__()})
+        return json.dumps({'status': 'ok', 'id': new_file.__str__()})
     else:
         return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
