@@ -5,4 +5,9 @@ MONGO_DB_NAME = 'test_base'
 
 #gridfs-server
 GFS_HOST = '127.0.0.1'
-GFS_PORT = 3000
+GFS_PORT = 80
+
+try:
+    from settings_local import *
+except ImportError:
+    pass

@@ -5,14 +5,7 @@ from flask import Flask, request
 from bson.objectid import ObjectId
 from pymongo import Connection
 from pymongo.errors import InvalidId, AutoReconnect
-from settings import *
-
-TOKENS = []
-#try import real TOKENS list from tokens.py
-try:
-    from tokens import *
-except ImportError:
-    pass
+import settings
 
 app = Flask(__name__)
 
@@ -25,7 +18,7 @@ def get_or_create_user(token):
 
         def allow_token(token):
             #some tests to allow token..
-            if token in TOKENS:
+            if hasattr(settings, 'TOKENS') and token in settings.TOKENS:
                 return 1
 
         try:
@@ -80,10 +73,10 @@ def get_file_info(id=None):
     try:
         #InvalidId
         file = fs.get(ObjectId(id))
-        try:
-            uri = 'http://%s:%s/%s' % (GFS_HOST, GFS_PORT, id)
-        except NameError:
-            uri = 'http://%s/%s' % (GFS_HOST, id)
+        if hasattr(settings, 'GFS_PORT') and settings.GFS_PORT != 80:
+            uri = 'http://%s:%s/%s' % (settings.GFS_HOST, settings.GFS_PORT, id)
+        else:
+            uri = 'http://%s/%s' % (settings.GFS_HOST, id)
         return json.dumps({'status': 'ok', 'information': {'name': file.name,
             'size': file.length, 'mimetype': file.content_type,
             'uri': uri}})
@@ -92,7 +85,7 @@ def get_file_info(id=None):
 
 if __name__ == '__main__':
     try:
-        db = Connection(MONGO_HOST, MONGO_PORT)[MONGO_DB_NAME]
+        db = Connection(settings.MONGO_HOST, settings.MONGO_PORT)[settings.MONGO_DB_NAME]
     except AutoReconnect:
         print 'Failed to connect to mongodb'
     else:
