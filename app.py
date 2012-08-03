@@ -3,6 +3,7 @@ from bson.objectid import ObjectId
 from pymongo import Connection
 import gridfs
 from hashlib import sha1
+from settings import TOKENS
 
 app = Flask(__name__)
 db = Connection('localhost', 27017)['test_base']
@@ -18,8 +19,8 @@ def get_or_create_user(token):
 
         def allow_token(token):
             #some tests to allow token..
-            #allow all tokens now
-            return 1
+            if token in TOKENS:
+                return 1
 
         try:
             token = str(token)
