@@ -4,16 +4,10 @@ import functools
 from flask import Flask, request
 from bson.objectid import ObjectId
 from pymongo import Connection
-from pymongo.errors import InvalidId
-
-
-from settings import TOKENS, GFS_HOST, GFS_PORT
-
+from pymongo.errors import InvalidId, AutoReconnect
+import settings
 
 app = Flask(__name__)
-db = Connection('localhost', 27017)['test_base']
-fs = gridfs.GridFS(db)
-
 
 def get_or_create_user(token):
     def check_token(token):
@@ -24,7 +18,7 @@ def get_or_create_user(token):
 
         def allow_token(token):
             #some tests to allow token..
-            if token in TOKENS:
+            if hasattr(settings, 'TOKENS') and token in settings.TOKENS:
                 return 1
 
         try:
@@ -79,11 +73,21 @@ def get_file_info(id=None):
     try:
         #InvalidId
         file = fs.get(ObjectId(id))
+        if hasattr(settings, 'GFS_PORT') and settings.GFS_PORT != 80:
+            uri = 'http://%s:%s/%s' % (settings.GFS_HOST, settings.GFS_PORT, id)
+        else:
+            uri = 'http://%s/%s' % (settings.GFS_HOST, id)
         return json.dumps({'status': 'ok', 'information': {'name': file.name,
             'size': file.length, 'mimetype': file.content_type,
-            'uri': 'http://%s:%s/%s' % (GFS_HOST, GFS_PORT, id)}})
+            'uri': uri}})
     except InvalidId:
         return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    try:
+        db = Connection(settings.MONGO_HOST, settings.MONGO_PORT)[settings.MONGO_DB_NAME]
+    except AutoReconnect:
+        print 'Failed to connect to mongodb'
+    else:
+        fs = gridfs.GridFS(db)
+        app.run(host='0.0.0.0', debug=True)
