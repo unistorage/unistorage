@@ -1,9 +1,9 @@
 import gridfs
 import json
 import functools
-from flask import Flask, request
+from flask import Flask, request, g
 from bson.objectid import ObjectId
-from pymongo import Connection
+from pymongo import Connection, ReplicaSetConnection
 from pymongo.errors import InvalidId, AutoReconnect
 import settings
 
@@ -28,7 +28,7 @@ def get_or_create_user(token):
 
         return check_format(token) and allow_token(token)
 
-    users = db['test_users']
+    users = g.db['test_users']
     #return False if token is not allowed
     return check_token(token) and (users.find_one({"token": token}) or
         users.find_one({"_id": users.insert({"token": token})}))
@@ -58,7 +58,7 @@ def index():
     file = request.files.get('file', '')
     if file:
         filename = convert_to_filename(file.filename)
-        new_file = fs.put(file.read(), user_id=request.user["_id"],
+        new_file = g.fs.put(file.read(), user_id=request.user["_id"],
             filename=filename, content_type=file.content_type)
         return json.dumps({'status': 'ok', 'id': new_file.__str__()})
     else:
@@ -83,11 +83,20 @@ def get_file_info(id=None):
     except InvalidId:
         return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
-if __name__ == '__main__':
-    try:
-        db = Connection(settings.MONGO_HOST, settings.MONGO_PORT)[settings.MONGO_DB_NAME]
-    except AutoReconnect:
-        print 'Failed to connect to mongodb'
+@app.before_request
+def before_request():
+    if settings.MONGO_DB_REPL_ON:
+        g.connection = ReplicaSetConnection(settings.MONGO_DB_REPL_URI,
+                    replicaset=settings.MONGO_REPLICA_NAME)
     else:
-        fs = gridfs.GridFS(db)
-        app.run(host='0.0.0.0', debug=True)
+        g.connection = Connection(settings.MONGO_HOST, settings.MONGO_PORT)
+
+    g.db = g.connection[settings.MONGO_DB_NAME]
+    g.fs = gridfs.GridFS(g.db)
+
+@app.teardown_request
+def teardown_request(exception):
+    g.connection.close()
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=True)
