@@ -96,7 +96,8 @@ def before_request():
 
 @app.teardown_request
 def teardown_request(exception):
-    g.connection.close()
+    if hasattr(g, 'connection'):
+        g.connection.close()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
