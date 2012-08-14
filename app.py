@@ -5,6 +5,7 @@ from flask import Flask, request
 from bson.objectid import ObjectId
 from pymongo import Connection
 from pymongo.errors import InvalidId, AutoReconnect
+import magic
 import settings
 
 app = Flask(__name__)
@@ -58,12 +59,13 @@ def index():
     file = request.files.get('file', '')
     if file:
         filename = convert_to_filename(file.filename)
+        content_type = magic.from_buffer(file.read(1024))
+        file.seek(0)
         new_file = fs.put(file.read(), user_id=request.user["_id"],
-            filename=filename, content_type=file.content_type)
+            filename=filename, content_type=content_type)
         return json.dumps({'status': 'ok', 'id': new_file.__str__()})
     else:
         return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
-
 
 @app.route('/<string:id>/', methods=['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'OPTIONS'])
 @login_required
@@ -90,4 +92,5 @@ if __name__ == '__main__':
         print 'Failed to connect to mongodb'
     else:
         fs = gridfs.GridFS(db)
+        magic = magic.Magic(mime=True)
         app.run(host='0.0.0.0', debug=True)
