@@ -13,7 +13,7 @@ def get_image_info(metadata):
 def get_video_info(metadata):
     fileinfo = {}
     video = metadata['video'][0]
-    for key in ('width', 'height', 'codec'):
+    for key in ('width', 'height', 'codec', 'length'):
         fileinfo[key] = video[key]
     return fileinfo
 
