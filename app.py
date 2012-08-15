@@ -75,12 +75,15 @@ def get_file_info(id=None):
             uri = 'http://%s:%s/%s' % (settings.GFS_HOST, settings.GFS_PORT, id)
         else:
             uri = 'http://%s/%s' % (settings.GFS_HOST, id)
-        return json.dumps({'status': 'ok', 'information': {
-                'name': file.name,
-                'size': file.length,
-                'mimetype': file.content_type,
-                'fileinfo': file.fileinfo,
-                'uri': uri}})
+        information = {
+            'name': file.name,
+            'size': file.length,
+            'mimetype': file.content_type,
+            'uri': uri
+        }
+        if hasattr(file, 'fileinfo'):
+            information['fileinfo'] = file.fileinfo
+        return json.dumps({'status': 'ok', 'information': information})
     except InvalidId:
         return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 

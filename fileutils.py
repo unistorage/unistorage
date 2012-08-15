@@ -10,6 +10,12 @@ def get_image_info(metadata):
         fileinfo[key] = metadata[key]
     return fileinfo
 
+def get_audio_info(metadata):
+    fileinfo = {}
+    for key in ('codec', 'length'):
+        fileinfo[key] = metadata[key]
+    return fileinfo
+
 def get_video_info(metadata):
     fileinfo = {}
     video = metadata['video'][0]
@@ -19,6 +25,7 @@ def get_video_info(metadata):
 
 handlers = {
     kaa.metadata.MEDIA_IMAGE: get_image_info,
+    kaa.metadata.MEDIA_AUDIO: get_audio_info,
     kaa.metadata.MEDIA_AV: get_video_info
 }
 
