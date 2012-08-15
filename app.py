@@ -1,9 +1,8 @@
-import json
 import functools
 
 import magic
 import gridfs
-from flask import Flask, request, g
+from flask import Flask, request, g, jsonify
 from bson.objectid import ObjectId
 from pymongo import Connection, ReplicaSetConnection
 from pymongo.errors import InvalidId, AutoReconnect
@@ -47,27 +46,27 @@ def login_required(func):
             if user:
                 request.user = user
                 return func(*args, **kwargs)
-        return json.dumps({'status': 'error', 'msg': 'Login failed'}), 401
+        return jsonify({'status': 'error', 'msg': 'Login failed'}), 401
     return f
 
 @app.route('/', methods=['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'OPTIONS'])
 @login_required
 def index():
     if request.method != 'POST':
-        return json.dumps({'status': 'error', 'msg': 'not implemented'}), 501
+        return jsonify({'status': 'error', 'msg': 'not implemented'}), 501
     file = request.files.get('file', '')
     if file:
         file_data = get_file_data(file)
         new_file = g.fs.put(file.read(), user_id=request.user['_id'], **file_data)
-        return json.dumps({'status': 'ok', 'id': str(new_file)})
+        return jsonify({'status': 'ok', 'id': str(new_file)})
     else:
-        return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
+        return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
 @app.route('/<string:id>/', methods=['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'OPTIONS'])
 @login_required
 def get_file_info(id=None):
     if request.method != 'GET':
-        return json.dumps({'status': 'error', 'msg': 'not implemented'}), 501
+        return jsonify({'status': 'error', 'msg': 'not implemented'}), 501
     try:
         #InvalidId
         file = g.fs.get(ObjectId(id))
@@ -83,9 +82,9 @@ def get_file_info(id=None):
         }
         if hasattr(file, 'fileinfo'):
             information['fileinfo'] = file.fileinfo
-        return json.dumps({'status': 'ok', 'information': information})
+        return jsonify({'status': 'ok', 'information': information})
     except InvalidId:
-        return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
+        return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
 @app.before_request
 def before_request():
