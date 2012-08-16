@@ -1,7 +1,7 @@
 import subprocess
 from StringIO import StringIO
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 import settings
 
@@ -22,6 +22,10 @@ class PILWrapper(object):
         self._image = image
         self._format = self._image.format
     
+    def make_grayscale(self):
+        self._image = ImageOps.grayscale(self._image)
+        return self
+
     def resize(self, width, height):
         self._image = self._image.resize((width, height), resample=Image.ANTIALIAS)
         return self
@@ -48,6 +52,10 @@ class ImageMagickWrapper(object):
         self._format = self._image.format
         self._args = [settings.CONVERT_BIN, '-', '-coalesce']
     
+    def make_grayscale(self):
+        self._args.extend(['-colorspace', 'gray'])
+        return self
+
     def resize(self, width, height):
         self._args.extend(['-resize', '%dx%d!' % (width, height)])
         return self
@@ -59,11 +67,23 @@ class ImageMagickWrapper(object):
 
     def finalize(self):
         self._args.append('%s:-' % self._format)
-        proc = subprocess.Popen(self._args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         proc_input = self._image.fp
         proc_input.seek(0)
+        proc = subprocess.Popen(self._args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout_data, stderr_data = proc.communicate(input=proc_input.read())
         return StringIO(stdout_data)
+
+def wrap(image):
+    if is_animated(image):
+        wrapper = ImageMagickWrapper
+    else:
+        wrapper = PILWrapper 
+    return wrapper(image)
+
+def make_grayscale(source_file):
+    source_image = Image.open(source_file)
+    target_image = wrap(source_image)
+    return target_image.make_grayscale().finalize()
 
 def resize(source_file, mode, target_width, target_height):
     """
@@ -71,11 +91,6 @@ def resize(source_file, mode, target_width, target_height):
     containing resulting image.
     """
     source_image = Image.open(source_file)
-    
-    if is_animated(source_image):
-        wrap = ImageMagickWrapper
-    else:
-        wrap = PILWrapper 
     target_image = wrap(source_image)
 
     if mode == 'resize':

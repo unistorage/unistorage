@@ -10,8 +10,9 @@ from redis import Redis
 from rq import Queue
 
 import settings
+import tasks
+import image_actions
 from fileutils import get_file_data
-
 
 
 app = Flask(__name__)
@@ -83,7 +84,43 @@ def validate_and_get_resize_args(args): # TODO Move
     elif not (w or h):
         raise Exception('Either w or h must be specified.')
 
-    return {'mode': mode, 'w': w, 'h': h}
+    return [mode, w, h]
+
+def handle_get_action(source_id):
+    action_name = request.args['action']
+
+    try:
+        if action_name == 'resize':
+            action = image_actions.resize
+            args = validate_and_get_resize_args(request.args.to_dict())
+        elif action_name == 'make_grayscale':
+            action = image_actions.make_grayscale
+            args = []
+        else:
+            raise Exception('Unknown action.')
+    except Exception as e:
+        return jsonify({'status': 'error', 'msg': str(e)}), 400
+
+    target_id = g.fs.put('', original=source_id, user_id=request.user['_id'])
+    g.db.fs.files.update({'_id': source_id}, {'$push': {'modifications': target_id}})
+    g.q.enqueue(tasks.perform_action, source_id, target_id, action, args)
+
+    return jsonify({'status': 'ok', 'id': str(target_id), 'queue_length': g.q.count})
+
+def handle_get_file_info(_id, file):
+    if hasattr(settings, 'GFS_PORT') and settings.GFS_PORT != 80:
+        uri = 'http://%s:%s/%s' % (settings.GFS_HOST, settings.GFS_PORT, _id)
+    else:
+        uri = 'http://%s/%s' % (settings.GFS_HOST, _id)
+    information = {
+        'name': file.name,
+        'size': file.length,
+        'mimetype': file.content_type,
+        'uri': uri
+    }
+    if hasattr(file, 'fileinfo'):
+        information['fileinfo'] = file.fileinfo
+    return jsonify({'status': 'ok', 'information': information})
 
 @app.route('/<string:_id>/', methods=['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'OPTIONS'])
 @login_required
@@ -97,33 +134,10 @@ def get_file_info(_id=None):
     except InvalidId:
         return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
     
-    if request.args and request.args['action'] == 'resize':
-        try:
-            args = validate_and_get_resize_args(request.args.to_dict())
-        except Exception as e:
-            return jsonify({'status': 'error', 'msg': str(e)}), 400
-
-        new_file_id = g.fs.put('', user_id=request.user['_id'], original=_id)
-        import tasks
-        result = g.q.enqueue(tasks.resize_task, _id, new_file_id, **args)
-
-        g.db.fs.files.update({'_id': _id}, {'$push': {'modifications': new_file_id}})
-
-        return jsonify({'status': 'ok', 'id': str(new_file_id)})
+    if request.args and 'action' in request.args:
+        return handle_get_action(_id)
     else:
-        if hasattr(settings, 'GFS_PORT') and settings.GFS_PORT != 80:
-            uri = 'http://%s:%s/%s' % (settings.GFS_HOST, settings.GFS_PORT, _id)
-        else:
-            uri = 'http://%s/%s' % (settings.GFS_HOST, _id)
-        information = {
-            'name': file.name,
-            'size': file.length,
-            'mimetype': file.content_type,
-            'uri': uri
-        }
-        if hasattr(file, 'fileinfo'):
-            information['fileinfo'] = file.fileinfo
-        return jsonify({'status': 'ok', 'information': information})
+        return handle_get_file_info(_id, file)
 
 def get_mongodb_connection():
     if settings.MONGO_DB_REPL_ON:

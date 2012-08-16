@@ -38,7 +38,7 @@ class Test(unittest.TestCase):
         self.assertEquals(r.json['information']['fileinfo'][key], value)
     
     def test_resize_keep_jpg(self):
-        original_id = self._put_file('./fixtures/some.jpg')
+        original_id = self._put_file('./test_images/some.jpg')
 
         url = '%s/%s/' % (self.base_url, original_id)
         r = requests.get(url, headers=self.headers)
@@ -50,7 +50,6 @@ class Test(unittest.TestCase):
         url = url + '?action=resize&mode=keep&w=400'
         r = requests.get(url, headers=self.headers)
         self.assertEquals(r.json['status'], 'ok')
-        self.assertFalse('information' in r.json)
         
         resized_image_id = ObjectId(r.json['id'])
         resized_image = self.db.fs.files.find_one(resized_image_id)
@@ -67,7 +66,7 @@ class Test(unittest.TestCase):
         self.assert_fileinfo(r, 'height', 300)
 
     def test_resize_crop_gif(self):
-        original_id = self._put_file('./fixtures/animated2.gif')
+        original_id = self._put_file('./test_images/animated.gif')
 
         url = '%s/%s/' % (self.base_url, original_id)
         r = requests.get(url, headers=self.headers)
@@ -79,7 +78,6 @@ class Test(unittest.TestCase):
         url = url + '?action=resize&mode=crop&w=200&h=200'
         r = requests.get(url, headers=self.headers)
         self.assertEquals(r.json['status'], 'ok')
-        self.assertFalse('information' in r.json)
         
         resized_image_id = ObjectId(r.json['id'])
         resized_image = self.db.fs.files.find_one(resized_image_id)
@@ -87,13 +85,31 @@ class Test(unittest.TestCase):
         
         self.assertEquals(resized_image['original'], original_id)
         self.assertTrue(resized_image_id in original_image['modifications'])
-        
+
         time.sleep(10)
         url = '%s/%s/' % (self.base_url, resized_image_id)
         r = requests.get(url, headers=self.headers)
         self.assert_mimetype(r, 'image/gif')
         self.assert_fileinfo(r, 'width', 200)
         self.assert_fileinfo(r, 'height', 200)
+
+    def test_make_grayscale(self):
+        original_id = self._put_file('./test_images/some.png')
+
+        url = '%s/%s/' % (self.base_url, original_id)
+        r = requests.get(url, headers=self.headers)
+        self.assert_fileinfo(r, 'width', 43)
+        self.assert_fileinfo(r, 'height', 43)
+
+        url = url + '?action=make_grayscale'
+        r = requests.get(url, headers=self.headers)
+        
+        grayscaled_image_id = ObjectId(r.json['id'])
+        time.sleep(1)
+        url = '%s/%s/' % (self.base_url, grayscaled_image_id)
+        r = requests.get(url, headers=self.headers)
+        self.assert_fileinfo(r, 'width', 43)
+        self.assert_fileinfo(r, 'height', 43)
 
 if __name__ == '__main__':
     unittest.main()
