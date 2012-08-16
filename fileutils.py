@@ -1,7 +1,7 @@
 import string
 
+import magic
 import kaa.metadata
-from flask import g
 
 
 def get_image_info(metadata):
@@ -37,7 +37,7 @@ def get_file_data(file):
     file.seek(0)
     data = {
         'filename': convert_to_filename(file.filename),
-        'content_type': g.magic.from_buffer(file.read(1024))
+        'content_type': magic.Magic(mime=True).from_buffer(file.read(1024))
     }
     file.seek(0)
 

@@ -13,6 +13,8 @@ MONGO_REPLICA_NAME = 'test_set'
 GFS_HOST = '127.0.0.1'
 GFS_PORT = 80
 
+CONVERT_BIN = '/usr/bin/convert'
+
 try:
     from settings_local import *
 except ImportError:

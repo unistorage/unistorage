@@ -6,9 +6,12 @@ from flask import Flask, request, g, jsonify
 from bson.objectid import ObjectId
 from pymongo import Connection, ReplicaSetConnection
 from pymongo.errors import InvalidId, AutoReconnect
+from redis import Redis
+from rq import Queue
 
 import settings
 from fileutils import get_file_data
+
 
 
 app = Flask(__name__)
@@ -62,18 +65,56 @@ def index():
     else:
         return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
-@app.route('/<string:id>/', methods=['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'OPTIONS'])
+def validate_and_get_resize_args(args): # TODO Move
+    if 'mode' not in args or args['mode'] not in ('keep', 'crop', 'resize'):
+        raise Exception('Unknown mode. Available options: "keep", "crop" and "resize".')
+    mode = args['mode']
+    
+    w = args.get('w', None)
+    h = args.get('h', None)
+    try:
+        w = w and int(w) or None
+        h = h and int(h) or None
+    except ValueError:
+        raise Exception('w and h must be integer values.')
+
+    if mode in ('crop', 'resize') and not (w and h):
+        raise Exception('Both w and h must be specified.')
+    elif not (w or h):
+        raise Exception('Either w or h must be specified.')
+
+    return {'mode': mode, 'w': w, 'h': h}
+
+@app.route('/<string:_id>/', methods=['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'OPTIONS'])
 @login_required
-def get_file_info(id=None):
+def get_file_info(_id=None):
     if request.method != 'GET':
         return jsonify({'status': 'error', 'msg': 'not implemented'}), 501
+
+    _id = ObjectId(_id)
     try:
-        #InvalidId
-        file = g.fs.get(ObjectId(id))
+        file = g.fs.get(_id)
+    except InvalidId:
+        return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
+    
+    if request.args and request.args['action'] == 'resize':
+        try:
+            args = validate_and_get_resize_args(request.args.to_dict())
+        except Exception as e:
+            return jsonify({'status': 'error', 'msg': str(e)}), 400
+
+        new_file_id = g.fs.put('', user_id=request.user['_id'], original=_id)
+        import tasks
+        result = g.q.enqueue(tasks.resize_task, _id, new_file_id, **args)
+
+        g.db.fs.files.update({'_id': _id}, {'$push': {'modifications': new_file_id}})
+
+        return jsonify({'status': 'ok', 'id': str(new_file_id)})
+    else:
         if hasattr(settings, 'GFS_PORT') and settings.GFS_PORT != 80:
-            uri = 'http://%s:%s/%s' % (settings.GFS_HOST, settings.GFS_PORT, id)
+            uri = 'http://%s:%s/%s' % (settings.GFS_HOST, settings.GFS_PORT, _id)
         else:
-            uri = 'http://%s/%s' % (settings.GFS_HOST, id)
+            uri = 'http://%s/%s' % (settings.GFS_HOST, _id)
         information = {
             'name': file.name,
             'size': file.length,
@@ -83,19 +124,23 @@ def get_file_info(id=None):
         if hasattr(file, 'fileinfo'):
             information['fileinfo'] = file.fileinfo
         return jsonify({'status': 'ok', 'information': information})
-    except InvalidId:
-        return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
+
+def get_mongodb_connection():
+    if settings.MONGO_DB_REPL_ON:
+        return ReplicaSetConnection(settings.MONGO_DB_REPL_URI,
+                    replicaset=settings.MONGO_REPLICA_NAME)
+    else:
+        return Connection(settings.MONGO_HOST, settings.MONGO_PORT)
+
+def get_redis_connection():
+    return Redis()
 
 @app.before_request
 def before_request():
-    if settings.MONGO_DB_REPL_ON:
-        g.connection = ReplicaSetConnection(settings.MONGO_DB_REPL_URI,
-                    replicaset=settings.MONGO_REPLICA_NAME)
-    else:
-        g.connection = Connection(settings.MONGO_HOST, settings.MONGO_PORT)
-
+    g.connection = get_mongodb_connection()
     g.db = g.connection[settings.MONGO_DB_NAME]
     g.fs = gridfs.GridFS(g.db)
+    g.q = Queue(connection=get_redis_connection())
     g.magic = magic.Magic(mime=True)
 
 @app.teardown_request
