@@ -1,4 +1,5 @@
 import functools
+from datetime import datetime
 
 import magic
 import gridfs
@@ -10,7 +11,6 @@ from redis import Redis
 from rq import Queue
 
 import settings
-import tasks
 import image_actions
 from fileutils import get_file_data
 
@@ -89,6 +89,9 @@ def validate_and_get_resize_args(args): # TODO Move
 def handle_get_action(source_id):
     action_name = request.args['action']
 
+    def create_label(action_name, args):
+        return '_'.join(map(str, [action_name] + args))
+
     try:
         if action_name == 'resize':
             action = image_actions.resize
@@ -101,13 +104,42 @@ def handle_get_action(source_id):
     except Exception as e:
         return jsonify({'status': 'error', 'msg': str(e)}), 400
 
-    target_id = g.fs.put('', original=source_id, user_id=request.user['_id'])
-    g.db.fs.files.update({'_id': source_id}, {'$push': {'modifications': target_id}})
-    g.q.enqueue(tasks.perform_action, source_id, target_id, action, args)
+    label = create_label(action_name, args)
 
-    return jsonify({'status': 'ok', 'id': str(target_id), 'queue_length': g.q.count})
+    if g.fs.exists(original=source_id, label=label):
+        target_file = g.fs.get_last_version(original=source_id, label=label)
+        target_id = target_file._id
+    else:
+        finish_time = datetime.now().replace(microsecond=0) + \
+                        settings.AVERAGE_TASK_TIME * g.q.count
+        target_kwargs = {
+            'user_id': request.user['_id'],
+            'original': source_id,
+            'label': label
+        }
+
+        target_file = g.fs.new_file(finish_time=finish_time, **target_kwargs)
+        target_file.close()
+        target_id = target_file._id
+
+        g.q.enqueue('tasks.perform_action', source_id, target_id, target_kwargs,
+                action, args)
+        g.db.fs.files.update({'_id': source_id},
+                {'$set': {'modifications.%s' % label: target_id}})
+
+    if hasattr(target_file, 'finish_time'):
+        return jsonify({
+            'status': 'wait',
+            'id': str(target_id),
+            'finish_time': str(target_file.finish_time)
+        }), 202
+    else:
+        return jsonify({'status': 'ok', 'id': str(target_id)})
 
 def handle_get_file_info(_id, file):
+    if hasattr(file, 'finish_time'):
+        return jsonify({'status': 'wait', 'finish_time': str(file.finish_time)})
+
     if hasattr(settings, 'GFS_PORT') and settings.GFS_PORT != 80:
         uri = 'http://%s:%s/%s' % (settings.GFS_HOST, settings.GFS_PORT, _id)
     else:

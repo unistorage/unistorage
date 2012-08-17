@@ -23,7 +23,7 @@ class Test(unittest.TestCase):
         self.db = app.get_mongodb_connection()[settings.MONGO_DB_NAME]
         self.q = Queue(connection=app.get_redis_connection())
 
-    def _put_file(self, path):
+    def put_file(self, path):
         files = {'file': open(path, 'rb')}
         r = requests.post(self.base_url, files=files, headers=self.headers)
         self.assertEquals(r.json['status'], 'ok')
@@ -36,80 +36,86 @@ class Test(unittest.TestCase):
 
     def assert_fileinfo(self, r, key, value):
         self.assertEquals(r.json['information']['fileinfo'][key], value)
+
+    def check(self, url, width=None, height=None, mime=None):
+        r = requests.get(url, headers=self.headers)
+        self.assertEquals(r.json['status'], 'ok')
+        if width:
+            self.assert_fileinfo(r, 'width', width)
+        if height:
+            self.assert_fileinfo(r, 'height', height)
+        if mime:
+            self.assert_mimetype(r, mime)
+        return r
     
     def test_resize_keep_jpg(self):
-        original_id = self._put_file('./test_images/some.jpg')
+        original_id = self.put_file('./test_images/some.jpg')
 
         url = '%s/%s/' % (self.base_url, original_id)
-        r = requests.get(url, headers=self.headers)
-        self.assertEquals(r.json['status'], 'ok')
-        self.assert_mimetype(r, 'image/jpeg')
-        self.assert_fileinfo(r, 'width', 640)
-        self.assert_fileinfo(r, 'height', 480)
-
-        url = url + '?action=resize&mode=keep&w=400'
-        r = requests.get(url, headers=self.headers)
-        self.assertEquals(r.json['status'], 'ok')
+        self.check(url, width=640, height=480, mime='image/jpeg')
         
+        resize_url = url + '?action=resize&mode=keep&w=400'
+        r = requests.get(resize_url, headers=self.headers)
+        self.assertEquals(r.json['status'], 'wait')
+        self.assertTrue('finish_time' in r.json)
         resized_image_id = ObjectId(r.json['id'])
-        resized_image = self.db.fs.files.find_one(resized_image_id)
-        original_image = self.db.fs.files.find_one(original_id)
-        
-        self.assertEquals(resized_image['original'], original_id)
-        self.assertTrue(resized_image_id in original_image['modifications'])
-        
-        time.sleep(1)
+
         url = '%s/%s/' % (self.base_url, resized_image_id)
         r = requests.get(url, headers=self.headers)
-        self.assert_mimetype(r, 'image/jpeg')
-        self.assert_fileinfo(r, 'width', 400)
-        self.assert_fileinfo(r, 'height', 300)
+        self.assertTrue('finish_time' in r.json)
 
-    def test_resize_crop_gif(self):
-        original_id = self._put_file('./test_images/animated.gif')
+        # Make sure that consequent calls return the same id for the same action
+        r = requests.get(resize_url, headers=self.headers)
+        self.assertEquals(r.json['status'], 'wait')
+        self.assertTrue('finish_time' in r.json)
+        self.assertEquals(ObjectId(r.json['id']), resized_image_id)
+        
+        time.sleep(1)
+        resized_image = self.db.fs.files.find_one(resized_image_id)
+        original_image = self.db.fs.files.find_one(original_id)
+
+        self.assertEquals(resized_image['original'], original_id)
+        self.assertTrue(resized_image_id in original_image['modifications'].values())
+
+        url = '%s/%s/' % (self.base_url, resized_image_id)
+        r = self.check(url, width=400, height=300, mime='image/jpeg')
+        self.assertTrue('finish_time' not in r.json)
+
+   def test_resize_crop_gif(self):
+        original_id = self.put_file('./test_images/animated.gif')
 
         url = '%s/%s/' % (self.base_url, original_id)
-        r = requests.get(url, headers=self.headers)
-        self.assertEquals(r.json['status'], 'ok')
-        self.assert_mimetype(r, 'image/gif')
-        self.assert_fileinfo(r, 'width', 410)
-        self.assert_fileinfo(r, 'height', 299)
+        self.check(url, width=410, height=299, mime='image/gif')
 
         url = url + '?action=resize&mode=crop&w=200&h=200'
         r = requests.get(url, headers=self.headers)
         self.assertEquals(r.json['status'], 'ok')
-        
         resized_image_id = ObjectId(r.json['id'])
+
         resized_image = self.db.fs.files.find_one(resized_image_id)
         original_image = self.db.fs.files.find_one(original_id)
         
         self.assertEquals(resized_image['original'], original_id)
-        self.assertTrue(resized_image_id in original_image['modifications'])
+        self.assertTrue(resized_image_id in original_image['modifications'].values())
 
         time.sleep(10)
         url = '%s/%s/' % (self.base_url, resized_image_id)
         r = requests.get(url, headers=self.headers)
-        self.assert_mimetype(r, 'image/gif')
-        self.assert_fileinfo(r, 'width', 200)
-        self.assert_fileinfo(r, 'height', 200)
+        self.check(url, width=200, height=200, mime='image/gif')
 
-    def test_make_grayscale(self):
-        original_id = self._put_file('./test_images/some.png')
+   def test_make_grayscale(self):
+        original_id = self.put_file('./test_images/some.png')
 
         url = '%s/%s/' % (self.base_url, original_id)
         r = requests.get(url, headers=self.headers)
-        self.assert_fileinfo(r, 'width', 43)
-        self.assert_fileinfo(r, 'height', 43)
+        self.check(url, width=43, height=43, mime='image/png')
 
         url = url + '?action=make_grayscale'
         r = requests.get(url, headers=self.headers)
         
-        grayscaled_image_id = ObjectId(r.json['id'])
         time.sleep(1)
-        url = '%s/%s/' % (self.base_url, grayscaled_image_id)
-        r = requests.get(url, headers=self.headers)
-        self.assert_fileinfo(r, 'width', 43)
-        self.assert_fileinfo(r, 'height', 43)
+        url = '%s/%s/' % (self.base_url, r.json['id'])
+        self.check(url, width=43, height=43, mime='image/png')
 
 if __name__ == '__main__':
     unittest.main()

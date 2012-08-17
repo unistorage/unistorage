@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 DEBUG = False
 
 #Mongo
@@ -14,6 +16,7 @@ GFS_HOST = '127.0.0.1'
 GFS_PORT = 80
 
 CONVERT_BIN = '/usr/bin/convert'
+AVERAGE_TASK_TIME = timedelta(seconds=2)
 
 try:
     from settings_local import *
