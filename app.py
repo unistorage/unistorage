@@ -1,12 +1,15 @@
-import gridfs
-import json
 import functools
-from flask import Flask, request, g
+
+import magic
+import gridfs
+from flask import Flask, request, g, jsonify
 from bson.objectid import ObjectId
 from pymongo import Connection, ReplicaSetConnection
 from pymongo.errors import InvalidId, AutoReconnect
-import magic
+
 import settings
+from fileutils import get_file_data
+
 
 app = Flask(__name__)
 
@@ -31,59 +34,57 @@ def get_or_create_user(token):
 
     users = g.db['test_users']
     #return False if token is not allowed
-    return check_token(token) and (users.find_one({"token": token}) or
-        users.find_one({"_id": users.insert({"token": token})}))
+    return check_token(token) and (users.find_one({'token': token}) or
+            users.find_one({'_id': users.insert({'token': token})}))
 
 def login_required(func):
     @functools.wraps(func)
     def f(*args, **kwargs):
         if request:
-            token = request.headers.get("Token", "")
+            token = request.headers.get('Token', '')
             user = get_or_create_user(token)
             if user:
                 request.user = user
                 return func(*args, **kwargs)
-        return json.dumps({'status': 'error', 'msg': 'Login failed'}), 401
+        return jsonify({'status': 'error', 'msg': 'Login failed'}), 401
     return f
 
 @app.route('/', methods=['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'OPTIONS'])
 @login_required
 def index():
-    def convert_to_filename(name):
-        import string
-        valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
-        return ''.join(c for c in name if c in valid_chars)
-
     if request.method != 'POST':
-        return json.dumps({'status': 'error', 'msg': 'not implemented'}), 501
+        return jsonify({'status': 'error', 'msg': 'not implemented'}), 501
     file = request.files.get('file', '')
     if file:
-        filename = convert_to_filename(file.filename)
-        content_type = g.magic.from_buffer(file.read(1024))
-        file.seek(0)
-        new_file = g.fs.put(file.read(), user_id=request.user["_id"],
-            filename=filename, content_type=content_type)
-        return json.dumps({'status': 'ok', 'id': new_file.__str__()})
+        file_data = get_file_data(file)
+        new_file = g.fs.put(file.read(), user_id=request.user['_id'], **file_data)
+        return jsonify({'status': 'ok', 'id': str(new_file)})
     else:
-        return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
+        return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
 @app.route('/<string:id>/', methods=['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'OPTIONS'])
 @login_required
 def get_file_info(id=None):
     if request.method != 'GET':
-        return json.dumps({'status': 'error', 'msg': 'not implemented'}), 501
+        return jsonify({'status': 'error', 'msg': 'not implemented'}), 501
     try:
         #InvalidId
-        file = fs.get(ObjectId(id))
+        file = g.fs.get(ObjectId(id))
         if hasattr(settings, 'GFS_PORT') and settings.GFS_PORT != 80:
             uri = 'http://%s:%s/%s' % (settings.GFS_HOST, settings.GFS_PORT, id)
         else:
             uri = 'http://%s/%s' % (settings.GFS_HOST, id)
-        return json.dumps({'status': 'ok', 'information': {'name': file.name,
-            'size': file.length, 'mimetype': file.content_type,
-            'uri': uri}})
+        information = {
+            'name': file.name,
+            'size': file.length,
+            'mimetype': file.content_type,
+            'uri': uri
+        }
+        if hasattr(file, 'fileinfo'):
+            information['fileinfo'] = file.fileinfo
+        return jsonify({'status': 'ok', 'information': information})
     except InvalidId:
-        return json.dumps({'status': 'error', 'msg': 'File wasn\'t found'}), 400
+        return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
 @app.before_request
 def before_request():
@@ -102,5 +103,8 @@ def teardown_request(exception):
     if hasattr(g, 'connection'):
         g.connection.close()
 
+if settings.DEBUG:
+    app.config['PROPAGATE_EXCEPTIONS'] = True # Useful when running with uwsgi
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', debug=settings.DEBUG)
