@@ -111,7 +111,7 @@ def handle_get_action(source_id):
         target_id = target_file._id
     else:
         finish_time = datetime.now().replace(microsecond=0) + \
-                        settings.AVERAGE_TASK_TIME * g.q.count
+                        settings.AVERAGE_TASK_TIME * (g.q.count + 1)
         target_kwargs = {
             'user_id': request.user['_id'],
             'original': source_id,
@@ -127,18 +127,16 @@ def handle_get_action(source_id):
         g.db.fs.files.update({'_id': source_id},
                 {'$set': {'modifications.%s' % label: target_id}})
 
-    if hasattr(target_file, 'finish_time'):
-        return jsonify({
-            'status': 'wait',
-            'id': str(target_id),
-            'finish_time': str(target_file.finish_time)
-        }), 202
-    else:
-        return jsonify({'status': 'ok', 'id': str(target_id)})
+    return jsonify({'status': 'ok', 'id': str(target_id)})
 
 def handle_get_file_info(_id, file):
     if hasattr(file, 'finish_time'):
-        return jsonify({'status': 'wait', 'finish_time': str(file.finish_time)})
+        finish_time = file.finish_time
+        if finish_time < datetime.now():
+            finish_time = datetime.now() + (finish_time - file.uploadDate)
+            finish_time = finish_time.replace(microsecond=0)
+            g.db.fs.files.update({'_id': _id}, {'$set': {'finish_time': finish_time}})
+        return jsonify({'status': 'wait', 'finish_time': str(finish_time)})
 
     if hasattr(settings, 'GFS_PORT') and settings.GFS_PORT != 80:
         uri = 'http://%s:%s/%s' % (settings.GFS_HOST, settings.GFS_PORT, _id)

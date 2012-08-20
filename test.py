@@ -56,8 +56,7 @@ class Test(unittest.TestCase):
         
         resize_url = url + '?action=resize&mode=keep&w=400'
         r = requests.get(resize_url, headers=self.headers)
-        self.assertEquals(r.json['status'], 'wait')
-        self.assertTrue('finish_time' in r.json)
+        self.assertEquals(r.json['status'], 'ok')
         resized_image_id = ObjectId(r.json['id'])
 
         url = '%s/%s/' % (self.base_url, resized_image_id)
@@ -66,8 +65,7 @@ class Test(unittest.TestCase):
 
         # Make sure that consequent calls return the same id for the same action
         r = requests.get(resize_url, headers=self.headers)
-        self.assertEquals(r.json['status'], 'wait')
-        self.assertTrue('finish_time' in r.json)
+        self.assertEquals(r.json['status'], 'ok')
         self.assertEquals(ObjectId(r.json['id']), resized_image_id)
         
         time.sleep(1)
@@ -81,7 +79,7 @@ class Test(unittest.TestCase):
         r = self.check(url, width=400, height=300, mime='image/jpeg')
         self.assertTrue('finish_time' not in r.json)
 
-   def test_resize_crop_gif(self):
+    def test_resize_crop_gif(self):
         original_id = self.put_file('./test_images/animated.gif')
 
         url = '%s/%s/' % (self.base_url, original_id)
@@ -103,7 +101,7 @@ class Test(unittest.TestCase):
         r = requests.get(url, headers=self.headers)
         self.check(url, width=200, height=200, mime='image/gif')
 
-   def test_make_grayscale(self):
+    def test_make_grayscale(self):
         original_id = self.put_file('./test_images/some.png')
 
         url = '%s/%s/' % (self.base_url, original_id)
