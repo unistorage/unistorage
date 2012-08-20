@@ -1,4 +1,5 @@
 import functools
+from datetime import datetime
 
 import magic
 import gridfs
@@ -6,8 +7,11 @@ from flask import Flask, request, g, jsonify
 from bson.objectid import ObjectId
 from pymongo import Connection, ReplicaSetConnection
 from pymongo.errors import InvalidId, AutoReconnect
+from redis import Redis
+from rq import Queue
 
 import settings
+import image_actions
 from fileutils import get_file_data
 
 
@@ -62,40 +66,125 @@ def index():
     else:
         return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
-@app.route('/<string:id>/', methods=['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'OPTIONS'])
+def validate_and_get_resize_args(args): # TODO Move
+    if 'mode' not in args or args['mode'] not in ('keep', 'crop', 'resize'):
+        raise Exception('Unknown mode. Available options: "keep", "crop" and "resize".')
+    mode = args['mode']
+    
+    w = args.get('w', None)
+    h = args.get('h', None)
+    try:
+        w = w and int(w) or None
+        h = h and int(h) or None
+    except ValueError:
+        raise Exception('w and h must be integer values.')
+
+    if mode in ('crop', 'resize') and not (w and h):
+        raise Exception('Both w and h must be specified.')
+    elif not (w or h):
+        raise Exception('Either w or h must be specified.')
+
+    return [mode, w, h]
+
+def handle_get_action(source_id):
+    action_name = request.args['action']
+
+    def create_label(action_name, args):
+        return '_'.join(map(str, [action_name] + args))
+
+    try:
+        if action_name == 'resize':
+            action = image_actions.resize
+            args = validate_and_get_resize_args(request.args.to_dict())
+        elif action_name == 'make_grayscale':
+            action = image_actions.make_grayscale
+            args = []
+        else:
+            raise Exception('Unknown action.')
+    except Exception as e:
+        return jsonify({'status': 'error', 'msg': str(e)}), 400
+
+    label = create_label(action_name, args)
+
+    if g.fs.exists(original=source_id, label=label):
+        target_file = g.fs.get_last_version(original=source_id, label=label)
+        target_id = target_file._id
+    else:
+        finish_time = datetime.now().replace(microsecond=0) + \
+                        settings.AVERAGE_TASK_TIME * (g.q.count + 1)
+        target_kwargs = {
+            'user_id': request.user['_id'],
+            'original': source_id,
+            'label': label
+        }
+
+        target_file = g.fs.new_file(finish_time=finish_time, **target_kwargs)
+        target_file.close()
+        target_id = target_file._id
+
+        g.q.enqueue('tasks.perform_action', source_id, target_id, target_kwargs,
+                action, args)
+        g.db.fs.files.update({'_id': source_id},
+                {'$set': {'modifications.%s' % label: target_id}})
+
+    return jsonify({'status': 'ok', 'id': str(target_id)})
+
+def handle_get_file_info(_id, file):
+    if hasattr(file, 'finish_time'):
+        finish_time = file.finish_time
+        if finish_time < datetime.now():
+            finish_time = datetime.now() + (finish_time - file.uploadDate)
+            finish_time = finish_time.replace(microsecond=0)
+            g.db.fs.files.update({'_id': _id}, {'$set': {'finish_time': finish_time}})
+        return jsonify({'status': 'wait', 'finish_time': str(finish_time)})
+
+    if hasattr(settings, 'GFS_PORT') and settings.GFS_PORT != 80:
+        uri = 'http://%s:%s/%s' % (settings.GFS_HOST, settings.GFS_PORT, _id)
+    else:
+        uri = 'http://%s/%s' % (settings.GFS_HOST, _id)
+    information = {
+        'name': file.name,
+        'size': file.length,
+        'mimetype': file.content_type,
+        'uri': uri
+    }
+    if hasattr(file, 'fileinfo'):
+        information['fileinfo'] = file.fileinfo
+    return jsonify({'status': 'ok', 'information': information})
+
+@app.route('/<string:_id>/', methods=['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'OPTIONS'])
 @login_required
-def get_file_info(id=None):
+def get_file_info(_id=None):
     if request.method != 'GET':
         return jsonify({'status': 'error', 'msg': 'not implemented'}), 501
+
+    _id = ObjectId(_id)
     try:
-        #InvalidId
-        file = g.fs.get(ObjectId(id))
-        if hasattr(settings, 'GFS_PORT') and settings.GFS_PORT != 80:
-            uri = 'http://%s:%s/%s' % (settings.GFS_HOST, settings.GFS_PORT, id)
-        else:
-            uri = 'http://%s/%s' % (settings.GFS_HOST, id)
-        information = {
-            'name': file.name,
-            'size': file.length,
-            'mimetype': file.content_type,
-            'uri': uri
-        }
-        if hasattr(file, 'fileinfo'):
-            information['fileinfo'] = file.fileinfo
-        return jsonify({'status': 'ok', 'information': information})
+        file = g.fs.get(_id)
     except InvalidId:
         return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
+    
+    if request.args and 'action' in request.args:
+        return handle_get_action(_id)
+    else:
+        return handle_get_file_info(_id, file)
+
+def get_mongodb_connection():
+    if settings.MONGO_DB_REPL_ON:
+        return ReplicaSetConnection(settings.MONGO_DB_REPL_URI,
+                    replicaset=settings.MONGO_REPLICA_NAME)
+    else:
+        return Connection(settings.MONGO_HOST, settings.MONGO_PORT)
+
+def get_redis_connection():
+    return Redis()
 
 @app.before_request
 def before_request():
-    if settings.MONGO_DB_REPL_ON:
-        g.connection = ReplicaSetConnection(settings.MONGO_DB_REPL_URI,
-                    replicaset=settings.MONGO_REPLICA_NAME)
-    else:
-        g.connection = Connection(settings.MONGO_HOST, settings.MONGO_PORT)
-
+    g.connection = get_mongodb_connection()
     g.db = g.connection[settings.MONGO_DB_NAME]
     g.fs = gridfs.GridFS(g.db)
+    g.q = Queue(connection=get_redis_connection())
     g.magic = magic.Magic(mime=True)
 
 @app.teardown_request
