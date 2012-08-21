@@ -13,6 +13,7 @@ from rq import Queue
 import settings
 import image_actions
 from fileutils import get_file_data
+from actions import handle_action_request, ValidationError
 
 
 app = Flask(__name__)
@@ -66,70 +67,9 @@ def index():
     else:
         return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
-def validate_and_get_resize_args(args): # TODO Move
-    if 'mode' not in args or args['mode'] not in ('keep', 'crop', 'resize'):
-        raise Exception('Unknown mode. Available options: "keep", "crop" and "resize".')
-    mode = args['mode']
-    
-    w = args.get('w', None)
-    h = args.get('h', None)
-    try:
-        w = w and int(w) or None
-        h = h and int(h) or None
-    except ValueError:
-        raise Exception('w and h must be integer values.')
 
-    if mode in ('crop', 'resize') and not (w and h):
-        raise Exception('Both w and h must be specified.')
-    elif not (w or h):
-        raise Exception('Either w or h must be specified.')
-
-    return [mode, w, h]
-
-def handle_get_action(source_id):
-    action_name = request.args['action']
-
-    def create_label(action_name, args):
-        return '_'.join(map(str, [action_name] + args))
-
-    try:
-        if action_name == 'resize':
-            action = image_actions.resize
-            args = validate_and_get_resize_args(request.args.to_dict())
-        elif action_name == 'make_grayscale':
-            action = image_actions.make_grayscale
-            args = []
-        else:
-            raise Exception('Unknown action.')
-    except Exception as e:
-        return jsonify({'status': 'error', 'msg': str(e)}), 400
-
-    label = create_label(action_name, args)
-
-    if g.fs.exists(original=source_id, label=label):
-        target_file = g.fs.get_last_version(original=source_id, label=label)
-        target_id = target_file._id
-    else:
-        finish_time = datetime.now().replace(microsecond=0) + \
-                        settings.AVERAGE_TASK_TIME * (g.q.count + 1)
-        target_kwargs = {
-            'user_id': request.user['_id'],
-            'original': source_id,
-            'label': label
-        }
-
-        target_file = g.fs.new_file(finish_time=finish_time, **target_kwargs)
-        target_file.close()
-        target_id = target_file._id
-
-        g.q.enqueue('tasks.perform_action', source_id, target_id, target_kwargs,
-                action, args)
-        g.db.fs.files.update({'_id': source_id},
-                {'$set': {'modifications.%s' % label: target_id}})
-
-    return jsonify({'status': 'ok', 'id': str(target_id)})
-
-def handle_get_file_info(_id, file):
+def handle_get_file_info(file):
+    _id = file._id
     if hasattr(file, 'finish_time'):
         finish_time = file.finish_time
         if finish_time < datetime.now():
@@ -165,9 +105,13 @@ def get_file_info(_id=None):
         return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
     
     if request.args and 'action' in request.args:
-        return handle_get_action(_id)
+        try:
+            target_id = handle_action_request(file, request)
+            return jsonify({'status': 'ok', 'id': str(target_id)})
+        except ValidationError as e:
+            return jsonify({'status': 'error', 'msg': str(e)}), 400
     else:
-        return handle_get_file_info(_id, file)
+        return handle_get_file_info(file)
 
 def get_mongodb_connection():
     if settings.MONGO_DB_REPL_ON:

@@ -13,14 +13,22 @@ def is_animated(image):
     try:
         image.seek(1)
     except EOFError:
-        return False
+        is_animated = False
     else:
-        return True
+        is_animated = True
+    image.seek(0)
+    return is_animated
+
+def is_rgba_png(image):
+    return image.mode == 'RGBA'
+
+def is_transparent_gif(image):
+    return image.format == 'GIF' and 'transparency' in image.info
 
 class PILWrapper(object):
     def __init__(self, image):
         self._image = image
-        self._format = self._image.format
+        self._format = self._image.format.upper()
     
     def make_grayscale(self):
         self._image = ImageOps.grayscale(self._image)
@@ -31,7 +39,7 @@ class PILWrapper(object):
         return self
     
     def crop_to_center(self, target_width, target_height):
-        width, height = map(float, self._image.size)
+        width, height = self._image.size
         width_to_crop = width - target_width
         height_to_crop = height - target_height
 
@@ -41,16 +49,20 @@ class PILWrapper(object):
         self._image = self._image.crop((left, top, right, bottom))
         return self
 
-    def finalize(self):
-        data = StringIO()
-        self._image.save(data, self._format)
-        return data
+    def finalize(self, **kwargs):
+        format = kwargs.get('format', self._format).upper()
+        if self._image.mode != 'RGB' and format in ('JPEG', 'BMP'):
+            self._image = self._image.convert('RGB')
+        result = StringIO()
+        self._image.save(result, format)
+        return result
 
 class ImageMagickWrapper(object):
     def __init__(self, image):
         self._image = image
-        self._format = self._image.format
-        self._args = [settings.CONVERT_BIN, '-', '-coalesce']
+        self._is_animated = is_animated(self._image)
+        self._format = self._image.format.upper()
+        self._args = [settings.CONVERT_BIN, '-']
     
     def make_grayscale(self):
         self._args.extend(['-colorspace', 'gray'])
@@ -65,16 +77,24 @@ class ImageMagickWrapper(object):
                 '-crop', '%dx%d+0+0' % (width, height), '+repage'])
         return self
 
-    def finalize(self):
-        self._args.append('%s:-' % self._format)
+    def finalize(self, **kwargs):
+        format = kwargs.get('format', self._format).upper()
+
+        if self._is_animated and format != self._format:
+            # If converting from animated image to static, specify frame number
+            self._args[1] += '[0]'
+        else:
+            self._args.insert(2, '-coalesce')
+
+        self._args.append('%s:-' % format.upper())
         proc_input = self._image.fp
         proc_input.seek(0)
         proc = subprocess.Popen(self._args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        stdout_data, stderr_data = proc.communicate(input=proc_input.read())
-        return StringIO(stdout_data)
+        result, _ = proc.communicate(input=proc_input.read())
+        return StringIO(result)
 
 def wrap(image):
-    if is_animated(image):
+    if image.format == 'GIF' or is_rgba_png(image):
         wrapper = ImageMagickWrapper
     else:
         wrapper = PILWrapper 
@@ -105,9 +125,15 @@ def resize(source_file, mode, target_width, target_height):
     width = to_int(source_width * factor)
     height = to_int(source_height * factor)
 
-    target_image.resize(width, height)
+    if factor < 1:
+        target_image.resize(width, height)
 
-    if mode == 'crop':
-        target_image.crop_to_center(target_width, target_height)
+        if mode == 'crop':
+            target_image.crop_to_center(target_width, target_height)
 
     return target_image.finalize()
+
+def convert(source_file, to):
+    source_image = Image.open(source_file)
+    target_image = wrap(source_image)
+    return target_image.finalize(format=to)
