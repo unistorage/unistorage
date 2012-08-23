@@ -4,3 +4,4 @@ python-magic
 kaa-metadata
 rq==0.3.0
 PIL
+nose
