@@ -1,6 +1,8 @@
 Flask
 pymongo
 python-magic
+WebTest==1.3.4
+kaa-base
 kaa-metadata
 rq==0.3.0
 PIL
