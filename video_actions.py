@@ -2,7 +2,7 @@ import tempfile
 import os
 import subprocess
 
-from video_converter import Converter
+from converter import Converter
 
 
 def convert(source_file, format, vcodec, acodec, only_try=False):
