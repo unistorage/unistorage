@@ -1,3 +1,4 @@
+import sys
 from datetime import timedelta
 
 DEBUG = False
@@ -22,3 +23,9 @@ try:
     from settings_local import *
 except ImportError:
     pass
+
+if 'test' in sys.argv[0]: # Is there another way?
+    try:
+        from settings_test import *
+    except ImportError:
+        pass

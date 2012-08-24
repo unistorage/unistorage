@@ -388,7 +388,7 @@ class H263Codec(VideoCodec):
     H.263 video codec.
     """
     codec_name = 'h263'
-    ffmpeg_codec_name = 'h263'
+    ffmpeg_codec_name = 'h263p'
 
 
 class FlvCodec(VideoCodec):

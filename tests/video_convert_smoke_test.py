@@ -10,12 +10,12 @@ class SmokeTest(unittest.TestCase):
     TEST_VIDEOS_DIR = './tests/videos'
     TEST_RESULTS_DIR = './tests/result_videos'
 
-    TO = {
-        'ogg': { 'vcodec': ['theora'], 'acodec': 'vorbis' },
-        'webm': { 'vcodec': ['vp8'], 'acodec': 'vorbis' },
-        'flv': { 'vcodec': ['h264', 'flv'], 'acodec': 'mp3' },
-        'mp4': { 'vcodec': ['h264', 'divx'], 'acodec': 'mp3' },
-        'mkv': { 'vcodec': ['h263', 'mpeg1', 'mpeg2'], 'acodec': 'mp3' },
+    CONVERT_TARGETS = {
+        'ogg': {'vcodec': ['theora'], 'acodec': 'vorbis'},
+        'webm': {'vcodec': ['vp8'], 'acodec': 'vorbis'},
+        'flv': {'vcodec': ['h264', 'flv'], 'acodec': 'mp3'},
+        'mp4': {'vcodec': ['h264', 'divx'], 'acodec': 'mp3'},
+        'mkv': {'vcodec': ['h263', 'mpeg1', 'mpeg2'], 'acodec': 'mp3'},
     }
 
     @classmethod
@@ -31,9 +31,9 @@ class SmokeTest(unittest.TestCase):
         for source_file_name in os.listdir(self.TEST_VIDEOS_DIR):
             source_file_path = os.path.join(self.TEST_VIDEOS_DIR, source_file_name)
             
-            for format in self.TO:
-                acodec = self.TO[format]['acodec']
-                for vcodec in self.TO[format]['vcodec']:
+            for format in self.CONVERT_TARGETS:
+                acodec = self.CONVERT_TARGETS[format]['acodec']
+                for vcodec in self.CONVERT_TARGETS[format]['vcodec']:
                     with open(source_file_path) as source_file:
                         if __name__ == 'main':
                             print 'Converting %s to %s using %s...' % (source_file_name, format, vcodec)
