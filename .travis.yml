@@ -1,0 +1,10 @@
+language: python
+python:
+  - "2.7"
+# command to install dependencies
+install: "pip install -r deploy/requirements.txt"
+# command to run tests
+script: nosetests tests.functional_test
+branches:
+  only:
+    - i24-convert-videos
