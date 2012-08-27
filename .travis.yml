@@ -1,0 +1,13 @@
+language: python
+python:
+  - "2.7"
+# command to install dependencies
+install:
+  - sudo apt-get install zlib1g zlib1g-dev ffmpeg x264 ubuntu-restricted-extras libmp3lame0 flvtool2
+  - sudo ln -s /usr/lib/i386-linux-gnu/libz.so /usr/lib/
+  - pip install -r deploy/requirements.txt
+# command to run tests
+script: nosetests
+branches:
+  only:
+    - i24-convert-videos

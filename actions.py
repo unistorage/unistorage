@@ -4,6 +4,7 @@ from flask import g
 
 import settings
 import image_actions
+import video_actions
 
 
 class ValidationError(Exception):
@@ -29,7 +30,7 @@ def validate_and_get_resize_args(source_file, args):
 
     return [mode, w, h]
 
-def validate_and_get_convert_args(source_file, args):
+def validate_and_get_image_convert_args(source_file, args):
     if 'to' not in args:
         raise ValidationError('"to" must be specified.')
     to = args['to']
@@ -46,6 +47,56 @@ def validate_and_get_convert_args(source_file, args):
 
     return [subtype]
 
+def validate_and_get_video_convert_args(source_file, args):
+    if 'format' not in args:
+        raise ValidationError('format must be specified.')
+    format = args['format']
+
+    supported_formats = ('ogg', 'webm', 'flv', 'avi', 'mkv', 'mov', 'mp4', 'mpg')
+    if format not in supported_formats:
+        raise ValidationError('Video can be only converted to the one of '
+            'following formats: %s.' % ', '.join(supported_formats))
+
+    vcodec = None
+    acodec = None
+    if format == 'ogg':
+        vcodec = 'theora'
+        acodec = 'vorbis'
+    elif format == 'webm':
+        vcodec = 'vp8'
+        acodec = 'vorbis'
+    vcodec = args.get('vcodec', vcodec)
+    acodec = args.get('acodec', acodec)
+    
+    vcodec_restrictions = {
+        'ogg': ('theora',),
+        'webm': ('vp8',),
+        'flv': ('h264', 'flv'),
+        'mp4': ('h264', 'divx', 'mpeg1', 'mpeg2')
+    }
+    acodec_restrictions = {
+        'ogg': ('vorbis',),
+        'webm': ('vorbis',)
+    }
+
+    all_supported_vcodecs = ('theora', 'h264', 'vp8', 'divx', 'h263', 'flv', 'mpeg1', 'mpeg2')
+    format_supported_vcodecs = vcodec_restrictions.get(format, all_supported_vcodecs)
+    all_supported_acodecs =  ('vorbis', 'mp3')
+    format_supported_acodecs = acodec_restrictions.get(format, all_supported_acodecs)
+    
+    if vcodec is None:
+        raise ValidationError('vcodec must be specified.')
+    elif vcodec not in format_supported_vcodecs:
+        raise ValidationError('Format %s allows only following video codecs: %s' % \
+                (format, ', '.join(format_supported_vcodecs)))
+    if acodec is None:
+        raise ValidationError('acodec must be specified.')
+    elif acodec not in format_supported_acodecs:
+        raise ValidationError('Format %s allows only following audio codecs: %s' % \
+                (format, ', '.join(format_supported_acodecs)))
+
+    return [format, vcodec, acodec]
+
 def create_label(action_name, args):
     return '_'.join(map(str, [action_name] + args))
 
@@ -61,9 +112,12 @@ def validate_and_get_action(source_file, args):
     elif action_name == 'convert':
         if source_file.content_type.startswith('image'):
             action = image_actions.convert
-            args = validate_and_get_convert_args(source_file, args)
+            args = validate_and_get_image_convert_args(source_file, args)
+        elif source_file.content_type.startswith('video'):
+            action = video_actions.convert
+            args = validate_and_get_video_convert_args(source_file, args)
         else:
-            raise ValidationError('Currently convert is only supported for images.')
+            raise ValidationError('Convert is not supported for %s.' % source_file.content_type)
     else:
         raise ValidationError('Unknown action.')
 

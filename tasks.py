@@ -29,3 +29,6 @@ def perform_action(source_id, target_id, target_kwargs, action, args):
 
     fs.delete(target_id)
     fs.put(target_file, _id=target_id, **target_kwargs)
+ 
+    source_file.close()
+    target_file.close()
