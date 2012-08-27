@@ -8,6 +8,3 @@ install:
   - pip install -r deploy/requirements.txt
 # command to run tests
 script: nosetests
-branches:
-  only:
-    - i24-convert-videos
