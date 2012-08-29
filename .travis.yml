@@ -8,6 +8,7 @@ before_install:
   - export PYTHON_VERSION=2.7 
   - cp /usr/share/pyshared/uno.py $VIRTUAL_ENV/lib/python$PYTHON_VERSION/site-packages/ 
   - cp /usr/share/pyshared/unohelper.py $VIRTUAL_ENV/lib/python$PYTHON_VERSION/site-packages/
+  - file -C -m ./magic
 install:
   - pip install -r deploy/requirements.txt
 # command to run tests
