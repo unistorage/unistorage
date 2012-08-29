@@ -22,9 +22,6 @@ def is_animated(image):
 def is_rgba_png(image):
     return image.mode == 'RGBA'
 
-def is_transparent_gif(image):
-    return image.format == 'GIF' and 'transparency' in image.info
-
 class PILWrapper(object):
     def __init__(self, image):
         self._image = image

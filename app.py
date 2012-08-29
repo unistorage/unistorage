@@ -1,7 +1,6 @@
 import functools
 from datetime import datetime
 
-import magic
 import gridfs
 from flask import Flask, request, g, jsonify
 from bson.objectid import ObjectId
@@ -129,7 +128,6 @@ def before_request():
     g.db = g.connection[settings.MONGO_DB_NAME]
     g.fs = gridfs.GridFS(g.db)
     g.q = Queue(connection=get_redis_connection())
-    g.magic = magic.Magic(mime=True)
 
 @app.teardown_request
 def teardown_request(exception):

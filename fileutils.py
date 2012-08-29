@@ -1,8 +1,13 @@
 import string
+import os.path
 
 import magic
 import kaa.metadata
 
+import settings
+
+
+MAGIC_PATH = '%s:%s' % (os.path.abspath('./magic.mgc'), settings.MAGIC_PATH)
 
 def get_image_info(metadata):
     fileinfo = {}
@@ -35,9 +40,10 @@ def convert_to_filename(name):
 
 def get_file_data(file):
     file.seek(0)
+    m = magic.Magic(mime=True, magic_file=MAGIC_PATH)
     data = {
         'filename': convert_to_filename(file.filename),
-        'content_type': magic.Magic(mime=True).from_buffer(file.read(1024))
+        'content_type': m.from_buffer(file.read(2048)),
     }
     file.seek(0)
 

@@ -5,12 +5,13 @@ import os
 from pprint import pprint
 from bson.objectid import ObjectId
 
-from webtest import TestApp
 import redis
+from webtest import TestApp
 from rq import Queue, Worker, use_connection
 
 import settings
 import app
+
 
 class FunctionalTest(unittest.TestCase):
     @classmethod
@@ -21,7 +22,7 @@ class FunctionalTest(unittest.TestCase):
 
     def run_worker(self):
         old_stderr = sys.stderr
-        sys.stderr = sys.stdout # Let worker log be captured by nose
+        #sys.stderr = sys.stdout # Let worker log be captured by nose
 
         use_connection(redis.Redis())
         queues = map(Queue, ['default'])
@@ -91,7 +92,7 @@ class FunctionalTest(unittest.TestCase):
         url = '/%s/' % original_id
         self.check(url, width=640, height=480, mime='image/jpeg')
         
-        convert_action_url = url + '?action=convert&to=image/gif'
+        convert_action_url = url + '?action=convert&to=gif'
         r = self.app.get(convert_action_url, headers=self.headers)
         self.assertEquals(r.json['status'], 'ok')
 
@@ -116,7 +117,7 @@ class FunctionalTest(unittest.TestCase):
         self.check(grayscaled_image_url, width=43, height=43, mime='image/png')
 
     def test_validation_errors(self):
-        original_id = self.put_file('./tests/images/some.png')
+        original_id = self.put_file('./tests/docs/test.docx')
 
         url = '/%s/' % original_id
 
@@ -125,3 +126,40 @@ class FunctionalTest(unittest.TestCase):
 
         r = self.app.get(url + '?action=convert&to=lalala', headers=self.headers, status='*')
         self.assertEquals(r.json['status'], 'error')
+
+    def test_convert_docx_to_html(self):
+        original_id = self.put_file('./tests/docs/test.docx')
+
+        url = '/%s/' % original_id
+        r = self.app.get(url, headers=self.headers)
+        pprint(r)
+        return
+        self.check(url, mime='application/msword')
+        
+        convert_action_url = url + '?action=convert&to=html'
+        r = self.app.get(convert_action_url, headers=self.headers)
+        self.assertEquals(r.json['status'], 'ok')
+
+        self.run_worker()
+
+        converted_doc_url = '/%s/' % r.json['id']
+        r = self.app.get(converted_doc_url, headers=self.headers)
+        mimetype = r.json['information']['mimetype']
+        self.assertTrue('xml' in mimetype or 'html' in mimetype)
+
+    def test_convert_odt_to_pdf(self):
+        original_id = self.put_file('./tests/docs/test.odt')
+
+        url = '/%s/' % original_id
+        #self.check(url, mime='application/vnd.oasis.opendocument.text')
+        
+        convert_action_url = url + '?action=convert&to=pdf'
+        r = self.app.get(convert_action_url, headers=self.headers)
+        self.assertEquals(r.json['status'], 'ok')
+
+        self.run_worker()
+
+        converted_doc_url = '/%s/' % r.json['id']
+        r = self.app.get(converted_doc_url, headers=self.headers)
+        pprint(r.json)
+        self.check(converted_doc_url, mime='application/pdf')
