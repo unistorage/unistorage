@@ -24,7 +24,7 @@ class SmokeTest(unittest.TestCase):
         for source_file_name in os.listdir(self.TEST_DOCS_DIR):
             source_file_path = os.path.join(self.TEST_DOCS_DIR, source_file_name)
             
-            for format in ('doc', 'odt', 'pdf', 'rtf', 'html', 'txt'):
+            for format in ('html', 'doc', 'odt', 'pdf', 'rtf', 'html', 'txt'):
                 with open(source_file_path) as source_file:
                     if __name__ == 'main':
                         print 'Converting %s to %s...' % (source_file_name, format)
@@ -34,6 +34,8 @@ class SmokeTest(unittest.TestCase):
 
                     with open(target_file_path, 'w') as target_file:
                         target_file.write(result.getvalue())
+        import time;
+        time.sleep(3)
 
 
 if __name__ == '__main__':

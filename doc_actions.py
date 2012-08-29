@@ -81,7 +81,7 @@ def start_openoffice(home_dir, port):
 
     uno_svc_mgr = uno_context.ServiceManager
     desktop = uno_svc_mgr.createInstanceWithContext('com.sun.star.frame.Desktop', uno_context)
-    return popen, uno_context, desktop
+    return popen, context, desktop
 
 FILTER_MAP = {
     'doc': 'MS Word 97',
@@ -112,10 +112,13 @@ def convert(source_file, to):
             'FilterData': uno.Any('[]com.sun.star.beans.PropertyValue', tuple(),),
             'FilterName': FILTER_MAP[to],
             'OutputStream': OutputStream(output_stream),
+            'Overwrite': True
         }))
 
+        source_file.close()
         doc.dispose()
         doc.close(True)
+
         try:
             desktop.terminate()
             # Sometimes it throws error:

@@ -132,8 +132,6 @@ class FunctionalTest(unittest.TestCase):
 
         url = '/%s/' % original_id
         r = self.app.get(url, headers=self.headers)
-        pprint(r)
-        return
         self.check(url, mime='application/msword')
         
         convert_action_url = url + '?action=convert&to=html'
@@ -151,7 +149,7 @@ class FunctionalTest(unittest.TestCase):
         original_id = self.put_file('./tests/docs/test.odt')
 
         url = '/%s/' % original_id
-        #self.check(url, mime='application/vnd.oasis.opendocument.text')
+        self.check(url, mime='application/vnd.oasis.opendocument.text')
         
         convert_action_url = url + '?action=convert&to=pdf'
         r = self.app.get(convert_action_url, headers=self.headers)
@@ -161,5 +159,4 @@ class FunctionalTest(unittest.TestCase):
 
         converted_doc_url = '/%s/' % r.json['id']
         r = self.app.get(converted_doc_url, headers=self.headers)
-        pprint(r.json)
         self.check(converted_doc_url, mime='application/pdf')
