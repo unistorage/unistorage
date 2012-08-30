@@ -24,7 +24,8 @@ FLVTOOL_BIN = '/usr/bin/flvtool2'
 
 MAGIC_PATH = '/etc/magic:/usr/share/misc/magic' # Check your `file --version`
 
-AVERAGE_TASK_TIME = timedelta(seconds=2)
+TTL = int(timedelta(days=7).total_seconds())
+AVERAGE_TASK_TIME = timedelta(seconds=5)
 
 try:
     from settings_local import *

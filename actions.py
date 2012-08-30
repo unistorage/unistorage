@@ -11,6 +11,7 @@ import doc_actions
 class ValidationError(Exception):
     pass
 
+
 def validate_and_get_resize_args(source_file, args):
     if 'mode' not in args or args['mode'] not in ('keep', 'crop', 'resize'):
         raise ValidationError('Unknown `mode`. Available options: "keep", "crop" and "resize".')
@@ -29,7 +30,14 @@ def validate_and_get_resize_args(source_file, args):
     elif not (w or h):
         raise ValidationError('Either `w` or `h` must be specified.')
 
-    return [mode, w, h]
+    nginx_filter_args = None
+    if mode == 'keep':
+        nginx_filter_args = {'mode': 'resize', 'w': w, 'h': h}
+    elif mode == 'crop':
+        nginx_filter_args = {'mode': 'crop', 'w': w, 'h': h}
+    
+    return [mode, w, h], nginx_filter_args
+
 
 def validate_and_get_image_convert_args(source_file, args):
     if 'to' not in args:
@@ -42,6 +50,7 @@ def validate_and_get_image_convert_args(source_file, args):
             'following formats: %s.' % (source_file.content_type, ', '.join(supported_formats)))
 
     return [format]
+
 
 def validate_and_get_video_convert_args(source_file, args):
     if 'to' not in args:
@@ -93,6 +102,7 @@ def validate_and_get_video_convert_args(source_file, args):
 
     return [format, vcodec, acodec]
 
+
 def validate_and_get_doc_convert_args(source_file, args):
     if 'to' not in args:
         raise ValidationError('`to` must be specified.')
@@ -105,8 +115,10 @@ def validate_and_get_doc_convert_args(source_file, args):
 
     return [format]
 
+
 def create_label(action_name, args):
     return '_'.join(map(str, [action_name] + args))
+
 
 # doc: 'application/msword'
 # docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -119,15 +131,19 @@ DOCUMENT_TYPES = ('application/msword', 'application/vnd.openxmlformats-officedo
     'application/vnd.oasis.opendocument.text', 'application/pdf', 'application/vnd.pdf', 'application/x-pdf',
     'application/rtf', 'application/x-rtf', 'text/richtext', 'text/plain', 'text/html')
 
+
 def validate_and_get_action(source_file, args):
     action_name = args['action']
     content_type = source_file.content_type
 
     action = None
+    extra = None
     if content_type.startswith('image'):
         if action_name == 'resize':
             action = image_actions.resize
-            args = validate_and_get_resize_args(source_file, args)
+            args, nginx_filter_args = validate_and_get_resize_args(source_file, args)
+            if nginx_filter_args:
+                extra = {'nginx_filter_args': nginx_filter_args}
         elif action_name == 'make_grayscale':
             action = image_actions.make_grayscale
             args = []
@@ -150,25 +166,27 @@ def validate_and_get_action(source_file, args):
                 (action_name, source_file.content_type))
 
     label = create_label(action_name, args)
-    return (action, args, label)
+    return (action, args, label, extra)
+
 
 def handle_action_request(source_file, request):
     source_id = source_file._id
-    action, args, label = validate_and_get_action(source_file, request.args.to_dict())
+    action, args, label, extra = validate_and_get_action(source_file, request.args.to_dict())
 
     if g.fs.exists(original=source_id, label=label):
         target_file = g.fs.get_last_version(original=source_id, label=label)
         target_id = target_file._id
     else:
-        finish_time = datetime.now().replace(microsecond=0) + \
-                        settings.AVERAGE_TASK_TIME * (g.q.count + 1)
+        ttl_timedelta = settings.AVERAGE_TASK_TIME * (g.q.count + 1)
+        ttl = int(ttl_timedelta.total_seconds())
         target_kwargs = {
             'user_id': request.user['_id'],
             'original': source_id,
             'label': label
         }
 
-        target_file = g.fs.new_file(finish_time=finish_time, **target_kwargs)
+        target_file = g.fs.new_file(pending=True, extra=extra,
+                ttl=ttl, **target_kwargs)
         target_file.close()
         target_id = target_file._id
 

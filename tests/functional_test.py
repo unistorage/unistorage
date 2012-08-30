@@ -22,7 +22,7 @@ class FunctionalTest(unittest.TestCase):
 
     def run_worker(self):
         old_stderr = sys.stderr
-        #sys.stderr = sys.stdout # Let worker log be captured by nose
+        sys.stderr = sys.stdout # Let worker log be captured by nose
 
         use_connection(redis.Redis())
         queues = map(Queue, ['default'])
@@ -68,7 +68,7 @@ class FunctionalTest(unittest.TestCase):
 
         resized_image_url = '/%s/' % resized_image_id
         r = self.app.get(resized_image_url, headers=self.headers)
-        self.assertTrue('finish_time' in r.json)
+        self.assertTrue('uri' in r.json)
 
         # Make sure that consequent calls return the same id for the same action
         r = self.app.get(resize_action_url, headers=self.headers)
@@ -84,7 +84,7 @@ class FunctionalTest(unittest.TestCase):
         self.assertTrue(resized_image_id in original_image['modifications'].values())
 
         r = self.check(resized_image_url, width=400, height=300, mime='image/jpeg')
-        self.assertTrue('finish_time' not in r.json)
+        self.assertEquals(int(r.json['ttl']), settings.TTL)
 
     def test_convert_jpg_to_gif(self):
         original_id = self.put_file('./tests/images/some.jpeg')
@@ -100,7 +100,6 @@ class FunctionalTest(unittest.TestCase):
 
         converted_image_url = '/%s/' % r.json['id']
         r = self.check(converted_image_url, width=640, height=480, mime='image/gif')
-        self.assertTrue('finish_time' not in r.json)
 
     def test_make_grayscale(self):
         original_id = self.put_file('./tests/images/some.png')
