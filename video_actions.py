@@ -38,4 +38,4 @@ def convert(source_file, format, vcodec, acodec, only_try=False):
     result = open(tmp_target_file.name)
     os.unlink(tmp_target_file.name)
     os.unlink(tmp_source_file.name)
-    return result
+    return result, format

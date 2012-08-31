@@ -29,14 +29,8 @@ def validate_and_get_resize_args(source_file, args):
         raise ValidationError('Both `w` and `h` must be specified.')
     elif not (w or h):
         raise ValidationError('Either `w` or `h` must be specified.')
-
-    nginx_filter_args = None
-    if mode == 'keep':
-        nginx_filter_args = {'mode': 'resize', 'w': w, 'h': h}
-    elif mode == 'crop':
-        nginx_filter_args = {'mode': 'crop', 'w': w, 'h': h}
     
-    return [mode, w, h], nginx_filter_args
+    return [mode, w, h]
 
 
 def validate_and_get_image_convert_args(source_file, args):
@@ -137,13 +131,10 @@ def validate_and_get_action(source_file, args):
     content_type = source_file.content_type
 
     action = None
-    extra = None
     if content_type.startswith('image'):
         if action_name == 'resize':
             action = image_actions.resize
-            args, nginx_filter_args = validate_and_get_resize_args(source_file, args)
-            if nginx_filter_args:
-                extra = {'nginx_filter_args': nginx_filter_args}
+            args = validate_and_get_resize_args(source_file, args)
         elif action_name == 'make_grayscale':
             action = image_actions.make_grayscale
             args = []
@@ -166,13 +157,12 @@ def validate_and_get_action(source_file, args):
                 (action_name, source_file.content_type))
 
     label = create_label(action_name, args)
-    return (action, args, label, extra)
+    return (action, action_name, args, label)
 
 
 def handle_action_request(source_file, request):
     source_id = source_file._id
-    action, args, label, extra = validate_and_get_action(source_file, request.args.to_dict())
-
+    action, action_name, args, label = validate_and_get_action(source_file, request.args.to_dict())
     if g.fs.exists(original=source_id, label=label):
         target_file = g.fs.get_last_version(original=source_id, label=label)
         target_id = target_file._id
@@ -182,11 +172,11 @@ def handle_action_request(source_file, request):
         target_kwargs = {
             'user_id': request.user['_id'],
             'original': source_id,
+            'action': {'name': action_name, 'args': args},
             'label': label
         }
 
-        target_file = g.fs.new_file(pending=True, extra=extra,
-                ttl=ttl, **target_kwargs)
+        target_file = g.fs.new_file(pending=True, ttl=ttl, **target_kwargs)
         target_file.close()
         target_id = target_file._id
 

@@ -93,7 +93,7 @@ FILTER_MAP = {
     'html': 'XHTML Writer File',
 } 
 
-def convert(source_file, to):
+def convert(source_file, format):
     port = get_free_port()
     home_dir = tempfile.mkdtemp()
     output_stream = StringIO()
@@ -110,7 +110,7 @@ def convert(source_file, to):
         }))
         doc.storeToURL('private:stream', to_properties({
             'FilterData': uno.Any('[]com.sun.star.beans.PropertyValue', tuple(),),
-            'FilterName': FILTER_MAP[to],
+            'FilterName': FILTER_MAP[format],
             'OutputStream': OutputStream(output_stream),
             'Overwrite': True
         }))
@@ -130,4 +130,4 @@ def convert(source_file, to):
     finally:
         shutil.rmtree(home_dir)
         
-    return output_stream
+    return output_stream, format

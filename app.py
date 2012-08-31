@@ -69,12 +69,15 @@ def index():
         return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
 
-def get_gfs_url(path):
-    if hasattr(settings, 'GFS_PORT') and settings.GFS_PORT != 80:
-        uri = 'http://%s:%s/%s' % (settings.GFS_HOST, settings.GFS_PORT, path)
+def get_gridfs_store_url(path):
+    return '%s/%s' % (settings.GRIDFS_SERVE_URL, path.lstrip('/'))
+
+
+def get_unistore_nginx_serve_url(path):
+    if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL'):
+        return '%s/%s' % (settings.UNISTORE_NGINX_SERVE_URL, path.lstrip('/'))
     else:
-        uri = 'http://%s/%s' % (settings.GFS_HOST, path)
-    return uri
+        return None
 
 
 def handle_get_file_info(_id):
@@ -84,14 +87,14 @@ def handle_get_file_info(_id):
         return jsonify({
             'status': 'ok',
             'ttl': file_data['ttl'],
-            'uri': get_gfs_url(_id)
+            'uri': get_unistore_nginx_serve_url(str(_id)) or get_gridfs_store_url(str(_id))
         })
     else:
         information = {
             'name': file_data['filename'],
             'size': file_data['length'],
             'mimetype': file_data['contentType'],
-            'uri': get_gfs_url(_id)
+            'uri': get_gridfs_store_url(str(_id))
         }
         if 'fileinfo' in file_data:
             information['fileinfo'] = file_data['fileinfo']
