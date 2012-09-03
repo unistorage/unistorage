@@ -28,7 +28,7 @@ class SmokeTest(unittest.TestCase):
                 with open(source_file_path) as source_file:
                     if __name__ == 'main':
                         print 'Converting %s to %s...' % (source_file_name, format)
-                    result = convert(source_file, format)
+                    result, _ = convert(source_file, format)
                     target_file_path = os.path.join(self.CONVERT_RESULTS_DIR,
                             '%s.%s' % (source_file_name, format))
 

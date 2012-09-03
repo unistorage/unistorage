@@ -37,7 +37,7 @@ class SmokeTest(unittest.TestCase):
                     with open(source_file_path) as source_file:
                         if __name__ == 'main':
                             print 'Converting %s to %s using %s...' % (source_file_name, format, vcodec)
-                        result = convert(source_file, format, vcodec, acodec, only_try=True)
+                        result, _ = convert(source_file, format, vcodec, acodec, only_try=True)
                         target_file_path = os.path.join(self.CONVERT_RESULTS_DIR,
                                 '%s_using_%s.%s' % (source_file_name, vcodec, format))
 
