@@ -1,4 +1,5 @@
-tests/results
+tests/result_images
+tests/result_docs
 tests/result_videos
 settings_local.py
 *.pyc

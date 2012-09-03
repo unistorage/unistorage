@@ -17,6 +17,13 @@ GFS_HOST = '127.0.0.1'
 GFS_PORT = 80
 
 CONVERT_BIN = '/usr/bin/convert'
+OPENOFFICE_BIN = '/usr/bin/libreoffice'
+FFMPEG_BIN = '/usr/bin/ffmpeg'
+FFPROBE_BIN = '/usr/bin/ffprobe'
+FLVTOOL_BIN = '/usr/bin/flvtool2'
+
+MAGIC_PATH = '/etc/magic:/usr/share/misc/magic' # Check your `file --version`
+
 AVERAGE_TASK_TIME = timedelta(seconds=2)
 
 try:

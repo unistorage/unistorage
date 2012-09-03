@@ -4,6 +4,8 @@ import subprocess
 
 from converter import Converter
 
+import settings
+
 
 def convert(source_file, format, vcodec, acodec, only_try=False):
     tmp_source_file = tempfile.NamedTemporaryFile(delete=False)
@@ -22,16 +24,16 @@ def convert(source_file, format, vcodec, acodec, only_try=False):
     if vcodec in ('mpeg1', 'mpeg2', 'divx'):
         options['video']['fps'] = '25'
 
-    c = Converter()
+    c = Converter(ffmpeg_path=settings.FFMPEG_BIN, ffprobe_path=settings.FFPROBE_BIN)
     convertion = c.convert(tmp_source_file.name, tmp_target_file.name, options)
     for timecode in convertion:
         if only_try:
             break
     
     if format == 'flv':
-        proc = subprocess.Popen(['flvtool2', '-U', tmp_target_file.name],
+        proc = subprocess.Popen([settings.FLVTOOL_BIN, '-U', tmp_target_file.name],
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        return_code = proc.wait() # TODO assert return_code == 0
+        return_code = proc.wait()
 
     result = open(tmp_target_file.name)
     os.unlink(tmp_target_file.name)

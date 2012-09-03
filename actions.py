@@ -5,6 +5,7 @@ from flask import g
 import settings
 import image_actions
 import video_actions
+import doc_actions
 
 
 class ValidationError(Exception):
@@ -12,7 +13,7 @@ class ValidationError(Exception):
 
 def validate_and_get_resize_args(source_file, args):
     if 'mode' not in args or args['mode'] not in ('keep', 'crop', 'resize'):
-        raise ValidationError('Unknown mode. Available options: "keep", "crop" and "resize".')
+        raise ValidationError('Unknown `mode`. Available options: "keep", "crop" and "resize".')
     mode = args['mode']
     
     w = args.get('w', None)
@@ -21,41 +22,36 @@ def validate_and_get_resize_args(source_file, args):
         w = w and int(w) or None
         h = h and int(h) or None
     except ValueError:
-        raise ValidationError('w and h must be integer values.')
+        raise ValidationError('`w` and `h` must be integer values.')
 
     if mode in ('crop', 'resize') and not (w and h):
-        raise ValidationError('Both w and h must be specified.')
+        raise ValidationError('Both `w` and `h` must be specified.')
     elif not (w or h):
-        raise ValidationError('Either w or h must be specified.')
+        raise ValidationError('Either `w` or `h` must be specified.')
 
     return [mode, w, h]
 
 def validate_and_get_image_convert_args(source_file, args):
     if 'to' not in args:
-        raise ValidationError('"to" must be specified.')
-    to = args['to']
+        raise ValidationError('`to` must be specified.')
+    format = args['to']
 
-    try:
-        type, subtype = to.split('/', 1)
-    except ValueError:
-        raise ValidationError('"to" must be a mime type.')
+    supported_formats = ('bmp', 'gif', 'jpeg', 'png', 'tiff')
+    if format not in supported_formats:
+        raise ValidationError('Source file is %s and can be only converted to the one of '
+            'following formats: %s.' % (source_file.content_type, ', '.join(supported_formats)))
 
-    supported_subtypes = ('bmp', 'gif', 'jpeg', 'png', 'tiff')
-    if type != 'image' or subtype not in supported_subtypes:
-        raise ValidationError('Source file is %s and can be only converted to the image of the one of '
-            'following subtypes: %s.' % (source_file.content_type, ', '.join(supported_subtypes)))
-
-    return [subtype]
+    return [format]
 
 def validate_and_get_video_convert_args(source_file, args):
-    if 'format' not in args:
-        raise ValidationError('format must be specified.')
-    format = args['format']
+    if 'to' not in args:
+        raise ValidationError('`to` must be specified.')
+    format = args['to']
 
     supported_formats = ('ogg', 'webm', 'flv', 'avi', 'mkv', 'mov', 'mp4', 'mpg')
     if format not in supported_formats:
-        raise ValidationError('Video can be only converted to the one of '
-            'following formats: %s.' % ', '.join(supported_formats))
+        raise ValidationError('Source file is %s and can be only converted to the one of '
+            'following formats: %s.' % (source_file.content_type, ', '.join(supported_formats)))
 
     vcodec = None
     acodec = None
@@ -97,29 +93,61 @@ def validate_and_get_video_convert_args(source_file, args):
 
     return [format, vcodec, acodec]
 
+def validate_and_get_doc_convert_args(source_file, args):
+    if 'to' not in args:
+        raise ValidationError('`to` must be specified.')
+    format = args['to']
+
+    supported_formats = ('doc', 'docx', 'odt', 'pdf', 'rtf', 'txt', 'html')
+    if format not in supported_formats:
+        raise ValidationError('Source file is %s and can be only converted to the one of '
+            'following formats: %s.' % (source_file.content_type, ', '.join(supported_formats)))
+
+    return [format]
+
 def create_label(action_name, args):
     return '_'.join(map(str, [action_name] + args))
 
+# doc: 'application/msword'
+# docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+# odf; 'application/vnd.oasis.opendocument.text'
+# pdf: 'application/pdf', 'application/vnd.pdf', 'application/x-pdf'
+# rtf: 'application/rtf', 'application/x-rtf', 'text/richtext'
+# txt: 'text/plain'
+# html: 'text/html'
+DOCUMENT_TYPES = ('application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.oasis.opendocument.text', 'application/pdf', 'application/vnd.pdf', 'application/x-pdf',
+    'application/rtf', 'application/x-rtf', 'text/richtext', 'text/plain', 'text/html')
+
 def validate_and_get_action(source_file, args):
     action_name = args['action']
-    
-    if action_name == 'resize':
-        action = image_actions.resize
-        args = validate_and_get_resize_args(source_file, args)
-    elif action_name == 'make_grayscale':
-        action = image_actions.make_grayscale
-        args = []
-    elif action_name == 'convert':
-        if source_file.content_type.startswith('image'):
+    content_type = source_file.content_type
+
+    action = None
+    if content_type.startswith('image'):
+        if action_name == 'resize':
+            action = image_actions.resize
+            args = validate_and_get_resize_args(source_file, args)
+        elif action_name == 'make_grayscale':
+            action = image_actions.make_grayscale
+            args = []
+        elif action_name == 'convert':
             action = image_actions.convert
             args = validate_and_get_image_convert_args(source_file, args)
-        elif source_file.content_type.startswith('video'):
+
+    elif content_type.startswith('video'):
+        if action_name == 'convert':
             action = video_actions.convert
             args = validate_and_get_video_convert_args(source_file, args)
-        else:
-            raise ValidationError('Convert is not supported for %s.' % source_file.content_type)
-    else:
-        raise ValidationError('Unknown action.')
+
+    elif content_type in DOCUMENT_TYPES:
+        if action_name == 'convert':
+            action = doc_actions.convert
+            args = validate_and_get_doc_convert_args(source_file, args)
+    
+    if not action:
+        raise ValidationError('Action %s is not supported for %s.' % \
+                (action_name, source_file.content_type))
 
     label = create_label(action_name, args)
     return (action, args, label)

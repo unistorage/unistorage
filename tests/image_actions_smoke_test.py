@@ -8,7 +8,7 @@ from image_actions import convert, resize, make_grayscale
 
 class SmokeTest(unittest.TestCase):
     TEST_IMAGES_DIR = './tests/images'
-    TEST_RESULTS_DIR = './tests/results'
+    TEST_RESULTS_DIR = './tests/result_images'
 
     @classmethod
     def setUpClass(cls):

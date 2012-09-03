@@ -3,8 +3,12 @@ python:
   - "2.7"
 before_install:
   - sudo apt-get update
-  - sudo apt-get -qq install zlib1g zlib1g-dev ffmpeg x264 ubuntu-restricted-extras libmp3lame0 flvtool2
+  - sudo apt-get -qq install zlib1g zlib1g-dev ffmpeg x264 ubuntu-restricted-extras libmp3lame0 flvtool2 libreoffice
   - sudo ln -s /usr/lib/i386-linux-gnu/libz.so /usr/lib/
+  - export PYTHON_VERSION=2.7 
+  - cp /usr/share/pyshared/uno.py $VIRTUAL_ENV/lib/python$PYTHON_VERSION/site-packages/ 
+  - cp /usr/share/pyshared/unohelper.py $VIRTUAL_ENV/lib/python$PYTHON_VERSION/site-packages/
+  - file -C -m ./magic
 install:
   - pip install -r deploy/requirements.txt
 # command to run tests
