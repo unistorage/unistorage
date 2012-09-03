@@ -8,9 +8,12 @@ MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
 MONGO_DB_NAME = 'grid_fs'
 
-MONGO_DB_REPL_ON = True
-MONGO_DB_REPL_URI = 'localhost:27017,localhost:27018'
-MONGO_REPLICA_NAME = 'test_set'
+MONGO_REPLICATION_ON = True
+MONGO_REPLICA_SET_URI = 'localhost:27017,localhost:27018'
+MONGO_REPLICA_SET_NAME = 'grid_fs_set'
+
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
 
 CONVERT_BIN = '/usr/bin/convert'
 OPENOFFICE_BIN = '/usr/bin/libreoffice'
