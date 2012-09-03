@@ -112,7 +112,7 @@ def handle_get_file_info(_id):
             'name': file_data['filename'],
             'size': file_data['length'],
             'mimetype': file_data['contentType'],
-            'uri': get_gridfs_store_url(str(_id))
+            'uri': get_gridfs_serve_url(str(_id))
         }
         if 'fileinfo' in file_data:
             information['fileinfo'] = file_data['fileinfo']
