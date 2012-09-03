@@ -172,11 +172,15 @@ def handle_action_request(source_file, request):
         target_kwargs = {
             'user_id': request.user['_id'],
             'original': source_id,
-            'action': {'name': action_name, 'args': args},
             'label': label
         }
+        action_data = {
+            'name': action_name,
+            'args': args,
+            'source_content_type': source_file.content_type
+        }
 
-        target_file = g.fs.new_file(pending=True, ttl=ttl, **target_kwargs)
+        target_file = g.fs.new_file(pending=True, action=action_data, ttl=ttl, **target_kwargs)
         target_file.close()
         target_id = target_file._id
 

@@ -17,6 +17,7 @@ from actions import handle_action_request, ValidationError
 
 app = Flask(__name__)
 
+
 def get_or_create_user(token):
     def check_token(token):
         def check_format(token):
@@ -69,26 +70,43 @@ def index():
         return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
 
 
-def get_gridfs_store_url(path):
+def get_gridfs_serve_url(path):
     return '%s/%s' % (settings.GRIDFS_SERVE_URL, path.lstrip('/'))
 
 
 def get_unistore_nginx_serve_url(path):
-    if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL'):
-        return '%s/%s' % (settings.UNISTORE_NGINX_SERVE_URL, path.lstrip('/'))
-    else:
-        return None
+    return '%s/%s' % (settings.UNISTORE_NGINX_SERVE_URL, path.lstrip('/'))
+
+
+def can_unistore_serve(file_data):
+    action = file_data['action']
+    if not action['source_content_type'].startswith('image'):
+        return False
+    if action['name'] != 'resize':
+        return False
+
+    mode, w, h = action['args']
+    if mode not in ('keep', 'crop'):
+        return False
+
+    return True
 
 
 def handle_get_file_info(_id):
     file_data = g.db.fs.files.find_one(_id)
     
     if file_data.get('pending', False):
-        return jsonify({
-            'status': 'ok',
-            'ttl': file_data['ttl'],
-            'uri': get_unistore_nginx_serve_url(str(_id)) or get_gridfs_store_url(str(_id))
-        })
+        if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL') and can_unistore_serve(file_data):
+            return jsonify({
+                'status': 'ok',
+                'ttl': file_data['ttl'],
+                'uri': get_unistore_nginx_serve_url(str(_id))
+            })
+        else:
+            return jsonify({
+                'status': 'wait',
+                'ttl': file_data['ttl']
+            })
     else:
         information = {
             'name': file_data['filename'],
