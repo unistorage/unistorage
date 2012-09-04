@@ -10,10 +10,9 @@ from pymongo.errors import InvalidId, AutoReconnect
 from rq import Queue
 
 import settings
-import image_actions
 from connections import get_redis_connection, get_mongodb_connection
 from fileutils import get_file_data
-from actions import handle_action_request, ValidationError
+from actions.handler import handle_get_action
 
 
 config = yaml.load(open('logging.conf'))
@@ -138,12 +137,7 @@ def get_file_info(_id=None):
         return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
     
     if request.args and 'action' in request.args:
-        file = g.fs.get(_id)
-        try:
-            target_id = handle_action_request(file, request)
-            return jsonify({'status': 'ok', 'id': str(target_id)})
-        except ValidationError as e:
-            return jsonify({'status': 'error', 'msg': str(e)}), 400
+        return handle_get_action(_id)
     else:
         return handle_get_file_info(_id)
 

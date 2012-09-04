@@ -14,15 +14,79 @@ from com.sun.star.io import XOutputStream
 
 import settings
 from tasks import ActionException
+from ..utils import ValidationError
+
+
+name = 'convert'
+type_families_applicable_for = ['doc']
+result_type_family = 'doc'
+
+
+def validate_and_get_args(source_file, args):
+    if 'to' not in args:
+        raise ValidationError('`to` must be specified.')
+    format = args['to']
+
+    supported_formats = ('doc', 'docx', 'odt', 'pdf', 'rtf', 'txt', 'html')
+    if format not in supported_formats:
+        raise ValidationError('Source file is %s and can be only converted to the one of '
+            'following formats: %s.' % (source_file.content_type, ', '.join(supported_formats)))
+
+    return [format]
+
+
+def perform(source_file, format):
+    port = get_free_port()
+    home_dir = tempfile.mkdtemp()
+    output_stream = StringIO()
+
+    try:
+        popen, context, desktop = start_openoffice(home_dir, port)
+        
+        input_stream = context.ServiceManager.createInstanceWithContext(
+                'com.sun.star.io.SequenceInputStream', context)
+        input_stream.initialize((uno.ByteSequence(source_file.read()),))
+
+        doc = desktop.loadComponentFromURL('private:stream', '_blank', 0, to_properties({
+           'InputStream': input_stream,
+        }))
+        doc.storeToURL('private:stream', to_properties({
+            'FilterData': uno.Any('[]com.sun.star.beans.PropertyValue', tuple(),),
+            'FilterName': FILTER_MAP[format],
+            'OutputStream': OutputStream(output_stream),
+            'Overwrite': True
+        }))
+
+        source_file.close()
+        doc.dispose()
+        doc.close(True)
+
+        try:
+            desktop.terminate()
+            # Sometimes it throws error:
+            # com.sun.star.lang.DisposedException: Binary URP bridge disposed during call
+            # But it doesn't seem to affect anything, so just pass
+        except Exception:
+            pass
+        return_code = popen.wait()
+        if return_code != 0:
+            raise ActionException()
+    finally:
+        shutil.rmtree(home_dir)
+        
+    return output_stream, format
 
 
 # Utils
-def get_free_port():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(('0.0.0.0', 0))
-    _, port = s.getsockname()
-    s.close()
-    return port
+FILTER_MAP = {
+    'doc': 'MS Word 97',
+    'docx': 'MS Word 2007 XML',
+    'odt': 'writer8',
+    'pdf': 'writer_pdf_Export',
+    'rtf': 'Rich Text Format',
+    'txt': 'Text (encoded)',
+    'html': 'XHTML Writer File',
+}
 
 
 class OutputStream(unohelper.Base, XOutputStream):
@@ -44,6 +108,14 @@ class OutputStream(unohelper.Base, XOutputStream):
 
 def to_properties(d):
     return tuple(PropertyValue(key, 0, value, 0) for key, value in d.iteritems())
+
+
+def get_free_port():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('0.0.0.0', 0))
+    _, port = s.getsockname()
+    s.close()
+    return port
 # /Utils
 
 
@@ -87,54 +159,4 @@ def start_openoffice(home_dir, port):
     return popen, context, desktop
 
 
-FILTER_MAP = {
-    'doc': 'MS Word 97',
-    'docx': 'MS Word 2007 XML',
-    'odt': 'writer8',
-    'pdf': 'writer_pdf_Export',
-    'rtf': 'Rich Text Format',
-    'txt': 'Text (encoded)',
-    'html': 'XHTML Writer File',
-} 
 
-
-def convert(source_file, format):
-    port = get_free_port()
-    home_dir = tempfile.mkdtemp()
-    output_stream = StringIO()
-
-    try:
-        popen, context, desktop = start_openoffice(home_dir, port)
-        
-        input_stream = context.ServiceManager.createInstanceWithContext(
-                'com.sun.star.io.SequenceInputStream', context)
-        input_stream.initialize((uno.ByteSequence(source_file.read()),))
-
-        doc = desktop.loadComponentFromURL('private:stream', '_blank', 0, to_properties({
-           'InputStream': input_stream,
-        }))
-        doc.storeToURL('private:stream', to_properties({
-            'FilterData': uno.Any('[]com.sun.star.beans.PropertyValue', tuple(),),
-            'FilterName': FILTER_MAP[format],
-            'OutputStream': OutputStream(output_stream),
-            'Overwrite': True
-        }))
-
-        source_file.close()
-        doc.dispose()
-        doc.close(True)
-
-        try:
-            desktop.terminate()
-            # Sometimes it throws error:
-            # com.sun.star.lang.DisposedException: Binary URP bridge disposed during call
-            # But it doesn't seem to affect anything, so just pass
-        except Exception:
-            pass
-        return_code = popen.wait()
-        if return_code != 0:
-            raise ActionException()
-    finally:
-        shutil.rmtree(home_dir)
-        
-    return output_stream, format
