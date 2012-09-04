@@ -7,4 +7,5 @@ kaa-metadata
 rq==0.3.0
 PIL
 nose
+pyyaml
 -e git+git://github.com/mediasite/python-video-converter.git#egg=python-video-converter
