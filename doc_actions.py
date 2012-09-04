@@ -13,6 +13,7 @@ from com.sun.star.beans import PropertyValue
 from com.sun.star.io import XOutputStream
 
 import settings
+from tasks import ActionException
 
 
 # Utils
@@ -22,6 +23,7 @@ def get_free_port():
     _, port = s.getsockname()
     s.close()
     return port
+
 
 class OutputStream(unohelper.Base, XOutputStream):
     def __init__(self, descriptor=None):
@@ -38,6 +40,7 @@ class OutputStream(unohelper.Base, XOutputStream):
 
     def flush(self):
         pass
+
 
 def to_properties(d):
     return tuple(PropertyValue(key, 0, value, 0) for key, value in d.iteritems())
@@ -57,10 +60,10 @@ def start_openoffice(home_dir, port):
         popen = subprocess.Popen(args, env=custom_env)
         pid = popen.pid
     except Exception, e:
-        raise Exception('Failed to start OpenOffice on port %d: %s' % (port, e.message))
+        raise ActionException('Failed to start OpenOffice on port %d: %s' % (port, e.message))
 
     if pid <= 0:
-        raise Exception('Failed to start OpenOffice on port %d' % port)
+        raise ActionException('Failed to start OpenOffice on port %d' % port)
 
     context = uno.getComponentContext()
     svc_mgr = context.ServiceManager
@@ -77,11 +80,12 @@ def start_openoffice(home_dir, port):
             time.sleep(1)
 
     if not uno_context:
-        raise Exception('Failed to connect to OpenOffice on port %d' % port)
+        raise ActionException('Failed to connect to OpenOffice on port %d' % port)
 
     uno_svc_mgr = uno_context.ServiceManager
     desktop = uno_svc_mgr.createInstanceWithContext('com.sun.star.frame.Desktop', uno_context)
     return popen, context, desktop
+
 
 FILTER_MAP = {
     'doc': 'MS Word 97',
@@ -92,6 +96,7 @@ FILTER_MAP = {
     'txt': 'Text (encoded)',
     'html': 'XHTML Writer File',
 } 
+
 
 def convert(source_file, format):
     port = get_free_port()
@@ -126,7 +131,9 @@ def convert(source_file, format):
             # But it doesn't seem to affect anything, so just pass
         except Exception:
             pass
-        popen.wait()
+        return_code = popen.wait()
+        if return_code != 0:
+            raise ActionException()
     finally:
         shutil.rmtree(home_dir)
         

@@ -1,19 +1,23 @@
 import functools
+import logging.config
 from datetime import datetime
 
-import gridfs
+import yaml
+from gridfs import GridFS
 from flask import Flask, request, g, jsonify
 from bson.objectid import ObjectId
-from pymongo import Connection, ReplicaSetConnection
 from pymongo.errors import InvalidId, AutoReconnect
-from redis import Redis
 from rq import Queue
 
 import settings
 import image_actions
+from connections import get_redis_connection, get_mongodb_connection
 from fileutils import get_file_data
 from actions import handle_action_request, ValidationError
 
+
+config = yaml.load(open('logging.conf'))
+logging.config.dictConfig(config)
 
 app = Flask(__name__)
 
@@ -144,23 +148,11 @@ def get_file_info(_id=None):
         return handle_get_file_info(_id)
 
 
-def get_mongodb_connection():
-    if settings.MONGO_REPLICATION_ON:
-        return ReplicaSetConnection(settings.MONGO_REPLICA_SET_URI,
-                    replicaset=settings.MONGO_REPLICA_SET_NAME)
-    else:
-        return Connection(settings.MONGO_HOST, settings.MONGO_PORT)
-
-
-def get_redis_connection():
-    return Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
-
-
 @app.before_request
 def before_request():
     g.connection = get_mongodb_connection()
     g.db = g.connection[settings.MONGO_DB_NAME]
-    g.fs = gridfs.GridFS(g.db)
+    g.fs = GridFS(g.db)
     g.q = Queue(connection=get_redis_connection())
 
 

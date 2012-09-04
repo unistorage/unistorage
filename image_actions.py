@@ -4,6 +4,7 @@ from StringIO import StringIO
 from PIL import Image, ImageOps
 
 import settings
+from tasks import ActionException
 
 
 def to_int(x):
@@ -90,8 +91,18 @@ class ImageMagickWrapper(object):
         self._args.append('%s:-' % format.upper())
         proc_input = self._image.fp
         proc_input.seek(0)
-        proc = subprocess.Popen(self._args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        result, _ = proc.communicate(input=proc_input.read())
+
+        try:
+            proc = subprocess.Popen(self._args, stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except OSError as e:
+            raise ActionException('Failed to start ImageMagick\'s convert: %s' % self._args[0])
+
+        result, error = proc.communicate(input=proc_input.read())
+        return_code = proc.wait()
+        if return_code != 0:
+            raise ActionException('ImageMagick\'s convert (%s) failed.' % self._args[0])
+
         return StringIO(result), format.lower()
 
 
