@@ -7,5 +7,7 @@ kaa-metadata
 rq==0.3.0
 PIL
 nose
+nose-exclude
 pyyaml
--e git+git://github.com/mediasite/python-video-converter.git#egg=python-video-converter
+-e git://github.com/mediasite/python-video-converter.git#egg=python-video-converter
+-e git://github.com/mediasite/openoffice-wrapper.git#egg=openoffice_wrapper-dev

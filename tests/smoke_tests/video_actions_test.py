@@ -3,7 +3,7 @@ import glob
 import shutil
 import unittest
 
-from video_actions import convert
+from actions.videos.convert import perform as convert
 
 
 class SmokeTest(unittest.TestCase):

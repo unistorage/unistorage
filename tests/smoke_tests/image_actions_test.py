@@ -3,7 +3,9 @@ import glob
 import shutil
 import unittest
 
-from image_actions import convert, resize, make_grayscale
+from actions.images.convert import perform as convert
+from actions.images.resize import perform as resize
+from actions.images.make_grayscale import perform as make_grayscale
 
 
 class SmokeTest(unittest.TestCase):

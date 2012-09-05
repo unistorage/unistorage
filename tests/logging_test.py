@@ -1,14 +1,14 @@
 import os
 import unittest
-import logging
+import logging.config
 
+import yaml
 from converter import FFMpegConvertError
 from PIL import Image
 from gridfs import GridFS
 
 import settings
-import video_actions 
-from image_actions import ImageMagickWrapper, PILWrapper, resize
+from actions.images.resize import perform as resize
 from tasks import ActionException, perform_action
 from connections import get_mongodb_connection
 
@@ -39,7 +39,16 @@ class Test(unittest.TestCase):
         cls.fs = GridFS(cls.db)
         # Mock logger
         cls.handler = MockLoggingHandler(level=logging.ERROR)
-        logging.getLogger('action_error_logger').addHandler(cls.handler)
+        logger = logging.getLogger('action_error_logger')
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+        logger.addHandler(cls.handler)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Restore logging configuration
+        config = yaml.load(open('logging.conf'))
+        logging.config.dictConfig(config)
 
     def put_file(self, path):
         f = open(path, 'rb')
@@ -47,32 +56,20 @@ class Test(unittest.TestCase):
         return self.fs.put(f.read(), filename=filename)
     
     def test_imagemagick_wrapper(self):
-        source_image = Image.open('./tests/images/some.jpeg')
-        with self.assertRaises(ActionException):
-            wrapper = ImageMagickWrapper(source_image)
-            wrapper.resize(-123123, 0) # Bad arguments
-            wrapper.finalize()
-
-    def test_pil_wrapper(self):
-        source_image = Image.open('./tests/images/some.jpeg')
-        with self.assertRaises(Exception):
-            wrapper = PILWrapper(source_image)
-            wrapper.resize(-123123, 0) # Bad arguments
-            wrapper.finalize()
-
-    def test_video_convert(self):
-        source_video = open('./tests/videos/sample.3gp')
-        with self.assertRaises(FFMpegConvertError):
-            video_actions.convert(source_video, 'webm', 'divx', 'mp3', # Incompatible codecs
-                    only_try=True)
-
-    def test_logging(self):
+        """Tests that exception raised by action is logged"""
         path = './tests/images/some.jpeg'
+        source_file = open(path, 'rb')
+
+        # Make sure that exception raised
+        with self.assertRaises(Exception):
+            resize(source_file, 'keep', -123123, 0)
+
         source_id = self.put_file(path)
         target_id = self.fs.put('')
 
+        # Make sure that it's logged
         self.assertEquals(len(self.handler.messages['error']), 0)
-        perform_action(source_id, target_id, {}, resize, ['mode', -10, -10])
+        perform_action(source_id, target_id, {}, resize, ['keep', -123123, 0])
         logged_message = self.handler.messages['error'][0]
         self.handler.reset()
         self.assertTrue('Action failed' in logged_message)

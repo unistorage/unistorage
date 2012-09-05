@@ -16,7 +16,7 @@ REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 
 CONVERT_BIN = '/usr/bin/convert'
-OPENOFFICE_BIN = '/usr/bin/libreoffice'
+OO_WRAPPER_BIN = 'oowrapper.py'
 FFMPEG_BIN = '/usr/bin/ffmpeg'
 FFPROBE_BIN = '/usr/bin/ffprobe'
 FLVTOOL_BIN = '/usr/bin/flvtool2'
