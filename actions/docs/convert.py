@@ -11,15 +11,15 @@ type_families_applicable_for = ['doc']
 result_type_family = 'doc'
 
 
-def validate_and_get_args(source_file, args):
+def validate_and_get_args(args):
     if 'to' not in args:
         raise ValidationError('`to` must be specified.')
     format = args['to']
 
     supported_formats = ('doc', 'docx', 'odt', 'pdf', 'rtf', 'txt', 'html')
     if format not in supported_formats:
-        raise ValidationError('Source file is %s and can be only converted to the one of '
-            'following formats: %s.' % (source_file.content_type, ', '.join(supported_formats)))
+        raise ValidationError('Source file can be only converted to the one of '
+            'following formats: %s.' % ', '.join(supported_formats))
 
     return [format]
 

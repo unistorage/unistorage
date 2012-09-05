@@ -14,15 +14,15 @@ type_families_applicable_for = ['video']
 result_type_family = 'video'
 
 
-def validate_and_get_args(source_file, args):
+def validate_and_get_args(args):
     if 'to' not in args:
         raise ValidationError('`to` must be specified.')
     format = args['to']
 
     supported_formats = ('ogg', 'webm', 'flv', 'avi', 'mkv', 'mov', 'mp4', 'mpg')
     if format not in supported_formats:
-        raise ValidationError('Source file is %s and can be only converted to the one of '
-            'following formats: %s.' % (source_file.content_type, ', '.join(supported_formats)))
+        raise ValidationError('Source file can be only converted to the one of '
+            'following formats: %s.' % ', '.join(supported_formats))
 
     vcodec = None
     acodec = None

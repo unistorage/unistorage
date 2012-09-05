@@ -1,3 +1,5 @@
+TYPE_FAMILIES = ('image', 'video', 'doc')
+
 DOCUMENT_TYPES = ('application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 'application/vnd.oasis.opendocument.text', 'application/pdf', 'application/vnd.pdf', 'application/x-pdf',
 'application/rtf', 'application/x-rtf', 'text/richtext', 'text/plain', 'text/html')

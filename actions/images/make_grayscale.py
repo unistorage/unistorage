@@ -8,7 +8,7 @@ type_families_applicable_for = ['image']
 result_type_family = 'image'
 
 
-def validate_and_get_args(source_file, args):
+def validate_and_get_args(args):
     return []
 
 

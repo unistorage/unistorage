@@ -12,7 +12,7 @@ from rq import Queue
 import settings
 from connections import get_redis_connection, get_mongodb_connection
 from fileutils import get_file_data
-from actions.handler import handle_get_action
+from actions.handler import handle_get_action, handle_create_template
 
 
 config = yaml.load(open('logging.conf'))
@@ -40,7 +40,7 @@ def get_or_create_user(token):
 
         return check_format(token) and allow_token(token)
 
-    users = g.db['test_users']
+    users = g.db[settings.MONGO_USERS_DB]
     #return False if token is not allowed
     return check_token(token) and (users.find_one({'token': token}) or
             users.find_one({'_id': users.insert({'token': token})}))
@@ -93,6 +93,14 @@ def can_unistore_serve(file_data):
         return False
 
     return True
+
+
+@app.route('/create_template', methods=['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'OPTIONS'])
+@login_required
+def create_template():
+    if request.method != 'POST':
+        return jsonify({'status': 'error', 'msg': 'not implemented'}), 501
+    return handle_create_template()
 
 
 def handle_get_file_info(_id):

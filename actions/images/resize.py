@@ -8,8 +8,11 @@ type_families_applicable_for = ['image']
 result_type_family = 'image'
 
 
-def validate_and_get_args(source_file, args):
-    if 'mode' not in args or args['mode'] not in ('keep', 'crop', 'resize'):
+def validate_and_get_args(args):
+    if 'mode' not in args:
+        raise ValidationError('`mode` must be specified.')
+    
+    if args['mode'] not in ('keep', 'crop', 'resize'):
         raise ValidationError('Unknown `mode`. Available options: "keep", "crop" and "resize".')
     mode = args['mode']
     
