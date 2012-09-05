@@ -6,15 +6,14 @@ DEBUG = False
 #Mongo
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
-MONGO_DB_NAME = 'test_base'
+MONGO_DB_NAME = 'grid_fs'
 
-MONGO_DB_REPL_ON = True
-MONGO_DB_REPL_URI = 'localhost:27017,localhost:27018'
-MONGO_REPLICA_NAME = 'test_set'
+MONGO_REPLICATION_ON = True
+MONGO_REPLICA_SET_URI = 'localhost:27017,localhost:27018'
+MONGO_REPLICA_SET_NAME = 'grid_fs_set'
 
-#gridfs-server
-GFS_HOST = '127.0.0.1'
-GFS_PORT = 80
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
 
 CONVERT_BIN = '/usr/bin/convert'
 OPENOFFICE_BIN = '/usr/bin/libreoffice'
@@ -24,7 +23,11 @@ FLVTOOL_BIN = '/usr/bin/flvtool2'
 
 MAGIC_PATH = '/etc/magic:/usr/share/misc/magic' # Check your `file --version`
 
-AVERAGE_TASK_TIME = timedelta(seconds=2)
+GRIDFS_SERVE_URL = 'http://127.0.0.1'
+UNISTORE_NGINX_SERVE_URL = 'http://127.0.0.1/uns'
+
+TTL = int(timedelta(days=7).total_seconds())
+AVERAGE_TASK_TIME = timedelta(seconds=5)
 
 try:
     from settings_local import *

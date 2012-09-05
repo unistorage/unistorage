@@ -4,10 +4,12 @@ from StringIO import StringIO
 from PIL import Image, ImageOps
 
 import settings
+from tasks import ActionException
 
 
 def to_int(x):
     return int(round(x, 0))
+
 
 def is_animated(image):
     try:
@@ -19,8 +21,10 @@ def is_animated(image):
     image.seek(0)
     return is_animated
 
+
 def is_rgba_png(image):
     return image.mode == 'RGBA'
+
 
 class PILWrapper(object):
     def __init__(self, image):
@@ -52,7 +56,8 @@ class PILWrapper(object):
             self._image = self._image.convert('RGB')
         result = StringIO()
         self._image.save(result, format)
-        return result
+        return result, format.lower()
+
 
 class ImageMagickWrapper(object):
     def __init__(self, image):
@@ -86,9 +91,20 @@ class ImageMagickWrapper(object):
         self._args.append('%s:-' % format.upper())
         proc_input = self._image.fp
         proc_input.seek(0)
-        proc = subprocess.Popen(self._args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        result, _ = proc.communicate(input=proc_input.read())
-        return StringIO(result)
+
+        try:
+            proc = subprocess.Popen(self._args, stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except OSError as e:
+            raise ActionException('Failed to start ImageMagick\'s convert: %s' % self._args[0])
+
+        result, error = proc.communicate(input=proc_input.read())
+        return_code = proc.wait()
+        if return_code != 0:
+            raise ActionException('ImageMagick\'s convert (%s) failed.' % self._args[0])
+
+        return StringIO(result), format.lower()
+
 
 def wrap(image):
     if image.format == 'GIF' or is_rgba_png(image):
@@ -97,10 +113,12 @@ def wrap(image):
         wrapper = PILWrapper 
     return wrapper(image)
 
+
 def make_grayscale(source_file):
     source_image = Image.open(source_file)
     target_image = wrap(source_image)
     return target_image.make_grayscale().finalize()
+
 
 def resize(source_file, mode, target_width, target_height):
     """
@@ -129,6 +147,7 @@ def resize(source_file, mode, target_width, target_height):
             target_image.crop_to_center(target_width, target_height)
 
     return target_image.finalize()
+
 
 def convert(source_file, to):
     source_image = Image.open(source_file)

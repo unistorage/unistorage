@@ -38,7 +38,7 @@ class SmokeTest(unittest.TestCase):
         for source_file, source_name, target_file in self._util(self.CROP_RESULTS_DIR, 'cropped'):
             if __name__ == 'main':
                 print 'Cropping %s...' % source_name
-            result = resize(source_file, 'crop', 110, 110)
+            result, _ = resize(source_file, 'crop', 110, 110)
             target_file.write(result.getvalue())
 
     def test_grayscaling(self):
@@ -46,7 +46,7 @@ class SmokeTest(unittest.TestCase):
         for source_file, source_name, target_file in self._util(self.GRAYSCALE_RESULTS_DIR, 'grayscaled'):
             if __name__ == 'main':
                 print 'Grayscaling %s...' % source_name
-            result = make_grayscale(source_file)
+            result, _ = make_grayscale(source_file)
             target_file.write(result.getvalue())
 
     def test_convert(self):
@@ -58,7 +58,7 @@ class SmokeTest(unittest.TestCase):
                 with open(source_file_path) as source_file:
                     if __name__ == 'main':
                         print 'Converting %s to %s...' % (source_file_name, format)
-                    result = convert(source_file, format)
+                    result, _ = convert(source_file, format)
                     target_file_path = os.path.join(self.CONVERT_RESULTS_DIR,
                             '%s.%s' % (source_file_name, format))
 
