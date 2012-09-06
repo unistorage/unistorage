@@ -3,17 +3,17 @@ import logging.config
 from datetime import datetime
 
 import yaml
-from gridfs import GridFS
-from flask import Flask, request, g, jsonify
 from bson.objectid import ObjectId
 from pymongo.errors import InvalidId, AutoReconnect
+from gridfs import GridFS
+from flask import Flask, request, g, jsonify
 from rq import Queue
 
 import settings
-import image_actions
-from connections import get_redis_connection, get_mongodb_connection
 from fileutils import get_file_data
-from actions import handle_action_request, ValidationError
+from connections import get_redis_connection, get_mongodb_connection
+from actions.handlers import handle_apply_action, handle_create_template, \
+        handle_apply_template
 
 
 config = yaml.load(open('logging.conf'))
@@ -41,7 +41,7 @@ def get_or_create_user(token):
 
         return check_format(token) and allow_token(token)
 
-    users = g.db['test_users']
+    users = g.db[settings.MONGO_USERS_COLLECTION_NAME]
     #return False if token is not allowed
     return check_token(token) and (users.find_one({'token': token}) or
             users.find_one({'_id': users.insert({'token': token})}))
@@ -83,17 +83,32 @@ def get_unistore_nginx_serve_url(path):
 
 
 def can_unistore_serve(file_data):
-    action = file_data['action']
-    if not action['source_content_type'].startswith('image'):
-        return False
-    if action['name'] != 'resize':
+    original_content_type = file_data['original_content_type']
+    actions = file_data['actions']
+
+    if not original_content_type.startswith('image'):
         return False
 
-    mode, w, h = action['args']
+    if len(actions) > 1:
+        return False
+    action_name, action_args = actions[0]
+        
+    if action_name != 'resize':
+        return False
+
+    mode, w, h = action_args
     if mode not in ('keep', 'crop'):
         return False
 
     return True
+
+
+@app.route('/create_template', methods=['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'OPTIONS'])
+@login_required
+def create_template():
+    if request.method != 'POST':
+        return jsonify({'status': 'error', 'msg': 'not implemented'}), 501
+    return handle_create_template()
 
 
 def handle_get_file_info(_id):
@@ -129,7 +144,7 @@ def handle_get_file_info(_id):
 
 @app.route('/<string:_id>/', methods=['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'OPTIONS'])
 @login_required
-def get_file_info(_id=None):
+def get_file(_id=None):
     if request.method != 'GET':
         return jsonify({'status': 'error', 'msg': 'not implemented'}), 501
 
@@ -137,13 +152,10 @@ def get_file_info(_id=None):
     if not g.fs.exists(_id=_id):
         return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
     
-    if request.args and 'action' in request.args:
-        file = g.fs.get(_id)
-        try:
-            target_id = handle_action_request(file, request)
-            return jsonify({'status': 'ok', 'id': str(target_id)})
-        except ValidationError as e:
-            return jsonify({'status': 'error', 'msg': str(e)}), 400
+    if 'action' in request.args:
+        return handle_apply_action(_id)
+    elif 'template' in request.args:
+        return handle_apply_template(_id)
     else:
         return handle_get_file_info(_id)
 

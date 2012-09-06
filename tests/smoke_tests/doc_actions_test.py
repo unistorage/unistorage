@@ -3,7 +3,7 @@ import glob
 import shutil
 import unittest
 
-from doc_actions import convert
+from actions.docs.convert import perform as convert
 
 
 class SmokeTest(unittest.TestCase):
@@ -34,8 +34,6 @@ class SmokeTest(unittest.TestCase):
 
                     with open(target_file_path, 'w') as target_file:
                         target_file.write(result.getvalue())
-        import time;
-        time.sleep(3)
 
 
 if __name__ == '__main__':

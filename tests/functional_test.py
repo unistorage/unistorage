@@ -1,35 +1,22 @@
-import sys
+import os
 import time
 import unittest
-import os
 from pprint import pprint
-from bson.objectid import ObjectId
 
-import redis
+from bson.objectid import ObjectId
 from webtest import TestApp
-from rq import Queue, Worker, use_connection
 
 import settings
 import app
+import tests.utils
 
 
-class FunctionalTest(unittest.TestCase):
+class FunctionalTest(unittest.TestCase, tests.utils.WorkerMixin):
     @classmethod
     def setUpClass(cls):
         cls.app = TestApp(app.app)
         cls.headers = {'Token': settings.TOKENS[0]}
         cls.db = app.get_mongodb_connection()[settings.MONGO_DB_NAME]
-
-    def run_worker(self):
-        old_stderr = sys.stderr
-        sys.stderr = sys.stdout # Let worker log be captured by nose
-
-        use_connection(redis.Redis())
-        queues = map(Queue, ['default'])
-        w = Worker(queues)
-        w.work(burst=True)
-
-        sys.stderr = old_stderr
    
     def put_file(self, path):
         files = [('file', os.path.basename(path), open(path, 'rb').read())]
@@ -159,3 +146,23 @@ class FunctionalTest(unittest.TestCase):
         converted_doc_url = '/%s/' % r.json['id']
         r = self.app.get(converted_doc_url, headers=self.headers)
         self.check(converted_doc_url, mime='application/pdf')
+
+    def test_template(self):
+        r = self.app.post('/create_template', {
+            'applicable_for': 'image',
+            'action[]': ['action=resize&mode=keep&w=400', 'action=make_grayscale']
+        }, headers=self.headers)
+        template_id = r.json['id']
+
+        image_id = self.put_file('./tests/images/some.png')
+        apply_template_url = '/%s/?template=%s' % (image_id, template_id)
+        r = self.app.get(apply_template_url, headers=self.headers)
+
+        self.assertEquals(r.json['status'], 'ok')
+
+        video_id = self.put_file('./tests/videos/sample.3gp')
+        apply_template_url = '/%s/?template=%s' % (video_id, template_id)
+        r = self.app.get(apply_template_url, headers=self.headers, status='*')
+        
+        self.assertEquals(r.status_code, 400)
+        self.assertTrue('not applicable' in r.json['msg'])
