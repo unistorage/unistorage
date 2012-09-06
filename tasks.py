@@ -7,7 +7,7 @@ from pymongo import Connection, ReplicaSetConnection
 import settings
 from connections import get_mongodb_connection
 from fileutils import get_file_data, get_content_type, convert_to_filename
-from actions import get_action
+from actions import get_action, ActionException
 from actions.utils import get_type_family
 
 
@@ -24,10 +24,6 @@ LOG_TEMPLATE = '''
     Exception type: %(exception_type)s
     Exception message: %(exception_msg)s
 '''
-
-
-class ActionException(Exception):
-    pass
 
 
 def perform_action_list(source_id, target_id, target_kwargs, action_list):

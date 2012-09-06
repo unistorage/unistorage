@@ -4,7 +4,7 @@ from StringIO import StringIO
 from PIL import Image, ImageOps
 
 import settings
-from tasks import ActionException
+from actions import ActionException
 
 
 def to_int(x):

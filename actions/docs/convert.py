@@ -2,8 +2,8 @@ import subprocess
 from StringIO import StringIO
 
 import settings
-from tasks import ActionException
-from ..utils import ValidationError
+from actions import ActionException
+from actions.utils import ValidationError
 
 
 name = 'convert'

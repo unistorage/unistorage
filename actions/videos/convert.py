@@ -5,8 +5,8 @@ import subprocess
 from converter import Converter
 
 import settings
-from tasks import ActionException
-from ..utils import *
+from actions import ActionException
+from actions.utils import *
 
 
 name = 'convert'
