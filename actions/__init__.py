@@ -8,6 +8,14 @@ def register_action(action):
         actions[type_family][action.name] = action
 
 
+def get_action(type_family, name):
+    # Get actions that applicable for given type family
+    applicable_actions = actions.get(type_family, {})
+    # Try to get applicable action by name
+    action = applicable_actions.get(name)
+    return action
+
+
 import images.convert
 register_action(images.convert)
 

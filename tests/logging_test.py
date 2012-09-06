@@ -3,14 +3,13 @@ import unittest
 import logging.config
 
 import yaml
-from converter import FFMpegConvertError
-from PIL import Image
 from gridfs import GridFS
 
 import settings
 from actions.images.resize import perform as resize
-from tasks import ActionException, perform_action
+from tasks import ActionException, perform_action_list
 from connections import get_mongodb_connection
+from fileutils import get_content_type
 
 
 class MockLoggingHandler(logging.Handler):
@@ -53,7 +52,7 @@ class Test(unittest.TestCase):
     def put_file(self, path):
         f = open(path, 'rb')
         filename = os.path.basename(path)
-        return self.fs.put(f.read(), filename=filename)
+        return self.fs.put(f.read(), filename=filename, content_type=get_content_type(f))
     
     def test_imagemagick_wrapper(self):
         """Tests that exception raised by action is logged"""
@@ -69,7 +68,7 @@ class Test(unittest.TestCase):
 
         # Make sure that it's logged
         self.assertEquals(len(self.handler.messages['error']), 0)
-        perform_action(source_id, target_id, {}, resize, ['keep', -123123, 0])
+        perform_action_list(source_id, target_id, {}, [('resize', ['keep', -123123, 0])])
         logged_message = self.handler.messages['error'][0]
         self.handler.reset()
         self.assertTrue('Action failed' in logged_message)
