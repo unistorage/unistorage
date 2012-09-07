@@ -3,6 +3,8 @@ import sys
 import redis
 from rq import Queue, Worker, use_connection
 
+import app
+
 
 class WorkerMixin(object):
     def run_worker(self):
@@ -15,3 +17,15 @@ class WorkerMixin(object):
         w.work(burst=True)
 
         sys.stderr = old_stderr
+
+
+class ContextMixin(object):
+    def setUp(self):
+        super(ContextMixin, self).setUp()
+        self.ctx = app.app.test_request_context()
+        self.ctx.push()
+        app.before_request()
+
+    def tearDown(self):
+        super(ContextMixin, self).tearDown()
+        self.ctx.pop()

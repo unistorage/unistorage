@@ -28,6 +28,9 @@ register_action(images.resize)
 import images.make_grayscale
 register_action(images.make_grayscale)
 
+import images.watermark
+register_action(images.watermark)
+
 import videos.convert
 register_action(videos.convert)
 
