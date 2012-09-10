@@ -27,10 +27,10 @@ class ValidationTest(ContextMixin, unittest.TestCase):
     def get_valid_args(self):
         return {
             'watermark_id': self.watermark_id,
-            'w': 45,
-            'h': 30,
-            'h_pad': 10,
-            'v_pad': 5,
+            'w': '45px',
+            'h': '30',
+            'h_pad': '10px',
+            'v_pad': '5',
             'corner': 'ne'
         }
     
@@ -61,4 +61,4 @@ class ValidationTest(ContextMixin, unittest.TestCase):
             validate(args)
 
         args = self.get_valid_args()
-        self.assertEquals(validate(args), [self.watermark_id, 45, 30, 10, 5, 'ne'])
+        self.assertEquals(validate(args), [self.watermark_id, 45, 0.3, 10, 0.05, 'ne'])

@@ -14,11 +14,14 @@ class ExecutionTest(ContextMixin, GridFSMixin, unittest.TestCase):
     
     def test(self):
         source_id = self.put_file('./tests/images/some.jpeg')
-        w = h = 5
-        hpad = vpad = 5
+        w = h = 0.1
+        hpad = vpad = 20
         corner = 'ne'
         result_data, result_extension = watermark.perform(g.fs.get(source_id),
                 self.watermark_id, w, h, hpad, vpad, corner)
 
         self.assertEquals(watermark.identify(result_data, '%wx%h'), '640x480')
         self.assertTrue(result_extension in ('jpeg', 'jpg'))
+
+        with open('/home/aromanovich/result1.jpg', 'w') as lala:
+            lala.write(result_data.read())

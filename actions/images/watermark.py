@@ -19,21 +19,29 @@ def validate_presence(args, arg_name):
         raise ValidationError('`%s` must be specified.' % arg_name)
 
 
-def validate_and_get_as_percent(args, arg_name):
+def validate_and_get_as_dimension(args, arg_name):
+    str_value = args[arg_name]
+    is_in_pixels = str_value.endswith('px')
+    
     try:
-        percent = int(args[arg_name])
+        int_value = int(str_value[0:-2] if is_in_pixels else str_value)
     except ValueError:
-        raise ValidationError('`%s` must be an integer.' % arg_name)
-    if not 0 <= percent <= 100:
+        raise ValidationError('`%s` must be an integer (possibly suffixed by "px").' % arg_name)
+
+    if is_in_pixels:
+        return int_value
+
+    if 0 <= int_value <= 100:
+        return int_value / 100.
+    else:
         raise ValidationError('Percent value `%s` must be between 0 and 100.' % arg_name)
-    return percent
 
 
 def validate_and_get_args(args):
     for arg_name in ('w', 'h', 'h_pad', 'v_pad', 'corner', 'watermark_id'):
         validate_presence(args, arg_name)
     
-    w, h, hpad, vpad = [validate_and_get_as_percent(args, arg_name) \
+    w, h, hpad, vpad = [validate_and_get_as_dimension(args, arg_name) \
             for arg_name in ('w', 'h', 'h_pad', 'v_pad')]
         
     corners = ('ne', 'se', 'sw', 'nw')
@@ -74,11 +82,11 @@ def identify(file, format):
 
 def get_watermark_bbox_geometry(source_width, source_height, w, h, h_pad, v_pad):
     """Returns watermark bounding box geometry"""
-    get_percent = lambda value, percent: round(value * percent / 100.)
-    bbox_width = get_percent(source_width, w)
-    bbox_height = get_percent(source_width, h)
-    bbox_h_offset = get_percent(source_width, h_pad)
-    bbox_v_offset = get_percent(source_height, v_pad)
+    is_float = lambda value: isinstance(value, float)
+    bbox_width = round(source_width * w) if is_float(w) else w
+    bbox_height = round(source_height * h) if is_float(h) else h
+    bbox_h_offset = round(source_width * h_pad) if is_float(h_pad) else h_pad
+    bbox_v_offset = round(source_height * v_pad) if is_float(v_pad) else v_pad
     return '%dx%d+%d+%d' % (bbox_width, bbox_height, bbox_h_offset, bbox_v_offset)
 
 
