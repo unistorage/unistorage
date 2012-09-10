@@ -2,6 +2,7 @@ import os.path
 import logging
 
 import gridfs
+from bson.objectid import ObjectId
 from pymongo import Connection, ReplicaSetConnection
 
 import settings
@@ -39,6 +40,11 @@ def perform_action_list(source_id, target_id, target_kwargs, action_list):
         type_family = get_type_family(content_type)
         action = get_action(type_family, action_name)
 
+        # Resolve all ObjectIds to GridOut instances
+        action_args = map(
+                lambda arg: fs.get(arg) if isinstance(arg, ObjectId) else arg,
+                action_args)
+        
         try:
             next_file, next_file_ext = action.perform(curr_file, *action_args)
         except Exception as e:
@@ -59,7 +65,6 @@ def perform_action_list(source_id, target_id, target_kwargs, action_list):
     target_file = curr_file
     target_file_name = '%s_%s' % (source_file_name, target_kwargs['label'])
     target_file_ext = curr_file_ext
-
     target_file.filename = target_file.name = \
             convert_to_filename('%s.%s' % (target_file_name, target_file_ext))
     target_kwargs.update(get_file_data(target_file))

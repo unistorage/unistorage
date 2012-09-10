@@ -1,5 +1,3 @@
-import app
-import settings
 from tests.utils import FunctionalTest, WorkerMixin, ContextMixin
 
 

@@ -13,7 +13,7 @@ from tests.utils import ContextMixin
 class ValidationTest(ContextMixin, unittest.TestCase):
     def setUp(self):
         super(ValidationTest, self).setUp()
-        self.watermark_id = str(self.put_file('./tests/watermarks/watermark.png'))
+        self.watermark_id = self.put_file('./tests/watermarks/watermark.png')
 
     def put_file(self, path):
         f = open(path, 'rb')

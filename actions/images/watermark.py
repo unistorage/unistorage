@@ -1,64 +1,22 @@
 import os
 import subprocess
+from StringIO import StringIO
 
 import gridfs
 from flask import g
-from bson.objectid import ObjectId
 from PIL import Image
-from utils import *
+
+import actions
+import settings
+from actions import ActionException
 from actions.utils import ValidationError, get_type_family
+from actions.common import watermark_validation
 
 
 name = 'watermark'
 applicable_for = 'image'
 result_type_family = 'image'
-
-
-def validate_presence(args, arg_name):
-    if arg_name not in args:
-        raise ValidationError('`%s` must be specified.' % arg_name)
-
-
-def validate_and_get_as_dimension(args, arg_name):
-    str_value = args[arg_name]
-    is_in_pixels = str_value.endswith('px')
-    
-    try:
-        int_value = int(str_value[0:-2] if is_in_pixels else str_value)
-    except ValueError:
-        raise ValidationError('`%s` must be an integer (possibly suffixed by "px").' % arg_name)
-
-    if is_in_pixels:
-        return int_value
-
-    if 0 <= int_value <= 100:
-        return int_value / 100.
-    else:
-        raise ValidationError('Percent value `%s` must be between 0 and 100.' % arg_name)
-
-
-def validate_and_get_args(args):
-    for arg_name in ('w', 'h', 'h_pad', 'v_pad', 'corner', 'watermark_id'):
-        validate_presence(args, arg_name)
-    
-    w, h, hpad, vpad = [validate_and_get_as_dimension(args, arg_name) \
-            for arg_name in ('w', 'h', 'h_pad', 'v_pad')]
-        
-    corners = ('ne', 'se', 'sw', 'nw')
-    corner = args['corner']
-    if corner not in corners:
-        raise ValidationError('`corner` must be one of the following: %s.' % ', '.join(corners))
-
-    watermark_id = args['watermark_id']
-    try:
-        watermark = g.fs.get(ObjectId(args['watermark_id']))
-    except gridfs.errors.NoFile:
-        raise ValidationError('File with id %s does not exist.' % watermark_id)
-    
-    if get_type_family(watermark.content_type) != 'image':
-        raise ValidationError('File with id %s is not an image.' % watermark_id)
-
-    return [watermark_id, w, h, hpad, vpad, corner]
+validate_and_get_args = actions.common.watermark_validation.validate_and_get_args
 
 
 CORNER_MAP = {
@@ -70,13 +28,19 @@ CORNER_MAP = {
 
 
 def identify(file, format):
-    args = ['identify', '-format', format, '-']
-    proc = subprocess.Popen(args, stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout_data, stderr_data = proc.communicate(input=file.read())
+    args = [settings.IDENTIFY_BIN, '-format', format, '-']
+    try:
+        proc = subprocess.Popen(args, stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError as e:
+        raise ActionException('Failed to start `identify` (%s)' % settings.IDENTIFY_BIN)
+    
+    proc_input = file.read()
     file.seek(0)
+
+    stdout_data, stderr_data = proc.communicate(input=proc_input)
     if proc.returncode != 0:
-        raise Exception('`identify` failed: %s' % stderr_data)
+        raise ActionException('`identify` failed: %s' % stderr_data)
     return stdout_data.strip()
 
 
@@ -90,23 +54,28 @@ def get_watermark_bbox_geometry(source_width, source_height, w, h, h_pad, v_pad)
     return '%dx%d+%d+%d' % (bbox_width, bbox_height, bbox_h_offset, bbox_v_offset)
 
 
-def perform(source_file, watermark_id, w, h, h_pad, v_pad, corner):
+def perform(source_file, watermark_file, w, h, h_pad, v_pad, corner):
     source_format, source_size = identify(source_file, '%m %wx%h').split()
     source_width, source_height = map(int, source_size.split('x'))
 
-    watermark = g.fs.get(ObjectId(watermark_id))
-    watermark_format = identify(watermark, '%m')
+    watermark_format = identify(watermark_file, '%m')
     watermark_bbox_geometry = get_watermark_bbox_geometry(
             source_width, source_height, w, h, h_pad, v_pad)
 
     fd_in, fd_out = os.pipe()
-    args = ['composite', '-gravity', CORNER_MAP[corner],
+    args = [settings.COMPOSITE_BIN, '-gravity', CORNER_MAP[corner],
             '-geometry', watermark_bbox_geometry,
             '%s:fd:%d' % (watermark_format, fd_in), '-', '-']
-    proc = subprocess.Popen(args, stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    os.write(fd_out, watermark.read())
+
+    try:
+        proc = subprocess.Popen(args, stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError as e:
+        raise ActionException('Failed to start `composite` (%s)' % settings.COMPOSITE_BIN)
+    os.write(fd_out, watermark_file.read())
     os.close(fd_out)
 
-    stdout, stderr = proc.communicate(input=source_file.read())
-    return StringIO(stdout), source_format.lower()
+    stdout_data, stderr_data = proc.communicate(input=source_file.read())
+    if proc.returncode != 0:
+        raise ActionException('`composite` failed: %s' % stderr_data)
+    return StringIO(stdout_data), source_format.lower()

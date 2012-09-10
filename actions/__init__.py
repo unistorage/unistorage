@@ -36,5 +36,8 @@ register_action(images.watermark)
 import videos.convert
 register_action(videos.convert)
 
+import videos.watermark
+register_action(videos.watermark)
+
 import docs.convert
 register_action(docs.convert)

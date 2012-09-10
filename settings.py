@@ -17,10 +17,17 @@ MONGO_REPLICA_SET_NAME = 'grid_fs_set'
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 
+# ImageMagick binaries
 CONVERT_BIN = '/usr/bin/convert'
-OO_WRAPPER_BIN = 'oowrapper.py'
+IDENTIFY_BIN = '/usr/bin/identify'
+COMPOSITE_BIN = '/usr/bin/composite'
+
+# FFMpeg binaries
 FFMPEG_BIN = '/usr/bin/ffmpeg'
 FFPROBE_BIN = '/usr/bin/ffprobe'
+
+# Other binaries
+OO_WRAPPER_BIN = 'oowrapper.py'
 FLVTOOL_BIN = '/usr/bin/flvtool2'
 
 MAGIC_PATH = '/etc/magic:/usr/share/misc/magic' # Check your `file --version`
