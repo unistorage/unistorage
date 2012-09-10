@@ -4,7 +4,7 @@ from ..utils import ValidationError
 
 
 name = 'resize'
-type_families_applicable_for = ['image']
+applicable_for = 'image'
 result_type_family = 'image'
 
 

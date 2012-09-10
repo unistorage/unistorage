@@ -10,7 +10,7 @@ from actions.utils import *
 
 
 name = 'convert'
-type_families_applicable_for = ['video']
+applicable_for = 'video'
 result_type_family = 'video'
 
 

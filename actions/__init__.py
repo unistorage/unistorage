@@ -8,8 +8,10 @@ class ActionException(Exception):
 actions = defaultdict(dict) # Map family types to lists of applicable actions
 
 def register_action(action):
-    for type_family in action.type_families_applicable_for:
-        actions[type_family][action.name] = action
+    for required_attr in ('name', 'result_type_family', 'applicable_for',
+            'validate_and_get_args', 'perform'):
+        assert hasattr(action, required_attr)
+    actions[action.applicable_for][action.name] = action
 
 def get_action(type_family, name):
     # Get actions that applicable for given type family

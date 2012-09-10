@@ -5,7 +5,7 @@ import unittest
 
 from actions.images.convert import perform as convert
 from actions.images.resize import perform as resize
-from actions.images.make_grayscale import perform as make_grayscale
+from actions.images.grayscale import perform as grayscale
 
 
 class SmokeTest(unittest.TestCase):
@@ -16,7 +16,7 @@ class SmokeTest(unittest.TestCase):
     def setUpClass(cls):
         cls.CONVERT_RESULTS_DIR = os.path.join(cls.TEST_RESULTS_DIR, 'convert')
         cls.CROP_RESULTS_DIR = os.path.join(cls.TEST_RESULTS_DIR, 'resize_w_crop')
-        cls.GRAYSCALE_RESULTS_DIR = os.path.join(cls.TEST_RESULTS_DIR, 'make_grayscale')
+        cls.GRAYSCALE_RESULTS_DIR = os.path.join(cls.TEST_RESULTS_DIR, 'grayscale')
 
         if os.path.exists(cls.TEST_RESULTS_DIR):
             shutil.rmtree(cls.TEST_RESULTS_DIR)
@@ -48,7 +48,7 @@ class SmokeTest(unittest.TestCase):
         for source_file, source_name, target_file in self._util(self.GRAYSCALE_RESULTS_DIR, 'grayscaled'):
             if __name__ == 'main':
                 print 'Grayscaling %s...' % source_name
-            result, _ = make_grayscale(source_file)
+            result, _ = grayscale(source_file)
             target_file.write(result.getvalue())
 
     def test_convert(self):

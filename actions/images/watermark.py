@@ -10,7 +10,7 @@ from actions.utils import ValidationError, get_type_family
 
 
 name = 'watermark'
-type_families_applicable_for = ['image']
+applicable_for = 'image'
 result_type_family = 'image'
 
 
@@ -73,7 +73,7 @@ def identify(file, format):
 
 
 def get_watermark_bbox_geometry(source_width, source_height, w, h, h_pad, v_pad):
-    '''Returns watermark bounding box geometry'''
+    """Returns watermark bounding box geometry"""
     get_percent = lambda value, percent: round(value * percent / 100.)
     bbox_width = get_percent(source_width, w)
     bbox_height = get_percent(source_width, h)
