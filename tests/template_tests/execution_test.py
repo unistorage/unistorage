@@ -1,60 +1,23 @@
-import os
-import sys
-import time
-import unittest
-from pprint import pprint
-
-from bson.objectid import ObjectId
-from gridfs import GridFS
-from flask import request
-
-import app
-import settings
-import fileutils
-from actions.utils import ValidationError
-from actions.handlers import apply_template
-from tests.utils import WorkerMixin
+from tests.utils import FunctionalTest, ContextMixin
 
 
-class UnitTest(unittest.TestCase, WorkerMixin):
-    def setUp(self):
-        self.db = app.get_mongodb_connection()[settings.MONGO_DB_NAME]
-        self.fs = GridFS(self.db)
-        self.templates = self.db[settings.MONGO_TEMPLATES_COLLECTION_NAME]
-        
-        self.ctx = app.app.test_request_context()
-        self.ctx.push()
-        app.before_request()
-        token = settings.TOKENS[0]
-        self.user = app.get_or_create_user(token)
-        request.user = self.user
-
-    def tearDown(self):
-        self.ctx.pop()
-
-    def put_file(self, path):
-        f = open(path, 'rb')
-        filename = os.path.basename(path)
-        return self.fs.put(f.read(), filename=filename, content_type='image/jpg')
-
+class FunctionalTest(ContextMixin, FunctionalTest):
     def test(self):
-        file_id = self.put_file('./tests/images/some.jpeg')
-        template_data = {
-            'user_id': self.user['_id'],
+        r = self.app.post('/create_template', {
             'applicable_for': 'image',
-            'action_list': [
-                ('resize', ['keep', 400, None]),
-                ('make_grayscale', []),
-                ('resize', ['keep', 300, None]),
-            ]
-        }
-        template_id = self.templates.insert(template_data)
-        target_id = apply_template(self.fs.get(file_id), {
-            'template': str(template_id)
-        })
+            'action[]': ['action=resize&mode=keep&w=400', 'action=grayscale']
+        }, headers=self.headers)
+        template_id = r.json['id']
 
-        self.run_worker()
+        image_id = self.put_file('./tests/images/some.png')
+        apply_template_url = '/%s/?template=%s' % (image_id, template_id)
+        r = self.app.get(apply_template_url, headers=self.headers)
 
-        target_file = self.fs.get(ObjectId(target_id))
-        file_data = fileutils.get_file_data(target_file)
-        self.assertEquals(file_data['fileinfo']['width'], 300)
+        self.assertEquals(r.json['status'], 'ok')
+
+        video_id = self.put_file('./tests/videos/sample.3gp')
+        apply_template_url = '/%s/?template=%s' % (video_id, template_id)
+        r = self.app.get(apply_template_url, headers=self.headers, status='*')
+        
+        self.assertEquals(r.status_code, 400)
+        self.assertTrue('not applicable' in r.json['msg'])

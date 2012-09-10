@@ -1,25 +1,16 @@
-import os
 import unittest
 
 from flask import g
 
-import app
-import fileutils
 from actions.images import watermark
 from actions.utils import ValidationError
-from tests.utils import ContextMixin
+from tests.utils import ContextMixin, GridFSMixin
 
 
-class ExecutionTest(ContextMixin, unittest.TestCase):
+class ExecutionTest(ContextMixin, GridFSMixin, unittest.TestCase):
     def setUp(self):
         super(ExecutionTest, self).setUp()
         self.watermark_id = str(self.put_file('./tests/watermarks/watermark.png'))
-
-    def put_file(self, path):
-        f = open(path, 'rb')
-        filename = os.path.basename(path)
-        content_type = fileutils.get_content_type(f)
-        return g.fs.put(f.read(), filename=filename, content_type=content_type)
     
     def test(self):
         source_id = self.put_file('./tests/images/some.jpeg')

@@ -1,15 +1,13 @@
-import os
 import unittest
 import logging.config
 
 import yaml
-from gridfs import GridFS
+from flask import g
 
-import settings
 from actions.images.resize import perform as resize
 from tasks import ActionException, perform_action_list
-from connections import get_mongodb_connection
 from fileutils import get_content_type
+from tests.utils import GridFSMixin, ContextMixin
 
 
 class MockLoggingHandler(logging.Handler):
@@ -31,30 +29,23 @@ class MockLoggingHandler(logging.Handler):
         }
 
 
-class Test(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.db = get_mongodb_connection()[settings.MONGO_DB_NAME]
-        cls.fs = GridFS(cls.db)
+class Test(ContextMixin, GridFSMixin, unittest.TestCase):
+    def setUp(self):
+        super(Test, self).setUp()
         # Mock logger
-        cls.handler = MockLoggingHandler(level=logging.ERROR)
+        self.handler = MockLoggingHandler(level=logging.ERROR)
         logger = logging.getLogger('action_error_logger')
         for handler in logger.handlers:
             logger.removeHandler(handler)
-        logger.addHandler(cls.handler)
+        logger.addHandler(self.handler)
 
-    @classmethod
-    def tearDownClass(cls):
+    def tearDown(self):
+        super(Test, self).tearDown()
         # Restore logging configuration
         config = yaml.load(open('logging.conf'))
         logging.config.dictConfig(config)
-
-    def put_file(self, path):
-        f = open(path, 'rb')
-        filename = os.path.basename(path)
-        return self.fs.put(f.read(), filename=filename, content_type=get_content_type(f))
     
-    def test_imagemagick_wrapper(self):
+    def test(self):
         """Tests that exception raised by action is logged"""
         path = './tests/images/some.jpeg'
         source_file = open(path, 'rb')
@@ -64,7 +55,7 @@ class Test(unittest.TestCase):
             resize(source_file, 'keep', -123123, 0)
 
         source_id = self.put_file(path)
-        target_id = self.fs.put('')
+        target_id = g.fs.put('')
 
         # Make sure that it's logged
         self.assertEquals(len(self.handler.messages['error']), 0)
