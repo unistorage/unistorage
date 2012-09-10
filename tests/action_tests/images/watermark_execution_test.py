@@ -12,7 +12,7 @@ from tests.utils import ContextMixin
 
 class ExecutionTest(ContextMixin, unittest.TestCase):
     def setUp(self):
-        super(ValidationTest, self).setUp()
+        super(ExecutionTest, self).setUp()
         self.watermark_id = str(self.put_file('./tests/watermarks/watermark.png'))
 
     def put_file(self, path):
