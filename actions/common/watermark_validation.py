@@ -29,11 +29,11 @@ def validate_and_get_as_dimension(args, arg_name):
 
 
 def validate_and_get_args(args):
-    for arg_name in ('w', 'h', 'h_pad', 'v_pad', 'corner', 'watermark_id'):
+    for arg_name in ('w', 'h', 'w_pad', 'h_pad', 'corner', 'watermark_id'):
         validate_presence(args, arg_name)
     
-    w, h, hpad, vpad = [validate_and_get_as_dimension(args, arg_name) \
-            for arg_name in ('w', 'h', 'h_pad', 'v_pad')]
+    w, h, w_pad, h_pad = [validate_and_get_as_dimension(args, arg_name) \
+            for arg_name in ('w', 'h', 'w_pad', 'h_pad')]
         
     corners = ('ne', 'se', 'sw', 'nw')
     corner = args['corner']
@@ -49,4 +49,4 @@ def validate_and_get_args(args):
     if get_type_family(watermark.content_type) != 'image':
         raise ValidationError('File with id %s is not an image.' % watermark_id)
 
-    return [ObjectId(watermark_id), w, h, hpad, vpad, corner]
+    return [ObjectId(watermark_id), w, h, w_pad, h_pad, corner]

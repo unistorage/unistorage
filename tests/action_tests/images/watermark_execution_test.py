@@ -10,7 +10,7 @@ class FunctionalTest(FunctionalTest, WorkerMixin):
         self.check(url, width=640, height=480, mime='image/jpeg')
         
         watermark_action_url = url + '?action=watermark&watermark_id=%s' \
-                                    '&w=5&h=40px&h_pad=10&v_pad=10px&corner=ne' % watermark_id
+                                    '&w=5&h=40px&w_pad=10&h_pad=10px&corner=ne' % watermark_id
         r = self.app.get(watermark_action_url, headers=self.headers)
         self.assertEquals(r.json['status'], 'ok')
 

@@ -29,8 +29,8 @@ class ValidationTest(ContextMixin, unittest.TestCase):
             'watermark_id': self.watermark_id,
             'w': '45px',
             'h': '30',
-            'h_pad': '10px',
-            'v_pad': '5',
+            'w_pad': '10px',
+            'h_pad': '5',
             'corner': 'ne'
         }
     
@@ -41,8 +41,8 @@ class ValidationTest(ContextMixin, unittest.TestCase):
             validate({})
         
         args = self.get_valid_args()
-        del args['h_pad']
-        with self.expect_validation_error('`h_pad` must be specified'):
+        del args['w_pad']
+        with self.expect_validation_error('`w_pad` must be specified'):
             validate(args)
 
         args = self.get_valid_args()
