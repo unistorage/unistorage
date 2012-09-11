@@ -61,9 +61,13 @@ class FunctionalTest(unittest.TestCase):
         self.app = TestApp(app.app)
         self.headers = {'Token': settings.TOKENS[0]}
 
-    def put_file(self, path):
-        files = [('file', os.path.basename(path), open(path, 'rb').read())]
-        r = self.app.post('/', headers=self.headers, upload_files=files)
+    def put_file(self, path, type_id=None):
+        files = [('file', path)]
+        params = {}
+        if type_id is not None:
+            params.update({'type_id': type_id})
+            
+        r = self.app.post('/', params, headers=self.headers, upload_files=files)
         self.assertEquals(r.json['status'], 'ok')
         self.assertTrue('id' in r.json)
         return ObjectId(r.json['id'])

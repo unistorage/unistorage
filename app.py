@@ -67,8 +67,15 @@ def index():
         return jsonify({'status': 'error', 'msg': 'not implemented'}), 501
     file = request.files.get('file')
     if file:
-        file_data = get_file_data(file)
-        new_file = g.fs.put(file.read(), user_id=request.user['_id'], **file_data)
+        kwargs = get_file_data(file)
+
+        type_id = request.form.get('type_id')
+        # TODO validate?
+        if type_id:
+            kwargs.update({'type_id': type_id})
+
+        new_file = g.fs.put(file.read(),
+                user_id=request.user['_id'], **kwargs)
         return jsonify({'status': 'ok', 'id': str(new_file)})
     else:
         return jsonify({'status': 'error', 'msg': 'File wasn\'t found'}), 400
