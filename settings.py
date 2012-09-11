@@ -1,5 +1,9 @@
 import sys
+import logging.config
 from datetime import timedelta
+
+import yaml
+
 
 DEBUG = False
 
@@ -48,3 +52,6 @@ if 'test' in sys.argv[0]: # Is there another way?
         from settings_test import *
     except ImportError:
         pass
+
+config = yaml.load(open('./logging.conf'))
+logging.config.dictConfig(config)

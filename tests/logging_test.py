@@ -5,7 +5,7 @@ import yaml
 from flask import g
 
 from actions.images.resize import perform as resize
-from tasks import ActionException, perform_action_list
+from actions.tasks import ActionException, perform_actions
 from fileutils import get_content_type
 from tests.utils import GridFSMixin, ContextMixin
 
@@ -59,7 +59,7 @@ class Test(ContextMixin, GridFSMixin, unittest.TestCase):
 
         # Make sure that it's logged
         self.assertEquals(len(self.handler.messages['error']), 0)
-        perform_action_list(source_id, target_id, {}, [('resize', ['keep', -123123, 0])])
+        perform_actions(source_id, target_id, {}, [('resize', ['keep', -123123, 0])])
         logged_message = self.handler.messages['error'][0]
         self.handler.reset()
         self.assertTrue('Action failed' in logged_message)

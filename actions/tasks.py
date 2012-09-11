@@ -3,7 +3,6 @@ import logging
 
 import gridfs
 from bson.objectid import ObjectId
-from pymongo import Connection, ReplicaSetConnection
 
 import settings
 from connections import get_mongodb_connection
@@ -27,7 +26,7 @@ LOG_TEMPLATE = '''
 '''
 
 
-def perform_action_list(source_id, target_id, target_kwargs, action_list):
+def perform_actions(source_id, target_id, target_kwargs, action_list):
     source_file = fs.get(source_id)
     source_file_name, source_file_ext = os.path.splitext(source_file.name)
 
