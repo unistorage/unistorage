@@ -4,14 +4,14 @@ from flask import Flask, g
 
 import settings
 import connections
-from app.storage import storage
-from app.admin import admin
+from app import storage
+from app import admin
 
 
 app = Flask(__name__)
-app.secret_key = 'N4BU123dasHxNoO8g'
-app.register_blueprint(admin, url_prefix='/admin')
-app.register_blueprint(storage)
+app.secret_key = settings.SECRET_KEY
+app.register_blueprint(admin.bp, url_prefix='/admin')
+app.register_blueprint(storage.bp)
 
 
 if settings.DEBUG:

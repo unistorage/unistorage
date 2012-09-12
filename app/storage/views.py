@@ -8,10 +8,19 @@ from file_utils import get_file_data
 from actions.utils import ValidationError
 from actions.handlers import apply_template, apply_action
 from utils import ok, error, methods_required
-from . import storage
+from . import bp
 
 
-@storage.route('/')
+def login_required(func):
+    @functools.wraps(func)
+    def f(*args, **kwargs):
+        if not request.user:
+            abort(401)
+        return func(*args, **kwargs)
+    return f
+
+
+@bp.route('/')
 @methods_required(['POST'])
 @login_required
 def index_view():
@@ -22,15 +31,16 @@ def index_view():
     kwargs = get_file_data(file)
 
     type_id = request.form.get('type_id')
-    # TODO validate?
     if type_id:
+        if len(type_id) > 32:
+            return error({'msg': '`type_id` is too long. Maximum length is 32.'}), 400
         kwargs.update({'type_id': type_id})
 
     new_file = g.fs.put(file.read(), user_id=request.user['_id'], **kwargs)
     return ok({'id': str(new_file)})
 
 
-@storage.route('/create_template')
+@bp.route('/create_template')
 @methods_required(['POST'])
 @login_required
 def create_template_view():
@@ -49,7 +59,7 @@ def create_template_view():
     return ok({'id': str(template_id)})
 
 
-@storage.route('/<string:_id>/')
+@bp.route('/<string:_id>/')
 @methods_required(['GET'])
 @login_required
 def id_view(_id=None):

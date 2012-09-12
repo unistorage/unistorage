@@ -12,3 +12,4 @@ pyyaml
 -e git://github.com/mediasite/python-video-converter.git#egg=python-video-converter
 -e git://github.com/mediasite/openoffice-wrapper.git#egg=openoffice_wrapper-dev
 wtforms
+repoze.who==2.0

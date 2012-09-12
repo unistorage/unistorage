@@ -4,35 +4,19 @@ from flask import g, request, redirect, url_for, render_template, flash, session
 
 import forms
 import who
-from . import admin
-
-
-@admin.record
-def configure(state):
-    app = state.app
-    app.who_api_factory = who.make_repoze_who_api_factory()
-
-    @app.errorhandler(401)
-    def unauthorized_error_handler(error):
-        who_api = app.who_api_factory(request.environ)
-        return who_api.challenge()
-
-    @admin.before_request
-    def restrict_to_admins():
-        who_api = app.who_api_factory(request.environ)
-        g.user = who_api.authenticate()
+from . import bp
 
 
 def login_required(func):
     @functools.wraps(func)
     def f(*args, **kwargs):
-        if not g.user:
+        if not request.user:
             abort(401)
         return func(*args, **kwargs)
     return f
 
 
-@admin.route('/login', methods=['GET', 'POST'])
+@bp.route('/login', methods=['GET', 'POST'])
 def login():
     who_api = who.get_api(request.environ)
     form = forms.LoginForm(request.form)
@@ -48,7 +32,7 @@ def login():
     return render_template('login.html', form=form)
 
 
-@admin.route('/logout', methods=['GET'])
+@bp.route('/logout', methods=['GET'])
 def logout():
     who_api = who.get_api(request.environ)
     headers = who_api.forget()
@@ -58,7 +42,7 @@ def logout():
     return response
 
 
-@admin.route('/', methods=['GET'])
+@bp.route('/', methods=['GET'])
 @login_required
 def index():
     return 'Index!'

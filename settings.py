@@ -6,6 +6,7 @@ import yaml
 
 
 DEBUG = False
+SECRET_KEY = 'qwertyuiop[]'
 
 #Mongo
 MONGO_HOST = 'localhost'
