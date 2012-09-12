@@ -4,7 +4,7 @@ import unittest
 from flask import g
 
 import app
-import fileutils
+import file_utils
 from actions.images import watermark
 from actions.utils import ValidationError
 from tests.utils import ContextMixin
@@ -18,7 +18,7 @@ class ValidationTest(ContextMixin, unittest.TestCase):
     def put_file(self, path):
         f = open(path, 'rb')
         filename = os.path.basename(path)
-        content_type = fileutils.get_content_type(f)
+        content_type = file_utils.get_content_type(f)
         return g.fs.put(f.read(), filename=filename, content_type=content_type)
 
     def expect_validation_error(self, error):

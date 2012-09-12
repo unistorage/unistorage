@@ -10,7 +10,7 @@ from rq import Queue, Worker, use_connection
 
 import app
 import settings
-import fileutils
+import file_utils
 
 
 class WorkerMixin(object):
@@ -51,7 +51,7 @@ class GridFSMixin(object):
     def put_file(self, path):
         f = open(path, 'rb')
         filename = os.path.basename(path)
-        content_type = fileutils.get_content_type(f)
+        content_type = file_utils.get_content_type(f)
         return g.fs.put(f.read(), filename=filename, content_type=content_type)
 
 

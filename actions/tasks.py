@@ -6,7 +6,7 @@ from bson.objectid import ObjectId
 
 import settings
 from connections import get_mongodb_connection
-from fileutils import get_file_data, get_content_type, convert_to_filename
+from file_utils import get_file_data, get_content_type, convert_to_filename
 from actions import get_action, ActionException
 from actions.utils import get_type_family
 

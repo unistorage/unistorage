@@ -4,12 +4,15 @@ from flask import Flask, g
 
 import settings
 import connections
+from app.storage import storage
+from app.admin import admin
 
 
 app = Flask(__name__)
-
-from app.storage import storage
+app.secret_key = 'N4BU123dasHxNoO8g'
+app.register_blueprint(admin, url_prefix='/admin')
 app.register_blueprint(storage)
+
 
 if settings.DEBUG:
     app.config['PROPAGATE_EXCEPTIONS'] = True

@@ -6,7 +6,7 @@ from flask import g
 
 from actions.images.resize import perform as resize
 from actions.tasks import ActionException, perform_actions
-from fileutils import get_content_type
+from file_utils import get_content_type
 from tests.utils import GridFSMixin, ContextMixin
 
 

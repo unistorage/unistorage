@@ -4,13 +4,11 @@ from flask import request, g, jsonify
 import settings
 from auth import login_required
 from actions import templates
-from fileutils import get_file_data
+from file_utils import get_file_data
 from actions.utils import ValidationError
 from actions.handlers import apply_template, apply_action
-from utils import ok, error, StorageBlueprint, methods_required
-
-
-storage = StorageBlueprint('storage', __name__, template_folder='templates')
+from utils import ok, error, methods_required
+from . import storage
 
 
 @storage.route('/')

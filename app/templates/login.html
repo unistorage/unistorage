@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <form method="POST" action="" class="form-horizontal">
+    {{ form.login }}
+    {{ form.password }}
+    {{ form.came_from }}
+    <div class="form-actions">
+      <input type="submit" value="Войти" class="btn" />
+    </div>
+  </form>
+{% endblock %}
