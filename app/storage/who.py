@@ -46,11 +46,6 @@ def make_repoze_who_api_factory():
     mdproviders = [('token_plugin', token_plugin)]
     challengers = []
 
-    return APIFactory(
-        identifiers,
-        authenticators,
-        challengers,
-        mdproviders,
-        default_request_classifier,
-        default_challenge_decider
-    )
+    return APIFactory(identifiers, authenticators, challengers,
+            mdproviders, default_request_classifier,
+            default_challenge_decider)

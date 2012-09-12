@@ -1,4 +1,5 @@
 Flask
+Flask-Assets
 pymongo
 python-magic
 WebTest==1.3.4

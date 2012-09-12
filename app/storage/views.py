@@ -1,8 +1,9 @@
+import functools
+
 from bson.objectid import ObjectId
-from flask import request, g, jsonify
+from flask import request, g, jsonify, abort
 
 import settings
-from auth import login_required
 from actions import templates
 from file_utils import get_file_data
 from actions.utils import ValidationError

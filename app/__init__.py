@@ -1,17 +1,27 @@
 from rq import Queue
 from gridfs import GridFS
 from flask import Flask, g
+from flask.ext.assets import Environment, Bundle
 
 import settings
 import connections
-from app import storage
-from app import admin
+import storage
+import admin
 
 
 app = Flask(__name__)
 app.secret_key = settings.SECRET_KEY
 app.register_blueprint(admin.bp, url_prefix='/admin')
 app.register_blueprint(storage.bp)
+
+
+assets = Environment(app)
+
+bootstrap = Bundle('less/bootstrap/bootstrap.less', filters='less', output='gen/bootstap.css')
+less = Bundle('less/layout.less', filters='less', output='gen/style.css')
+
+assets.register('bootstrap', bootstrap)
+assets.register('less', less)
 
 
 if settings.DEBUG:

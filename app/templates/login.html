@@ -1,9 +1,11 @@
-{% extends 'base.html' %}
+{% from "utils.html" import render_field %}
+{% extends "base_unauth.html" %}
 
 {% block content %}
+  <legend>Вход</legend>
   <form method="POST" action="" class="form-horizontal">
-    {{ form.login }}
-    {{ form.password }}
+    {{ render_field(form.login) }}
+    {{ render_field(form.password) }}
     {{ form.came_from }}
     <div class="form-actions">
       <input type="submit" value="Войти" class="btn" />

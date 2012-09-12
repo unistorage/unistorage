@@ -1,19 +1,33 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Unistore admin</title>
-    <meta charset="utf-8" />
-  </head>
-  <body>
-    <div class="container">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-      {% endwith %}
+{% extends 'base_unauth.html' %}
 
-      {% block content %}
-      {% endblock %}
+{% set navigation_bar = [
+    (url_for('admin.index'), 'index', 'Главная'),
+    (url_for('admin.users'), 'users', 'Клиенты'),
+    (url_for('admin.statistics'), 'statistics', 'Статистика'),
+    (url_for('admin.logout'), 'logout', 'Выйти'),
+] -%}
+{% set active_page = active_page|default('clients') -%}
+
+{% block body %}
+  <div class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container" style="width: auto; padding: 0 20px;">
+        <a class="brand" href="#">Unistore</a>
+        <ul class="nav">
+          {% block menu %}
+            {% for href, id, caption in navigation_bar %}
+              <li{% if id == active_page %} class="active"{% endif%}>
+                <a href="{{ href|e }}">{{ caption|e }}</a>
+              </li>
+            {% endfor %}
+          {% endblock %}
+        </ul>
+      </div>
     </div>
-  </body>
-</html>
+  </div>
+
+  <div class="container">
+    {% block content %}
+    {% endblock %}
+  </div>
+{% endblock %}
