@@ -1,6 +1,9 @@
 from rq import Queue
 from gridfs import GridFS
+from bson.errors import InvalidId
+from bson import ObjectId
 from flask import Flask, g
+from werkzeug.routing import BaseConverter, ValidationError
 from flask.ext.assets import Environment, Bundle
 
 import settings
@@ -9,23 +12,41 @@ import storage
 import admin
 
 
+class ObjectIdConverter(BaseConverter):
+    def to_python(self, value):
+        try:
+            return ObjectId(value)
+        except InvalidId:
+            raise ValidationError()
+
+    def to_url(self, value):
+        return str(value)
+
+
 app = Flask(__name__)
+
+app.url_map.converters['ObjectId'] = ObjectIdConverter
 app.secret_key = settings.SECRET_KEY
 app.register_blueprint(admin.bp, url_prefix='/admin')
 app.register_blueprint(storage.bp)
 
+if settings.DEBUG:
+    app.config['PROPAGATE_EXCEPTIONS'] = True
+
 
 assets = Environment(app)
 
-bootstrap = Bundle('less/bootstrap/bootstrap.less', filters='less', output='gen/bootstap.css')
-less = Bundle('less/layout.less', filters='less', output='gen/style.css')
+bootstrap = Bundle('less/bootstrap/bootstrap.less',
+        filters='less', output='gen/bootstrap.css')
+jquery = Bundle('js/jquery.min.js', output='gen/jquery.js')
+
+css = Bundle('css/layout.css', output='gen/style.css')
+#js = Bundle(output='gen/js.js')
 
 assets.register('bootstrap', bootstrap)
-assets.register('less', less)
-
-
-if settings.DEBUG:
-    app.config['PROPAGATE_EXCEPTIONS'] = True
+assets.register('jquery', jquery)
+assets.register('css', css)
+#assets.register('js', js)
 
 
 @app.before_request

@@ -60,11 +60,10 @@ def create_template_view():
     return ok({'id': str(template_id)})
 
 
-@bp.route('/<string:_id>/')
+@bp.route('/<ObjectId:_id>/')
 @methods_required(['GET'])
 @login_required
 def id_view(_id=None):
-    _id = ObjectId(_id)
     if not g.fs.exists(_id=_id):
         return error({'msg': 'File wasn\'t found'}), 400
     source_file = g.fs.get(_id)

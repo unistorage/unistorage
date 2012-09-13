@@ -2,8 +2,8 @@
 {% extends "base_unauth.html" %}
 
 {% block content %}
-  <legend>Вход</legend>
   <form method="POST" action="" class="form-horizontal">
+    <legend>Вход</legend>
     {{ render_field(form.login) }}
     {{ render_field(form.password) }}
     {{ form.came_from }}

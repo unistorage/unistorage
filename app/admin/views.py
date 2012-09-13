@@ -26,7 +26,7 @@ def login():
         authenticated, headers = who_api.login(form.data)
         if authenticated:
             location = request.values.get('came_from')
-            response = redirect(location or url_for('admin.index'))
+            response = redirect(location or url_for('.index'))
             response.headers.extend(headers)
             return response
         flash(u'Wrong username or password', 'error')
@@ -38,7 +38,7 @@ def logout():
     who_api = who.get_api(request.environ)
     headers = who_api.forget()
     session.clear()
-    response = redirect(url_for('admin.index'))
+    response = redirect(url_for('.index'))
     response.headers.extend(headers)
     return response
 
@@ -49,14 +49,43 @@ def index():
     return render_template('index.html')
 
 
-@bp.route('/users', methods=['GET'])
+@bp.route('/users', methods=['GET', 'POST'])
 @login_required
 def users():
     users = g.db[settings.MONGO_USERS_COLLECTION_NAME]
-    context = {
+
+    if request.method == 'POST':
+        form = forms.UserForm(request.form)
+        if form.validate():
+            user_id = users.insert({
+                'name': form.data['name'],
+                'token': form.data['token']
+            })
+            return redirect(url_for('.users'))
+        else:
+            return render_template('user_create.html', **{
+                'form': form
+            })
+
+    return render_template('users.html', **{
         'users': users.find()
-    } 
-    return render_template('users.html', **context)
+    })
+
+
+@bp.route('/users/create', methods=['GET'])
+@login_required
+def user_create():
+    return render_template('user_create.html', **{
+        'form': forms.UserForm(request.form)
+    })
+
+
+@bp.route('/users/<ObjectId:_id>/remove', methods=['GET'])
+@login_required
+def user_remove(_id):
+    users = g.db[settings.MONGO_USERS_COLLECTION_NAME]
+    users.remove(_id)
+    return redirect(url_for('.users'))
 
 
 @bp.route('/statistics', methods=['GET'])

@@ -1,8 +1,43 @@
+{% from "utils.html" import render_field %}
+
 {% extends 'base.html' %}
-{% set active_page = "clients" %}
+
+{% set active_page = "users" %}
 
 {% block content %}
-  {% for user in users %}
-    {{ user.token }}
-  {% endfor %}
+  <h3>Пользователи</h3>
+  <table class="table  users">
+    <thead>
+      <tr>
+        <th>Имя</th>
+        <th>Токен</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+        <tr>
+          <td>{{ user.name }}</td>
+          <td>{{ user.token }}</td>
+          <td class="actions">
+            <a class="btn btn-danger btn-mini  remove-user"
+               href="{{ url_for('.user_remove', _id=user._id) }}">
+              <i class="icon-remove icon-white"></i>
+            </a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="{{ url_for('admin.user_create') }}" class="btn  add-user">
+    Добавить пользователя
+  </a>
+
+  <script>
+  $(function() {
+    $('a.remove-user').on('click', function() {
+        return confirm('Точно удалить?');
+      });
+    });
+  </script>
 {% endblock %}
