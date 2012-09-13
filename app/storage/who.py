@@ -4,6 +4,7 @@ from repoze.who.plugins.basicauth import BasicAuthPlugin
 from repoze.who.plugins.auth_tkt import AuthTktCookiePlugin
 from repoze.who.classifiers import default_request_classifier, default_challenge_decider
 
+from app.models import User
 import settings
 
 
@@ -18,7 +19,6 @@ class TokenPlugin(object):
         else:
             return None
 
-
     def remember(self, environ, identity):
         pass
 
@@ -27,16 +27,15 @@ class TokenPlugin(object):
     
     def authenticate(self, environ, identity):
         token = identity['token']
-        if token in settings.TOKENS:
+        if token in settings.TOKENS or User.get_one(g.db, {'token': token}):
             return token
         else:
             return None
 
     def add_metadata(self, environ, identity):
         token = identity.get('token')
-        users = g.db[settings.MONGO_USERS_COLLECTION_NAME]
-        identity['user'] = users.find_one({'token': token}) or \
-                users.find_one({'_id': users.insert({'token': token})})
+        identity['user'] = User.get_one(g.db, {'token': token}) or \
+                User.get_one(g.db, {'_id': User({'token': token}).save(g.db)}) # FIXME
 
 
 def make_repoze_who_api_factory():

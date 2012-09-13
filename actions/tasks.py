@@ -9,10 +9,12 @@ from connections import get_mongodb_connection
 from file_utils import get_file_data, get_content_type, convert_to_filename
 from actions import get_action, ActionException
 from actions.utils import get_type_family
+from app.models import File
 
 
 connection = get_mongodb_connection()
-fs = gridfs.GridFS(connection[settings.MONGO_DB_NAME])
+db = connection[settings.MONGO_DB_NAME]
+fs = gridfs.GridFS(db)
 
 
 LOG_TEMPLATE = '''
@@ -67,7 +69,8 @@ def perform_actions(source_id, target_id, target_kwargs, action_list):
     target_file.filename = target_file.name = \
             convert_to_filename('%s.%s' % (target_file_name, target_file_ext))
     target_kwargs.update(get_file_data(target_file))
+    target_kwargs['_id'] = target_id
 
     fs.delete(target_id)
-    fs.put(target_file, _id=target_id, **target_kwargs)
+    File.put(db, fs, target_file, target_kwargs)
     target_file.close()

@@ -11,6 +11,7 @@ from rq import Queue, Worker, use_connection
 import app
 import settings
 import file_utils
+from app.models import User, Statistics, File
 
 
 class WorkerMixin(object):
@@ -48,11 +49,24 @@ class GridFSMixin(object):
     Provides `put_file(path)` method to put file in GridFS.
     Requires Flask request context (see `ContextMixin`).
     """
-    def put_file(self, path):
-        f = open(path, 'rb')
-        filename = os.path.basename(path)
+    def setUp(self):
+        super(GridFSMixin, self).setUp()
+        g.db[User.collection].drop()
+        g.db[Statistics.collection].drop()
+        g.db.fs.files.drop()
+        g.db.fs.chunks.drop()
+        g.db.fs.drop()
+
+    def put_file(self, filepath, user_id=ObjectId('50516e3e8149950f0fa50462'), type_id=None):
+        f = open(filepath, 'rb')
+        filename = os.path.basename(filepath)
         content_type = file_utils.get_content_type(f)
-        return g.fs.put(f.read(), filename=filename, content_type=content_type)
+        return File.put(g.db, g.fs, f.read(), {
+            'type_id': type_id,
+            'user_id': user_id,
+            'filename': filename,
+            'content_type': content_type
+        }).get_id()
 
 
 class FunctionalTest(unittest.TestCase):

@@ -6,7 +6,7 @@ import settings
 import forms
 import who
 from . import bp
-
+from app.models import User
 
 def login_required(func):
     @functools.wraps(func)
@@ -52,15 +52,14 @@ def index():
 @bp.route('/users', methods=['GET', 'POST'])
 @login_required
 def users():
-    users = g.db[settings.MONGO_USERS_COLLECTION_NAME]
-
     if request.method == 'POST':
         form = forms.UserForm(request.form)
         if form.validate():
-            user_id = users.insert({
+            user = User({
                 'name': form.data['name'],
                 'token': form.data['token']
             })
+            user.save(g.db)
             return redirect(url_for('.users'))
         else:
             return render_template('user_create.html', **{
@@ -68,7 +67,7 @@ def users():
             })
 
     return render_template('users.html', **{
-        'users': users.find()
+        'users': User.find(g.db)
     })
 
 
@@ -83,8 +82,7 @@ def user_create():
 @bp.route('/users/<ObjectId:_id>/remove', methods=['GET'])
 @login_required
 def user_remove(_id):
-    users = g.db[settings.MONGO_USERS_COLLECTION_NAME]
-    users.remove(_id)
+    User.get_one(g.db, _id).remove(g.db)
     return redirect(url_for('.users'))
 
 

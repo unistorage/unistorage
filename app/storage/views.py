@@ -10,6 +10,7 @@ from actions.utils import ValidationError
 from actions.handlers import apply_template, apply_action
 from utils import ok, error, methods_required
 from . import bp
+from app.models import File
 
 
 def login_required(func):
@@ -30,6 +31,9 @@ def index_view():
         return error({'msg': 'File wasn\'t found'}), 400
     
     kwargs = get_file_data(file)
+    kwargs.update({
+        'user_id': request.user['_id']
+    })
 
     type_id = request.form.get('type_id')
     if type_id:
@@ -37,8 +41,10 @@ def index_view():
             return error({'msg': '`type_id` is too long. Maximum length is 32.'}), 400
         kwargs.update({'type_id': type_id})
 
-    new_file = g.fs.put(file.read(), user_id=request.user['_id'], **kwargs)
-    return ok({'id': str(new_file)})
+    f = File.put(g.db, g.fs, file.read(), kwargs)
+    return ok({
+        'id': str(f.get_id())
+    })
 
 
 @bp.route('/create_template')

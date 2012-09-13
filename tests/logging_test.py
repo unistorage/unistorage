@@ -29,7 +29,7 @@ class MockLoggingHandler(logging.Handler):
         }
 
 
-class Test(ContextMixin, GridFSMixin, unittest.TestCase):
+class Test(GridFSMixin, ContextMixin, unittest.TestCase):
     def setUp(self):
         super(Test, self).setUp()
         # Mock logger

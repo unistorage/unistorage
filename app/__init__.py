@@ -23,9 +23,19 @@ class ObjectIdConverter(BaseConverter):
         return str(value)
 
 
-app = Flask(__name__)
+# Wait for https://github.com/mitsuhiko/flask/pull/471 
+#from flask.helpers import JSONEncoder
+#class ObjectIdJSONEncoder(JSONEncoder):
+    #def default(self, obj):
+        #if isinstance(obj, ObjectId):
+            #return str(obj)
+        #return super(ObjectIdJSONEncoder, self).default(obj)
+#app.json_encoder_class = ObjectIdJSONEncoder
 
+
+app = Flask(__name__)
 app.url_map.converters['ObjectId'] = ObjectIdConverter
+
 app.secret_key = settings.SECRET_KEY
 app.register_blueprint(admin.bp, url_prefix='/admin')
 app.register_blueprint(storage.bp)
@@ -39,14 +49,11 @@ assets = Environment(app)
 bootstrap = Bundle('less/bootstrap/bootstrap.less',
         filters='less', output='gen/bootstrap.css')
 jquery = Bundle('js/jquery.min.js', output='gen/jquery.js')
-
 css = Bundle('css/layout.css', output='gen/style.css')
-#js = Bundle(output='gen/js.js')
 
 assets.register('bootstrap', bootstrap)
 assets.register('jquery', jquery)
 assets.register('css', css)
-#assets.register('js', js)
 
 
 @app.before_request
