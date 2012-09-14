@@ -61,7 +61,7 @@ class GridFSMixin(object):
     def put_file(self, filepath, user_id=ObjectId('50516e3e8149950f0fa50462'), type_id=None):
         file = StringIO(open(filepath, 'rb').read())
         file.name = file.filename = os.path.basename(filepath)
-        return File.put_to_fs(g.db, g.fs, file, {
+        return File.put_to_fs(g.db, g.fs, file, **{
             'type_id': type_id,
             'user_id': user_id,
         })

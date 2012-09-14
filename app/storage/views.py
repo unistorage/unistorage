@@ -39,7 +39,7 @@ def index_view():
             return error({'msg': '`type_id` is too long. Maximum length is 32.'}), 400
         kwargs.update({'type_id': type_id})
 
-    file_id = File.put_to_fs(g.db, g.fs, file, kwargs)
+    file_id = File.put_to_fs(g.db, g.fs, file, **kwargs)
     return ok({
         'id': str(file_id)
     })

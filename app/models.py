@@ -62,7 +62,7 @@ class File(ValidationMixin, modeling.Document):
         return super(File, cls).wrap_incoming(data, db)
 
     @classmethod
-    def put_to_fs(cls, db, fs, data, kwargs):
+    def put_to_fs(cls, db, fs, data, **kwargs):
         kwargs.update(get_file_data(data))
         kwargs.update({
             'pending': False    

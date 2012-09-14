@@ -77,5 +77,5 @@ def perform_actions(source_id, target_id, target_kwargs, action_list):
     # Remove pending file
     fs.delete(target_id)
     # Put regular file with the same id
-    File.put_to_fs(db, fs, target_file, target_kwargs)
+    File.put_to_fs(db, fs, target_file, **target_kwargs)
     target_file.close()
