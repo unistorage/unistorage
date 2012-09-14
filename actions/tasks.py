@@ -30,6 +30,10 @@ LOG_TEMPLATE = '''
 
 def perform_actions(source_id, target_id, target_kwargs, action_list):
     source_file = fs.get(source_id)
+    target_file = fs.get(target_id)
+    assert not source_file.pending
+    assert target_file.pending
+
     source_file_name, source_file_ext = os.path.splitext(source_file.name)
 
     curr_file = source_file
@@ -68,9 +72,10 @@ def perform_actions(source_id, target_id, target_kwargs, action_list):
     target_file_ext = curr_file_ext
     target_file.filename = target_file.name = \
             convert_to_filename('%s.%s' % (target_file_name, target_file_ext))
-    target_kwargs.update(get_file_data(target_file))
     target_kwargs['_id'] = target_id
-
+    
+    # Remove pending file
     fs.delete(target_id)
-    File.put(db, fs, target_file, target_kwargs)
+    # Put regular file with the same id
+    File.put_to_fs(db, fs, target_file, target_kwargs)
     target_file.close()

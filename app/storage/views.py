@@ -30,20 +30,18 @@ def index_view():
     if not file:
         return error({'msg': 'File wasn\'t found'}), 400
     
-    kwargs = get_file_data(file)
-    kwargs.update({
+    kwargs = {
         'user_id': request.user['_id']
-    })
-
+    }
     type_id = request.form.get('type_id')
     if type_id:
         if len(type_id) > 32:
             return error({'msg': '`type_id` is too long. Maximum length is 32.'}), 400
         kwargs.update({'type_id': type_id})
 
-    f = File.put(g.db, g.fs, file.read(), kwargs)
+    file_id = File.put_to_fs(g.db, g.fs, file, kwargs)
     return ok({
-        'id': str(f.get_id())
+        'id': str(file_id)
     })
 
 
@@ -70,9 +68,9 @@ def create_template_view():
 @methods_required(['GET'])
 @login_required
 def id_view(_id=None):
-    if not g.fs.exists(_id=_id):
+    source_file = File.get_one(g.db, {'_id': _id})
+    if not source_file:
         return error({'msg': 'File wasn\'t found'}), 400
-    source_file = g.fs.get(_id)
     
     action_presented = 'action' in request.args
     template_presented = 'template' in request.args
@@ -88,11 +86,10 @@ def id_view(_id=None):
     except ValidationError as e:
         return error({'msg': str(e)}), 400
 
-    source_file_data = g.db.fs.files.find_one(_id)
-    if source_file_data.get('pending', False):
-        return get_pending_file(source_file_data)
+    if source_file.get('pending', False):
+        return get_pending_file(source_file)
     else:
-        return get_regular_file(source_file_data)
+        return get_regular_file(source_file)
 
 
 def get_gridfs_serve_url(path):
@@ -103,9 +100,9 @@ def get_unistore_nginx_serve_url(path):
     return '%s/%s' % (settings.UNISTORE_NGINX_SERVE_URL, path.lstrip('/'))
 
 
-def can_unistore_serve(file_data):
-    original_content_type = file_data['original_content_type']
-    actions = file_data['actions']
+def can_unistore_serve(file):
+    original_content_type = file.original_content_type
+    actions = file.actions
 
     if not original_content_type.startswith('image') or len(actions) > 1:
         # If source file is not an image or more than one action was applied to it
@@ -120,26 +117,25 @@ def can_unistore_serve(file_data):
     return True
 
 
-def get_pending_file(file_data):
-    ttl = file_data['ttl']
-    if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL') and \
-            can_unistore_serve(file_data):
+def get_pending_file(file):
+    ttl = file.ttl
+    if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL') and can_unistore_serve(file):
         return ok({
             'ttl': ttl,
-            'uri': get_unistore_nginx_serve_url(str(file_data['_id']))
+            'uri': get_unistore_nginx_serve_url(str(file.get_id()))
         })
     else:
-        return jsonify({'status': 'wait', 'ttl': file_data['ttl']})
+        return jsonify({'status': 'wait', 'ttl': ttl})
 
 
-def get_regular_file(file_data):
+def get_regular_file(file):
     return ok({
         'information': {
-            'name': file_data['filename'],
-            'size': file_data['length'],
-            'mimetype': file_data['contentType'],
-            'uri': get_gridfs_serve_url(str(file_data['_id'])),
-            'fileinfo': file_data.get('fileinfo', {})
+            'name': file.filename,
+            'size': file.length,
+            'mimetype': file.content_type,
+            'uri': get_gridfs_serve_url(str(file.get_id())),
+            'fileinfo': file.get('fileinfo', {})
         },
         'ttl': settings.TTL
     })

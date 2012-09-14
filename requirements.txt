@@ -14,3 +14,4 @@ pyyaml
 -e git://github.com/mediasite/openoffice-wrapper.git#egg=openoffice_wrapper-dev
 wtforms
 repoze.who==2.0
+monk==0.5.1

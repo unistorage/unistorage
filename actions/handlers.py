@@ -5,31 +5,32 @@ import settings
 import actions
 from actions import templates
 from utils import ValidationError, get_type_family
+from app.models import File, PendingFile
 
 
 def apply_actions(source_file, action_list, label):
-    source_id = source_file._id
-    if g.fs.exists(original=source_id, label=label):
-        target_file = g.fs.get_last_version(original=source_id, label=label)
-        target_id = target_file._id
-    else:
-        ttl_timedelta = settings.AVERAGE_TASK_TIME * (g.q.count + len(action_list))
-        ttl = int(ttl_timedelta.total_seconds())
-        target_kwargs = {
-            'user_id': request.user['_id'],
-            'original': source_id,
-            'label': label
-        }
+    source_id = source_file.get_id()
+    target_file = File.get_one(g.db, {'original': source_id, 'label': label})
 
-        target_file = g.fs.new_file(pending=True, ttl=ttl, actions=action_list,
-                original_content_type=source_file.content_type, **target_kwargs)
-        target_file.close()
-        target_id = target_file._id
+    if target_file:
+        return target_file.get_id()
 
-        g.q.enqueue('actions.tasks.perform_actions',
-                source_id, target_id, target_kwargs, action_list)
-        g.db.fs.files.update({'_id': source_id},
-                {'$set': {'modifications.%s' % label: target_id}})
+    ttl_timedelta = settings.AVERAGE_TASK_TIME * (g.q.count + len(action_list))
+    ttl = int(ttl_timedelta.total_seconds())
+    target_kwargs = {
+        'user_id': request.user['_id'],
+        'type_id': source_file.type_id,
+        'original': source_id,
+        'label': label,
+    }
+
+    target_id = PendingFile.put_to_fs(g.db, g.fs, ttl=ttl, actions=action_list,
+            original_content_type=source_file.content_type, **target_kwargs)
+
+    g.q.enqueue('actions.tasks.perform_actions',
+            source_id, target_id, target_kwargs, action_list)
+    g.db[File.collection].update({'_id': source_id},
+            {'$set': {'modifications.%s' % label: target_id}})
     return target_id
 
 

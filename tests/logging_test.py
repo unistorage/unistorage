@@ -55,7 +55,7 @@ class Test(GridFSMixin, ContextMixin, unittest.TestCase):
             resize(source_file, 'keep', -123123, 0)
 
         source_id = self.put_file(path)
-        target_id = g.fs.put('')
+        target_id = g.fs.put('', pending=True)
 
         # Make sure that it's logged
         self.assertEquals(len(self.handler.messages['error']), 0)
