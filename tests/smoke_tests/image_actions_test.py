@@ -6,11 +6,12 @@ import unittest
 from actions.images.convert import perform as convert
 from actions.images.resize import perform as resize
 from actions.images.grayscale import perform as grayscale
+from tests.utils import fixture_path
 
 
 class SmokeTest(unittest.TestCase):
-    TEST_IMAGES_DIR = './tests/images'
-    TEST_RESULTS_DIR = './tests/result_images'
+    TEST_IMAGES_DIR = fixture_path('images')
+    TEST_RESULTS_DIR = './tests/smoke_tests/results/result_images'
 
     @classmethod
     def setUpClass(cls):

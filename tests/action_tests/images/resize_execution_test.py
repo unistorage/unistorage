@@ -7,7 +7,7 @@ from tests.utils import FunctionalTest, WorkerMixin, ContextMixin
 
 class FunctionalTest(ContextMixin, FunctionalTest, WorkerMixin):
     def test(self):
-        original_id = self.put_file('./tests/images/some.jpeg')
+        original_id = self.put_file('./images/some.jpeg')
 
         url = '/%s/' % original_id
         self.check(url, width=640, height=480, mime='image/jpeg')
@@ -38,7 +38,7 @@ class FunctionalTest(ContextMixin, FunctionalTest, WorkerMixin):
         self.assertEquals(int(r.json['ttl']), settings.TTL)
 
     def test_validation_errors(self):
-        original_id = self.put_file('./tests/images/some.jpeg')
+        original_id = self.put_file('./images/some.jpeg')
 
         url = '/%s/' % original_id
 

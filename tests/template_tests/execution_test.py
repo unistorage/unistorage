@@ -9,13 +9,13 @@ class FunctionalTest(ContextMixin, FunctionalTest):
         }, headers=self.headers)
         template_id = r.json['id']
 
-        image_id = self.put_file('./tests/images/some.png')
+        image_id = self.put_file('images/some.png')
         apply_template_url = '/%s/?template=%s' % (image_id, template_id)
         r = self.app.get(apply_template_url, headers=self.headers)
 
         self.assertEquals(r.json['status'], 'ok')
 
-        video_id = self.put_file('./tests/videos/sample.3gp')
+        video_id = self.put_file('videos/sample.3gp')
         apply_template_url = '/%s/?template=%s' % (video_id, template_id)
         r = self.app.get(apply_template_url, headers=self.headers, status='*')
         

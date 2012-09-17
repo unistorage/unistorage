@@ -4,11 +4,12 @@ import shutil
 import unittest
 
 from actions.docs.convert import perform as convert
+from tests.utils import fixture_path
 
 
 class SmokeTest(unittest.TestCase):
-    TEST_DOCS_DIR = './tests/docs'
-    TEST_RESULTS_DIR = './tests/result_docs'
+    TEST_DOCS_DIR = fixture_path('docs')
+    TEST_RESULTS_DIR = './tests/smoke_tests/results/result_docs'
 
     @classmethod
     def setUpClass(cls):

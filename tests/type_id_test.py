@@ -12,6 +12,6 @@ class FunctionalTest(ContextMixin, FunctionalTest):
 
     def test(self):
         type_id = self.get_random_type_id()
-        file_id = self.put_file('./tests/images/some.jpeg',
+        file_id = self.put_file('./images/some.jpeg',
                 type_id=type_id)
         self.assertEquals(g.fs.get(file_id).type_id, type_id)

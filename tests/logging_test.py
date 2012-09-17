@@ -1,3 +1,4 @@
+import os
 import unittest
 import logging.config
 
@@ -7,7 +8,7 @@ from flask import g
 from actions.images.resize import perform as resize
 from actions.tasks import ActionException, perform_actions
 from file_utils import get_content_type
-from tests.utils import GridFSMixin, ContextMixin
+from tests.utils import GridFSMixin, ContextMixin, fixture_path
 
 
 class MockLoggingHandler(logging.Handler):
@@ -47,8 +48,8 @@ class Test(GridFSMixin, ContextMixin, unittest.TestCase):
     
     def test(self):
         """Tests that exception raised by action is logged"""
-        path = './tests/images/some.jpeg'
-        source_file = open(path, 'rb')
+        path = 'images/some.jpeg'
+        source_file = open(fixture_path(path), 'rb')
 
         # Make sure that exception raised
         with self.assertRaises(Exception):

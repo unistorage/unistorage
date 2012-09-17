@@ -3,7 +3,7 @@ from tests.utils import FunctionalTest, WorkerMixin, ContextMixin
 
 class FunctionalTest(FunctionalTest, WorkerMixin):
     def test(self):
-        original_id = self.put_file('./tests/images/some.png')
+        original_id = self.put_file('./images/some.png')
 
         url = '/%s/' % original_id
         self.check(url, width=43, height=43, mime='image/png')

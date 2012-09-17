@@ -3,7 +3,7 @@ from tests.utils import FunctionalTest, WorkerMixin, ContextMixin
 
 class FunctionalTest(FunctionalTest, WorkerMixin):
     def test_convert_docx_to_html(self):
-        original_id = self.put_file('./tests/docs/test.docx')
+        original_id = self.put_file('./docs/test.docx')
 
         url = '/%s/' % original_id
         r = self.app.get(url, headers=self.headers)
@@ -21,7 +21,7 @@ class FunctionalTest(FunctionalTest, WorkerMixin):
         self.assertTrue('xml' in mimetype or 'html' in mimetype)
 
     def test_convert_odt_to_pdf(self):
-        original_id = self.put_file('./tests/docs/test.odt')
+        original_id = self.put_file('./docs/test.odt')
 
         url = '/%s/' % original_id
         self.check(url, mime='application/vnd.oasis.opendocument.text')

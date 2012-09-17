@@ -15,6 +15,12 @@ import file_utils
 from app.models import User, Statistics, File
 
 
+FIXTURES_DIR = './tests/fixtures'
+
+def fixture_path(path):
+    return os.path.join(FIXTURES_DIR, path)
+
+
 class WorkerMixin(object):
     """Provides `run_worker` method to run all tasks from default queue."""
     def run_worker(self):
@@ -58,9 +64,10 @@ class GridFSMixin(object):
         g.db.fs.chunks.drop()
         g.db.fs.drop()
 
-    def put_file(self, filepath, user_id=ObjectId('50516e3e8149950f0fa50462'), type_id=None):
-        file = StringIO(open(filepath, 'rb').read())
-        file.name = file.filename = os.path.basename(filepath)
+    def put_file(self, path, user_id=ObjectId('50516e3e8149950f0fa50462'), type_id=None):
+        path = fixture_path(path)
+        file = StringIO(open(path, 'rb').read())
+        file.name = file.filename = os.path.basename(path)
         return File.put_to_fs(g.db, g.fs, file, **{
             'type_id': type_id,
             'user_id': user_id,
@@ -74,6 +81,7 @@ class FunctionalTest(unittest.TestCase):
         self.headers = {'Token': settings.TOKENS[0]}
 
     def put_file(self, path, type_id=None):
+        path = fixture_path(path)
         files = [('file', path)]
         params = {}
         if type_id is not None:

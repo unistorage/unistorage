@@ -7,20 +7,14 @@ import app
 import file_utils
 from actions.images import watermark
 from actions.utils import ValidationError
-from tests.utils import ContextMixin
+from tests.utils import ContextMixin, GridFSMixin
 
 
-class ValidationTest(ContextMixin, unittest.TestCase):
+class ValidationTest(GridFSMixin, ContextMixin, unittest.TestCase):
     def setUp(self):
         super(ValidationTest, self).setUp()
-        self.watermark_id = self.put_file('./tests/watermarks/watermark.png')
-
-    def put_file(self, path):
-        f = open(path, 'rb')
-        filename = os.path.basename(path)
-        content_type = file_utils.get_content_type(f)
-        return g.fs.put(f.read(), filename=filename, content_type=content_type)
-
+        self.watermark_id = self.put_file('watermarks/watermark.png')
+    
     def expect_validation_error(self, error):
         return self.assertRaisesRegexp(ValidationError, error)
 

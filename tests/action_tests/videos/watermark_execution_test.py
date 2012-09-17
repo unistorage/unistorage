@@ -3,8 +3,8 @@ from tests.utils import FunctionalTest, WorkerMixin, ContextMixin
 
 class FunctionalTest(FunctionalTest, WorkerMixin):
     def test(self):
-        watermark_id = self.put_file('./tests/watermarks/watermark.png')
-        source_id = self.put_file('./tests/videos/gizmo.mp4')
+        watermark_id = self.put_file('watermarks/watermark.png')
+        source_id = self.put_file('videos/gizmo.mp4')
 
         url = '/%s/' % source_id
         self.check(url, width=560, height=320, mime='video/mp4')
