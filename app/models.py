@@ -49,8 +49,9 @@ class Statistics(ValidationMixin, modeling.Document):
                 'summary.files_count += entry.files_count;' \
             '}',
             finalize='function(entry) {' \
-                'entry.files_size /= 1024 * 1024;' \
+                'entry.files_size /= (1024 * 1024);' \
                 'entry.files_size = entry.files_size.toFixed(2);' \
+                'entry.files_size = parseInt(entry.files_size);' \
             '}'
         )
 
@@ -73,12 +74,19 @@ class Statistics(ValidationMixin, modeling.Document):
     @classmethod
     def get_timely(cls, db, user_id, **kwargs):
         conditions = cls._get_conditions(user_id, **kwargs)
-        return cls._aggregate_statistics(db, ['user_id', 'timestamp'], conditions)
+        group_by = ['user_id', 'timestamp']
+        if 'type_id' in kwargs:
+            group_by.append('type_id')
+        return cls._aggregate_statistics(db, group_by, conditions)
 
     @classmethod
     def get_summary(cls, db, user_id, **kwargs):
         conditions = cls._get_conditions(user_id, **kwargs)
-        return cls._aggregate_statistics(db, ['user_id'], conditions)[0]
+        group_by = ['user_id']
+        if 'type_id' in kwargs:
+            group_by.append('type_id')
+        result = cls._aggregate_statistics(db, group_by, conditions)
+        return result[0] if result else None
 
 
 class File(ValidationMixin, modeling.Document):
@@ -116,7 +124,6 @@ class File(ValidationMixin, modeling.Document):
 
         today_utc_midnight = datetime.utcnow().replace(
                 hour=0, minute=0, second=0, microsecond=0)
-        today_utc_midnight -= timedelta(days=10)
         
         db[Statistics.collection].update({
             'user_id': kwargs.get('user_id'),

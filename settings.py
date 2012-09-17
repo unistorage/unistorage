@@ -8,6 +8,9 @@ import yaml
 DEBUG = False
 SECRET_KEY = 'qwertyuiop[]'
 
+ADMIN_USERNAME = 'admin'
+ADMIN_PASSWORD = 'admin' # Should we put md5 here?
+
 #Mongo
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017

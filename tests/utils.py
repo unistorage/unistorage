@@ -73,8 +73,10 @@ class GridFSMixin(object):
             'user_id': user_id,
         })
 
-
-class FunctionalTest(unittest.TestCase):
+from flask.ext.testing import TestCase
+class FunctionalTest(TestCase): #unittest.TestCase):
+    def create_app(self):
+        return app.app
     def setUp(self):
         super(FunctionalTest, self).setUp()
         self.app = TestApp(app.app)

@@ -96,18 +96,17 @@ def get_utc_today():
 
 @bp.route('/users/<ObjectId:user_id>', methods=['GET'])
 @login_required
-def statistics(user_id):
+def user_statistics(user_id):
     type_ids = Statistics.find(g.db, {
         'user_id': user_id,
         'type_id': {'$ne':None}
     }).distinct('type_id')
 
-
     args = [user_id]
-    kwargs = {
-        'type_id': request.args.get('type_id'),
-        'start':  get_utc_today() - timedelta(days=7)
-    }
+    kwargs = {}
+    if 'type_id' in request.args:
+        kwargs['type_id'] = request.args['type_id']
+    print args, kwargs
     statistics = Statistics.get_timely(g.db, *args, **kwargs)
     summary = Statistics.get_summary(g.db, *args, **kwargs)
 
@@ -115,7 +114,6 @@ def statistics(user_id):
     for entry in statistics:
         entry['timestamp'] = entry['timestamp'] \
                 .replace(tzinfo=tz.tzutc()).astimezone(local_zone)
-    
     return render_template('statistics.html', **{
         'user': User.get_one(g.db, {'_id': user_id}),
         'type_ids': type_ids,

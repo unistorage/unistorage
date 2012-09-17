@@ -17,7 +17,7 @@
       {% for user in users %}
         <tr>
           <td>
-            <a href="{{ url_for('.statistics', user_id=user._id) }}">
+            <a href="{{ url_for('.user_statistics', user_id=user._id) }}">
               {{ user.name }}
             </a>
           </td>
