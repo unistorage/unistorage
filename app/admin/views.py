@@ -1,12 +1,16 @@
 import functools
 
-from flask import g, request, redirect, url_for, render_template, flash, session, abort
+from dateutil import tz
+from datetime import timedelta, datetime
+from flask import (g, request, redirect, url_for,
+        render_template, flash, session, abort)
 
 import settings
 import forms
 import who
 from . import bp
-from app.models import User
+from app.models import User, Statistics
+
 
 def login_required(func):
     @functools.wraps(func)
@@ -86,7 +90,35 @@ def user_remove(_id):
     return redirect(url_for('.users'))
 
 
-@bp.route('/statistics', methods=['GET'])
+def get_utc_today():
+    return datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+@bp.route('/users/<ObjectId:user_id>', methods=['GET'])
 @login_required
-def statistics():
-    return render_template('statistics.html')
+def statistics(user_id):
+    type_ids = Statistics.find(g.db, {
+        'user_id': user_id,
+        'type_id': {'$ne':None}
+    }).distinct('type_id')
+
+
+    args = [user_id]
+    kwargs = {
+        'type_id': request.args.get('type_id'),
+        'start':  get_utc_today() - timedelta(days=7)
+    }
+    statistics = Statistics.get_timely(g.db, *args, **kwargs)
+    summary = Statistics.get_summary(g.db, *args, **kwargs)
+
+    local_zone = tz.tzlocal()
+    for entry in statistics:
+        entry['timestamp'] = entry['timestamp'] \
+                .replace(tzinfo=tz.tzutc()).astimezone(local_zone)
+    
+    return render_template('statistics.html', **{
+        'user': User.get_one(g.db, {'_id': user_id}),
+        'type_ids': type_ids,
+        'statistics': statistics,
+        'summary': summary
+    })

@@ -1,10 +1,11 @@
-from datetime import date, time, datetime
+from datetime import date, time, datetime, timedelta
 
+import pytz
 from bson import ObjectId
 from monk import modeling
 from monk.validation import ValidationError
 
-from file_utils import get_file_data
+import file_utils
 
 
 class ValidationMixin(object):
@@ -37,6 +38,48 @@ class Statistics(ValidationMixin, modeling.Document):
     }
     required = ['user_id', 'timestamp']
 
+    @classmethod
+    def _aggregate_statistics(cls, db, group_by, conditions):
+        return db[Statistics.collection].group(
+            group_by,
+            conditions,
+            {'files_size': 0, 'files_count': 0},
+            'function(entry, summary) {' \
+                'summary.files_size += entry.files_size;' \
+                'summary.files_count += entry.files_count;' \
+            '}',
+            finalize='function(entry) {' \
+                'entry.files_size /= 1024 * 1024;' \
+                'entry.files_size = entry.files_size.toFixed(2);' \
+            '}'
+        )
+
+    @classmethod
+    def _get_conditions(cls, user_id, type_id=None, start=None, end=None):
+        conditions = {'user_id': user_id}
+        
+        if type_id:
+            conditions['type_id'] = type_id
+        
+        timestamp_conditions = {}
+        if start or end:
+            if start: 
+                timestamp_conditions['$gte'] = start
+            if end: 
+                timestamp_conditions['$lte'] = end
+            conditions['timestamp'] = timestamp_conditions
+        return conditions
+
+    @classmethod
+    def get_timely(cls, db, user_id, **kwargs):
+        conditions = cls._get_conditions(user_id, **kwargs)
+        return cls._aggregate_statistics(db, ['user_id', 'timestamp'], conditions)
+
+    @classmethod
+    def get_summary(cls, db, user_id, **kwargs):
+        conditions = cls._get_conditions(user_id, **kwargs)
+        return cls._aggregate_statistics(db, ['user_id'], conditions)[0]
+
 
 class File(ValidationMixin, modeling.Document):
     collection = 'fs.files'
@@ -63,7 +106,7 @@ class File(ValidationMixin, modeling.Document):
 
     @classmethod
     def put_to_fs(cls, db, fs, data, **kwargs):
-        kwargs.update(get_file_data(data))
+        kwargs.update(file_utils.get_file_data(data))
         kwargs.update({
             'pending': False    
         })
@@ -71,11 +114,14 @@ class File(ValidationMixin, modeling.Document):
         cls(**kwargs).validate()
         file_id = fs.put(data, **kwargs)
 
-        start_of_the_day = datetime.combine(date.today(), time())
+        today_utc_midnight = datetime.utcnow().replace(
+                hour=0, minute=0, second=0, microsecond=0)
+        today_utc_midnight -= timedelta(days=10)
+        
         db[Statistics.collection].update({
             'user_id': kwargs.get('user_id'),
             'type_id': kwargs.get('type_id'),
-            'timestamp': start_of_the_day,
+            'timestamp': today_utc_midnight,
         }, {
             '$inc': {'files_count': 1, 'files_size': fs.get(file_id).length}
         }, upsert=True)

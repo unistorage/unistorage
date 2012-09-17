@@ -8,13 +8,11 @@
     <script>window.jQuery ||
         document.write('{% assets "jquery" %}<script src="{{ ASSET_URL }}"><\/script>{% endassets %}')</script>
 
-    {% assets "bootstrap", "css" %}
-      <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css">
-    {% endassets %}
-
-    {% assets "js" %}
-      <script src="{{ ASSET_URL }}"></script>
-    {% endassets %}
+    {% block static %}
+      {% assets "bootstrap", "css" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css">
+      {% endassets %}
+    {% endblock %}
   </head>
   <body>
     {% block body %}

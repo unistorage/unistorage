@@ -3,9 +3,9 @@
 {% set navigation_bar = [
     (url_for('admin.index'), 'index', 'Главная'),
     (url_for('admin.users'), 'users', 'Клиенты'),
-    (url_for('admin.statistics'), 'statistics', 'Статистика'),
     (url_for('admin.logout'), 'logout', 'Выйти'),
 ] -%}
+{#(url_for('admin.statistics'), 'statistics', 'Статистика'),#}
 {% set active_page = active_page|default('clients') -%}
 
 {% block body %}

@@ -103,7 +103,7 @@ def get_unistore_nginx_serve_url(path):
 def can_unistore_serve(file):
     original_content_type = file.original_content_type
     actions = file.actions
-
+    
     if not original_content_type.startswith('image') or len(actions) > 1:
         # If source file is not an image or more than one action was applied to it
         return False

@@ -16,7 +16,11 @@
     <tbody>
       {% for user in users %}
         <tr>
-          <td>{{ user.name }}</td>
+          <td>
+            <a href="{{ url_for('.statistics', user_id=user._id) }}">
+              {{ user.name }}
+            </a>
+          </td>
           <td>{{ user.token }}</td>
           <td class="actions">
             <a class="btn btn-danger btn-mini  remove-user"
