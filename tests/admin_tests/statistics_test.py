@@ -1,20 +1,19 @@
 # -*- coding: utf-8 -*-
+from functools import partial
 from datetime import datetime, timedelta
 
 from flask import url_for, g
 
 from app.models import User, Statistics
 from app.admin.forms import get_random_token
-from tests.utils import FunctionalTest, ContextMixin
-from tests.admin_tests.utils import AuthMixin
+from tests.utils import AdminFunctionalTest
 
-class FunctionalTest(ContextMixin, FunctionalTest, AuthMixin):
-    TEST_FILE_SIZE = 10 * 1024 * 1024
+
+class FunctionalTest(AdminFunctionalTest):
+    FILE_SIZE_BYTES = 5.5 * 1024 * 1024
 
     def setUp(self):
         super(FunctionalTest, self).setUp();
-        g.db[User.collection].drop()
-        g.db[Statistics.collection].drop()
         self.login()
 
     def put_statistics(self, user_id, timestamp, type_id=None):
@@ -23,12 +22,8 @@ class FunctionalTest(ContextMixin, FunctionalTest, AuthMixin):
             'type_id': type_id,
             'timestamp': timestamp,
             'files_count': 1,
-            'files_size': self.TEST_FILE_SIZE
+            'files_size': self.FILE_SIZE_BYTES
         })
-
-    def get_today(self):
-        return datetime.utcnow().replace(
-                hour=0, minute=0, second=0, microsecond=0)
 
     def create_user(self):
         user = User({
@@ -38,20 +33,35 @@ class FunctionalTest(ContextMixin, FunctionalTest, AuthMixin):
         return user.save(g.db)
 
     def fill_db(self):
-        user_id = self.create_user()
-        today = self.get_today()
-        self.put_statistics(user_id, today, type_id='lala')
-        self.put_statistics(user_id, today - timedelta(days=1), type_id='lala')
-        self.put_statistics(user_id, today - timedelta(days=2), type_id='lala')
-        self.put_statistics(user_id, today - timedelta(days=3), type_id='lala')
-        self.put_statistics(user_id, today - timedelta(days=10), type_id='lala')
-        self.put_statistics(user_id, today, type_id='bubu')
-        self.put_statistics(user_id, today)
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        self.user1_id = self.create_user()
+        put_statistics = partial(self.put_statistics, self.user1_id)
+        put_statistics(today)
+        put_statistics(today, type_id='bubu')
+        put_statistics(today, type_id='lala')
+        put_statistics(today - timedelta(days=1), type_id='lala')
+        put_statistics(today - timedelta(days=2), type_id='lala')
+        put_statistics(today - timedelta(days=3), type_id='lala')
+        put_statistics(today - timedelta(days=10), type_id='lala')
 
-        another_user_id = self.create_user()
-        self.put_statistics(another_user_id, today, type_id='lala')
-        self.put_statistics(another_user_id, today)
-        return user_id
+        self.user2_id = self.create_user()
+        put_statistics = partial(self.put_statistics, self.user2_id)
+        put_statistics(today)
+        put_statistics(today, type_id='lala')
+
+    def assert_statistics(self, response, files_number, statistics_len):
+        to_mb = lambda n: n / (1024. * 1024)
+        summary = response.context['summary']
+        statistics = response.context['statistics']
+
+        summary_size = summary['files_size']
+        expected_summary_size = to_mb(files_number * self.FILE_SIZE_BYTES)
+        self.assertAlmostEqual(summary_size, expected_summary_size)
+
+        summary_count = summary['files_count']
+        self.assertEquals(summary_count, files_number)
+        self.assertEquals(len(statistics), statistics_len)
     
     def test_empty(self):
         user_id = self.create_user()
@@ -61,30 +71,18 @@ class FunctionalTest(ContextMixin, FunctionalTest, AuthMixin):
 
     def test(self):
         user_id = self.fill_db()
-        user_statistics_url = url_for('admin.user_statistics', user_id=user_id)
-        response = self.app.get(user_statistics_url)
-        ctx_summary = self.get_context_variable('summary')
-        ctx_statistics = self.get_context_variable('statistics')
-        self.assertEquals(ctx_summary['files_size'], 70)
-        self.assertEquals(ctx_summary['files_count'], 7)
-        self.assertEquals(len(ctx_statistics), 5)
+        user1_statistics_url = url_for('admin.user_statistics', user_id=self.user1_id)
+        response = self.app.get(user1_statistics_url)
+        self.assert_statistics(response, 7, 5)
+        self.assertEquals(len(response.context['type_ids']), 2)
 
-    def test2(self):
-        user_id = self.fill_db()
-        user_statistics_url = url_for('admin.user_statistics', user_id=user_id)
-        response = self.app.get(user_statistics_url + '?type_id=lala')
-        ctx_summary = self.get_context_variable('summary')
-        ctx_statistics = self.get_context_variable('statistics')
-        self.assertEquals(ctx_summary['files_size'], 50)
-        self.assertEquals(ctx_summary['files_count'], 5)
-        self.assertEquals(len(ctx_statistics), 5)
+        response = self.app.get(user1_statistics_url + '?type_id=lala')
+        self.assert_statistics(response, 5, 5)
 
-    def test3(self):
-        user_id = self.fill_db()
-        user_statistics_url = url_for('admin.user_statistics', user_id=user_id)
-        response = self.app.get(user_statistics_url + '?type_id=bubu')
-        ctx_summary = self.get_context_variable('summary')
-        ctx_statistics = self.get_context_variable('statistics')
-        self.assertEquals(ctx_summary['files_size'], 10)
-        self.assertEquals(ctx_summary['files_count'], 1)
-        self.assertEquals(len(ctx_statistics), 1)
+        response = self.app.get(user1_statistics_url + '?type_id=bubu')
+        self.assert_statistics(response, 1, 1)
+        
+        user2_statistics_url = url_for('admin.user_statistics', user_id=self.user2_id)
+        response = self.app.get(user2_statistics_url)
+        self.assertEquals(len(response.context['type_ids']), 1)
+        self.assert_statistics(response, 2, 1)

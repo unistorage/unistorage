@@ -50,8 +50,8 @@ class Statistics(ValidationMixin, modeling.Document):
             '}',
             finalize='function(entry) {' \
                 'entry.files_size /= (1024 * 1024);' \
-                'entry.files_size = entry.files_size.toFixed(2);' \
-                'entry.files_size = parseInt(entry.files_size);' \
+                'entry.files_size = parseFloat(entry.files_size.toFixed(2));' \
+                'entry.files_count = parseInt(entry.files_count);' \
             '}'
         )
 
@@ -124,7 +124,7 @@ class File(ValidationMixin, modeling.Document):
 
         today_utc_midnight = datetime.utcnow().replace(
                 hour=0, minute=0, second=0, microsecond=0)
-        
+
         db[Statistics.collection].update({
             'user_id': kwargs.get('user_id'),
             'type_id': kwargs.get('type_id'),

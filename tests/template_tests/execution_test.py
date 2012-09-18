@@ -1,23 +1,23 @@
-from tests.utils import FunctionalTest, ContextMixin
+from tests.utils import StorageFunctionalTest
 
 
-class FunctionalTest(ContextMixin, FunctionalTest):
+class FunctionalTest(StorageFunctionalTest):
     def test(self):
         r = self.app.post('/create_template', {
             'applicable_for': 'image',
             'action[]': ['action=resize&mode=keep&w=400', 'action=grayscale']
-        }, headers=self.headers)
+        })
         template_id = r.json['id']
 
         image_id = self.put_file('images/some.png')
         apply_template_url = '/%s/?template=%s' % (image_id, template_id)
-        r = self.app.get(apply_template_url, headers=self.headers)
+        r = self.app.get(apply_template_url)
 
         self.assertEquals(r.json['status'], 'ok')
 
         video_id = self.put_file('videos/sample.3gp')
         apply_template_url = '/%s/?template=%s' % (video_id, template_id)
-        r = self.app.get(apply_template_url, headers=self.headers, status='*')
+        r = self.app.get(apply_template_url, status='*')
         
         self.assertEquals(r.status_code, 400)
         self.assertTrue('not applicable' in r.json['msg'])

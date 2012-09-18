@@ -1,47 +1,45 @@
 # -*- coding: utf-8 -*-
 from flask import url_for, g
 
-from app.models import User
-from tests.utils import FunctionalTest, ContextMixin
-from tests.admin_tests.utils import AuthMixin
+from tests.utils import AdminFunctionalTest
 
 
-class FunctionalTest(ContextMixin, FunctionalTest, AuthMixin):
-    def setUp(self):
-        super(FunctionalTest, self).setUp();
-        g.db[User.collection].drop()
-        self.login()
-
+class Test(AdminFunctionalTest):
     def test_create(self):
-        users = self.app.get(url_for('admin.users'))
-
-        self.assertTemplateUsed('users.html')
-        self.assertEquals(self.get_context_variable('users').count(), 0)
-        form = users.click(u'Добавить пользователя').form
+        self.login()
+        users_url = url_for('admin.users')
+        response = self.app.get(users_url)
+        self.assertTemplateUsed(response, 'users.html')
+        self.assertEquals(response.context['users'].count(), 0)
+        form = response.click(u'Добавить пользователя').form
+        
         response = form.submit()
-
-        ctx_form = self.get_context_variable('form')
-        self.assertFalse(ctx_form.validate())
+        self.assertTemplateUsed(response, 'user_create.html')
+        self.assertFalse(response.context['form'].validate())
 
         form = response.form
         form.set('name', 'John Doe')
-        users = form.submit()
-        self.assertTemplateUsed('users.html')
-        self.assertEquals(self.get_context_variable('users').count(), 1)
+        response = form.submit().follow()
+
+        self.assertTemplateUsed(response, 'users.html')
+        self.assertEquals(response.context['users'].count(), 1)
 
     def test_remove(self):
+        self.login()
         form = self.app.get(url_for('admin.user_create')).form
         form.set('name', 'Test')
-        users = form.submit().follow()
+        response = form.submit().follow()
 
-        u = self.get_context_variable('users')
-        self.assertEquals(u.count(), 1)
-        u._cursor.rewind()
-        user = u[0]
+        ctx_users = response.context['users']
+        self.assertEquals(ctx_users.count(), 1)
+
+        ctx_users._cursor.rewind()
+        user = ctx_users[0]
         user_remove_url = url_for('admin.user_remove', _id=user.get_id())
         
-        response = users.click(href=user_remove_url)
+        response = response.click(href=user_remove_url)
         self.assertEquals(response.status_code, 302)
-        users = response.follow()
-        u = self.get_context_variable('users')
-        self.assertEquals(u.count(), 0)
+
+        response = response.follow()
+        ctx_users = response.context['users']
+        self.assertEquals(ctx_users.count(), 0)

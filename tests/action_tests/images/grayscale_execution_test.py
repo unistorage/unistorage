@@ -1,7 +1,7 @@
-from tests.utils import FunctionalTest, WorkerMixin, ContextMixin
+from tests.utils import StorageFunctionalTest, WorkerMixin
 
 
-class FunctionalTest(FunctionalTest, WorkerMixin):
+class FunctionalTest(StorageFunctionalTest, WorkerMixin):
     def test(self):
         original_id = self.put_file('./images/some.png')
 
@@ -9,7 +9,7 @@ class FunctionalTest(FunctionalTest, WorkerMixin):
         self.check(url, width=43, height=43, mime='image/png')
 
         grayscale_action_url = url + '?action=grayscale'
-        r = self.app.get(grayscale_action_url, headers=self.headers)
+        r = self.app.get(grayscale_action_url)
         
         self.run_worker()
 

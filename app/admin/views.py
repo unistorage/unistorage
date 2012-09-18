@@ -101,12 +101,12 @@ def user_statistics(user_id):
         'user_id': user_id,
         'type_id': {'$ne':None}
     }).distinct('type_id')
-
+    
     args = [user_id]
     kwargs = {}
-    if 'type_id' in request.args:
+    if request.args.get('type_id'):
         kwargs['type_id'] = request.args['type_id']
-    print args, kwargs
+    
     statistics = Statistics.get_timely(g.db, *args, **kwargs)
     summary = Statistics.get_summary(g.db, *args, **kwargs)
 
@@ -114,6 +114,7 @@ def user_statistics(user_id):
     for entry in statistics:
         entry['timestamp'] = entry['timestamp'] \
                 .replace(tzinfo=tz.tzutc()).astimezone(local_zone)
+    
     return render_template('statistics.html', **{
         'user': User.get_one(g.db, {'_id': user_id}),
         'type_ids': type_ids,

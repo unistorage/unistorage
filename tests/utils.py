@@ -4,7 +4,7 @@ import os.path
 from StringIO import StringIO
 
 import redis
-from flask import g
+from flask import g, url_for
 from webtest import TestApp
 from bson.objectid import ObjectId
 from rq import Queue, Worker, use_connection
@@ -13,6 +13,8 @@ import app
 import settings
 import file_utils
 from app.models import User, Statistics, File
+from app.admin.forms import get_random_token
+from tests.flask_webtest import FlaskTestCase, FlaskTestApp
 
 
 FIXTURES_DIR = './tests/fixtures'
@@ -51,18 +53,14 @@ class ContextMixin(object):
         self.ctx.pop()
 
 
-class GridFSMixin(object):
+class GridFSMixin(ContextMixin):
     """
     Provides `put_file(path)` method to put file in GridFS.
     Requires Flask request context (see `ContextMixin`).
     """
     def setUp(self):
         super(GridFSMixin, self).setUp()
-        g.db[User.collection].drop()
-        g.db[Statistics.collection].drop()
-        g.db.fs.files.drop()
-        g.db.fs.chunks.drop()
-        g.db.fs.drop()
+        g.db_connection.drop_database(settings.MONGO_DB_NAME)
 
     def put_file(self, path, user_id=ObjectId('50516e3e8149950f0fa50462'), type_id=None):
         path = fixture_path(path)
@@ -73,14 +71,38 @@ class GridFSMixin(object):
             'user_id': user_id,
         })
 
-from flask.ext.testing import TestCase
-class FunctionalTest(TestCase): #unittest.TestCase):
-    def create_app(self):
-        return app.app
+
+class AdminFunctionalTest(ContextMixin, FlaskTestCase):
     def setUp(self):
-        super(FunctionalTest, self).setUp()
-        self.app = TestApp(app.app)
-        self.headers = {'Token': settings.TOKENS[0]}
+        super(AdminFunctionalTest, self).setUp()
+        self.app = FlaskTestApp(app.app)
+        g.db_connection.drop_database(settings.MONGO_DB_NAME)
+
+    def login(self):
+        form = self.app.get(url_for('admin.login')).form
+        form.set('login', settings.ADMIN_USERNAME)
+        form.set('password', settings.ADMIN_PASSWORD)
+        form.submit()
+
+
+class StorageFlaskTestApp(FlaskTestApp):
+    def __init__(self, app, test_token, **kwargs):
+        super(StorageFlaskTestApp, self).__init__(app, **kwargs)
+        self.test_token = test_token
+
+    def do_request(self, req, status, expect_errors):
+        req.headers.update({'Token': self.test_token})
+        return super(StorageFlaskTestApp, self).do_request(req, status, expect_errors)
+
+
+class StorageFunctionalTest(ContextMixin, FlaskTestCase):
+    def setUp(self):
+        super(StorageFunctionalTest, self).setUp()
+        g.db_connection.drop_database(settings.MONGO_DB_NAME)
+        
+        token = get_random_token()
+        User({'name': 'Test', 'token': token}).save(g.db)
+        self.app = StorageFlaskTestApp(app.app, token)
 
     def put_file(self, path, type_id=None):
         path = fixture_path(path)
@@ -89,7 +111,7 @@ class FunctionalTest(TestCase): #unittest.TestCase):
         if type_id is not None:
             params.update({'type_id': type_id})
             
-        r = self.app.post('/', params, headers=self.headers, upload_files=files)
+        r = self.app.post('/', params, upload_files=files)
         self.assertEquals(r.json['status'], 'ok')
         self.assertTrue('id' in r.json)
         return ObjectId(r.json['id'])
@@ -98,7 +120,7 @@ class FunctionalTest(TestCase): #unittest.TestCase):
         self.assertEquals(r.json['information']['fileinfo'][key], value)
 
     def check(self, url, width=None, height=None, mime=None):
-        r = self.app.get(url, headers=self.headers)
+        r = self.app.get(url)
         self.assertEquals(r.json['status'], 'ok')
         if width:
             self.assert_fileinfo(r, 'width', width)

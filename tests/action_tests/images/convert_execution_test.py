@@ -1,7 +1,7 @@
-from tests.utils import FunctionalTest, WorkerMixin, ContextMixin
+from tests.utils import WorkerMixin, StorageFunctionalTest 
 
 
-class FunctionalTest(FunctionalTest, WorkerMixin):
+class FunctionalTest(StorageFunctionalTest, WorkerMixin):
     def test(self):
         original_id = self.put_file('./images/some.jpeg')
 
@@ -9,7 +9,7 @@ class FunctionalTest(FunctionalTest, WorkerMixin):
         self.check(url, width=640, height=480, mime='image/jpeg')
         
         convert_action_url = url + '?action=convert&to=gif'
-        r = self.app.get(convert_action_url, headers=self.headers)
+        r = self.app.get(convert_action_url)
         self.assertEquals(r.json['status'], 'ok')
 
         self.run_worker()
