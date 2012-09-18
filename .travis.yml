@@ -9,6 +9,7 @@ before_install:
   - cp /usr/share/pyshared/uno.py $VIRTUAL_ENV/lib/python$PYTHON_VERSION/site-packages/ 
   - cp /usr/share/pyshared/unohelper.py $VIRTUAL_ENV/lib/python$PYTHON_VERSION/site-packages/
   - file -C -m ./magic
+  - sudo npm install -g less
 install:
   - pip install -r requirements.txt
 # command to run tests
