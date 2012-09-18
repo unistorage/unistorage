@@ -15,3 +15,4 @@ pyyaml
 wtforms
 repoze.who==2.0
 monk==0.5.1
+blinker # for Flask signals

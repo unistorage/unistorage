@@ -39,7 +39,7 @@ class WorkerMixin(object):
 
 class ContextMixin(object):
     """
-    Creates request context and run `app.before_request`, so that
+    Creates request context and runs `app.before_request`, so that
     `g` and `request` objects becomes available in tests.
     """
     def setUp(self):
