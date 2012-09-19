@@ -91,10 +91,6 @@ def user_remove(_id):
     return redirect(url_for('.users'))
 
 
-def get_utc_today():
-    return datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-
-
 @bp.route('/users/<ObjectId:user_id>', methods=['GET'])
 @login_required
 def user_statistics(user_id):

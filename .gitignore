@@ -3,3 +3,4 @@ settings_local.py
 *.pyc
 app/static/.webassets-cache
 app/static/gen
+cover
