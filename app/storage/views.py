@@ -10,7 +10,7 @@ from actions.utils import ValidationError
 from actions.handlers import apply_template, apply_action
 from utils import ok, error, methods_required
 from . import bp
-from app.models import File
+from app.models import File, Template
 
 
 def login_required(func):
@@ -56,11 +56,10 @@ def create_template_view():
     except ValidationError as e:
         return error({'msg': str(e)}), 400
     
-    template_collection = g.db[settings.MONGO_TEMPLATES_COLLECTION_NAME]
     template_data.update({
         'user_id': request.user['_id']
     })
-    template_id = template_collection.insert(template_data)
+    template_id = Template(template_data).save(g.db)
     return ok({'id': str(template_id)})
 
 

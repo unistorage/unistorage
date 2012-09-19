@@ -5,7 +5,7 @@ import settings
 import actions
 from actions import templates
 from utils import ValidationError, get_type_family
-from app.models import File, PendingFile
+from app.models import Template, File, PendingFile
 
 
 def apply_actions(source_file, action_list, label):
@@ -36,8 +36,7 @@ def apply_actions(source_file, action_list, label):
 
 def apply_template(source_file, args):
     template_id = ObjectId(args['template'])
-    templates = g.db[settings.MONGO_TEMPLATES_COLLECTION_NAME]
-    template = templates.find_one({'_id': template_id})
+    template = Template.get_one(g.db, {'_id': template_id})
 
     source_type_family = get_type_family(source_file.content_type)
     if source_type_family != template['applicable_for']:

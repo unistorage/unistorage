@@ -26,6 +26,17 @@ class User(ValidationMixin, modeling.Document):
     required = ['token']
 
 
+class Template(ValidationMixin, modeling.Document):
+    collection = 'templates'
+    structure = {
+        '_id': ObjectId,
+        'user_id': ObjectId,
+        'applicable_for': basestring,
+        'action_list': list
+    }
+    required = ['user_id', 'applicable_for', 'action_list']
+
+
 class Statistics(ValidationMixin, modeling.Document):
     collection = 'statistics.daily'
     structure = {

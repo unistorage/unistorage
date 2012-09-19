@@ -15,8 +15,6 @@ ADMIN_PASSWORD = 'admin' # Should we put md5 here?
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
 MONGO_DB_NAME = 'grid_fs'
-MONGO_USERS_COLLECTION_NAME = 'users'
-MONGO_TEMPLATES_COLLECTION_NAME = 'templates'
 
 MONGO_REPLICATION_ON = True
 MONGO_REPLICA_SET_URI = 'localhost:27017,localhost:27018'
