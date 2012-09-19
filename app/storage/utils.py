@@ -1,6 +1,9 @@
+import json
 import functools
 
-from flask import request, Blueprint, jsonify
+from bson.objectid import ObjectId
+from flask import request, Blueprint
+from flask.globals import current_app
 
 
 class StorageBlueprint(Blueprint):
@@ -16,11 +19,24 @@ def methods_required(methods):
         @functools.wraps(func)
         def f(*args, **kwargs):
             if request.method not in methods:
-                return jsonify({'status': 'error', 'msg': 'not implemented'}), 501
+                return error({'msg': 'not implemented'}), 501
             else:
                 return func(*args, **kwargs)
         return f
     return wrap
+
+
+class ObjectIdJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        return super(ObjectIdJSONEncoder, self).default(obj)
+
+
+# Watch for https://github.com/mitsuhiko/flask/pull/471
+def jsonify(data):
+    return current_app.response_class(
+            json.dumps(data, cls=ObjectIdJSONEncoder), mimetype='application/json')
 
 
 def ok(response):

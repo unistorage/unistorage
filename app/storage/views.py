@@ -1,14 +1,14 @@
 import functools
 
 from bson.objectid import ObjectId
-from flask import request, g, jsonify, abort
+from flask import request, g, abort
 
 import settings
 from actions import templates
 from file_utils import get_file_data
 from actions.utils import ValidationError
 from actions.handlers import apply_template, apply_action
-from utils import ok, error, methods_required
+from utils import ok, error, jsonify, methods_required
 from . import bp
 from app.models import File, Template
 
@@ -41,7 +41,7 @@ def index_view():
 
     file_id = File.put_to_fs(g.db, g.fs, file, **kwargs)
     return ok({
-        'id': str(file_id)
+        'id': file_id
     })
 
 
@@ -60,7 +60,7 @@ def create_template_view():
         'user_id': request.user['_id']
     })
     template_id = Template(template_data).save(g.db)
-    return ok({'id': str(template_id)})
+    return ok({'id': template_id})
 
 
 @bp.route('/<ObjectId:_id>/')
@@ -76,16 +76,16 @@ def id_view(_id=None):
     try:
         if action_presented and not template_presented:
             target_id = apply_action(source_file, request.args.to_dict())
-            return ok({'status': 'ok', 'id': str(target_id)})
+            return ok({'status': 'ok', 'id': target_id})
         elif template_presented and not action_presented:
             target_id = apply_template(source_file, request.args.to_dict())
-            return ok({'id': str(target_id)})
+            return ok({'id': target_id})
         elif action_presented and template_presented:
             raise ValidationError('You can\'t specify both `action` and `template`.')
     except ValidationError as e:
         return error({'msg': str(e)}), 400
 
-    if source_file.get('pending', False):
+    if source_file.pending:
         return get_pending_file(source_file)
     else:
         return get_regular_file(source_file)

@@ -7,6 +7,8 @@ from repoze.who.plugins.redirector import RedirectorPlugin
 from repoze.who.plugins.auth_tkt import AuthTktCookiePlugin
 from repoze.who.classifiers import default_request_classifier, default_challenge_decider
 
+import settings
+
 
 class StaticUserPlugin(object):
     def authenticate(self, environ, identity):
@@ -16,7 +18,7 @@ class StaticUserPlugin(object):
         except KeyError:
             return None
 
-        if (username, password) == ('admin', 'admin'):
+        if (username, password) == (settings.ADMIN_USERNAME, settings.ADMIN_PASSWORD):
             return username
 
 

@@ -23,16 +23,6 @@ class ObjectIdConverter(BaseConverter):
         return str(value)
 
 
-# Wait for https://github.com/mitsuhiko/flask/pull/471 
-#from flask.helpers import JSONEncoder
-#class ObjectIdJSONEncoder(JSONEncoder):
-    #def default(self, obj):
-        #if isinstance(obj, ObjectId):
-            #return str(obj)
-        #return super(ObjectIdJSONEncoder, self).default(obj)
-#app.json_encoder_class = ObjectIdJSONEncoder
-
-
 app = Flask(__name__)
 app.url_map.converters['ObjectId'] = ObjectIdConverter
 

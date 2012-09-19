@@ -1,7 +1,8 @@
+# -*- coding: utf-8 -*-
 import functools
+from datetime import timedelta, datetime
 
 from dateutil import tz
-from datetime import timedelta, datetime
 from flask import (g, request, redirect, url_for,
         render_template, flash, session, abort)
 
@@ -33,7 +34,7 @@ def login():
             response = redirect(location or url_for('.index'))
             response.headers.extend(headers)
             return response
-        flash(u'Wrong username or password', 'error')
+        flash(u'Неверный логин или пароль', 'error')
     return render_template('login.html', form=form)
 
 

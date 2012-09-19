@@ -3,7 +3,7 @@ from tests.utils import WorkerMixin, StorageFunctionalTest
 
 class FunctionalTest(StorageFunctionalTest, WorkerMixin):
     def test(self):
-        original_id = self.put_file('./images/some.jpeg')
+        original_id = self.put_file('images/some.jpeg')
 
         url = '/%s/' % original_id
         self.check(url, width=640, height=480, mime='image/jpeg')
