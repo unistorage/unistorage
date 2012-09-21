@@ -44,7 +44,7 @@ class ContextMixin(object):
     """
     def setUp(self):
         super(ContextMixin, self).setUp()
-        self.ctx = app.app.test_request_context()
+        self.ctx = app.create_app().test_request_context()
         self.ctx.push()
         app.before_request()
 
@@ -75,7 +75,7 @@ class GridFSMixin(ContextMixin):
 class AdminFunctionalTest(ContextMixin, FlaskTestCase):
     def setUp(self):
         super(AdminFunctionalTest, self).setUp()
-        self.app = FlaskTestApp(app.app)
+        self.app = FlaskTestApp(app.create_app())
         g.db_connection.drop_database(settings.MONGO_DB_NAME)
 
     def login(self):
@@ -102,7 +102,7 @@ class StorageFunctionalTest(ContextMixin, FlaskTestCase):
         
         token = get_random_token()
         User({'name': 'Test', 'token': token}).save(g.db)
-        self.app = StorageFlaskTestApp(app.app, token)
+        self.app = StorageFlaskTestApp(app.create_app(), token)
 
     def put_file(self, path, type_id=None):
         path = fixture_path(path)

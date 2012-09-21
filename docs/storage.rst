@@ -1,5 +1,5 @@
-Storage
-=======
+Storage blueprint
+=================
 
 .. automodule:: app.storage.utils
     :members:

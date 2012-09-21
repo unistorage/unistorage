@@ -32,7 +32,7 @@ class StorageBlueprint(Blueprint):
 def methods_required(methods):
     """Декоратор, ограничивающий методы до перечисленных в `methods`.
 
-    Если ``request.methods`` не находится в `methods`, декоратор возвращает JSON
+    Если ``request.method`` не находится в `methods`, декоратор возвращает JSON
     со статусом 501 и указанием о том, что метод не реализован.
 
     :param methods: допустимые методы

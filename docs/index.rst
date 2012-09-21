@@ -7,6 +7,7 @@ unistore
    glossary
    models
    storage
+   actions
 
 Разное
 ------
