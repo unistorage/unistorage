@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Валидация шаблонов
+==================
+"""
+
 from werkzeug.urls import url_decode
 
 import actions
@@ -31,17 +37,29 @@ def validate_and_get_template_actions(source_type_family, action_args_list):
     return result
     
         
-def validate_and_get_template(source_type_family, action_strings):
-    if not source_type_family:
+def validate_and_get_template(args):
+    """Проверяет, что `applicable_for` и `actions` присутствуют в `args`; проверяет
+    совместимость операций, указанных в `actions`. Возвращает "очищенные" данные
+    для создания шаблона.
+
+    :param args: аргументы
+    :type args: `dict(applicable_for=..., actions=list(...))`
+    :raises: ValidationError
+    :rtype: `dict(applicable_for=<type_family>,
+                  action_list=list(tuple(action_name, action_cleaned_args)))`
+    """
+    applicable_for = args.get('applicable_for')
+    if not applicable_for:
         raise ValidationError('`applicable_for` is not specified.')
 
+    action_strings = args.get('actions')
     if not action_strings:
         raise ValidationError('`actions` must contain at least one action.')
     
     action_args_list = [url_decode(url) for url in action_strings]
-    action_list = validate_and_get_template_actions(source_type_family, action_args_list)
+    action_list = validate_and_get_template_actions(applicable_for, action_args_list)
 
     return {
-        'applicable_for': source_type_family,
+        'applicable_for': applicable_for,
         'action_list': action_list
     }

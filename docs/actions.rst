@@ -37,3 +37,6 @@ API
 
 .. automodule:: actions.handlers
     :members:
+
+.. automodule:: actions.templates
+    :members:

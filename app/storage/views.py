@@ -57,9 +57,10 @@ def index_view():
 def create_template_view():
     """Вьюшка, создающая :term:`шаблон`."""
     try:
-        template_data = templates.validate_and_get_template(
-                request.form.get('applicable_for'),
-                request.form.getlist('action[]'))
+        template_data = templates.validate_and_get_template({
+            'applicable_for': request.form.get('applicable_for'),
+            'actions': request.form.getlist('action[]'),
+        })
     except ValidationError as e:
         return error({'msg': str(e)}), 400
     
