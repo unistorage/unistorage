@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from datetime import date, time, datetime, timedelta
 
 import pytz
@@ -17,6 +18,16 @@ class ValidationMixin(object):
 
 
 class User(ValidationMixin, modeling.Document):
+    """Реализация сущности :term:`пользователь`.
+
+    .. attribute:: name
+
+        Имя пользователя в свободной форме.
+
+    .. attribute:: token
+
+        Токен для авторизации.
+    """
     collection = 'users'
     structure = {
         '_id': ObjectId,
@@ -27,6 +38,20 @@ class User(ValidationMixin, modeling.Document):
 
 
 class Template(ValidationMixin, modeling.Document):
+    """Реализация сущности :term:`шаблон`.
+
+    .. attribute:: user_id
+
+        :class:`ObjectId` создателя шаблона.
+
+    .. attribute:: applicable_for
+
+        :term:`Семейство типов`, к которому применим шаблон.
+
+    .. attribute:: action_list
+
+        Список операций шаблона.
+    """
     collection = 'templates'
     structure = {
         '_id': ObjectId,
@@ -38,6 +63,32 @@ class Template(ValidationMixin, modeling.Document):
 
 
 class Statistics(ValidationMixin, modeling.Document):
+    """Статистика, отражающая суммарный объем и количество файлов,
+    появившихся в хранилище в конкретную дату.
+
+    Файлы учитываются как залитые пользователем, так и полученные в 
+    результате операций, произведённых им.
+
+    .. attribute:: user_id
+
+        :class:`ObjectId` пользователя, для которого собирается статистика.
+    
+    .. attribute:: type_id
+
+        :term:`Идентификатор контента` файлов, для которых собирается статистика.
+
+    .. attribute:: timestamp
+
+        :class:`datetime` начала дня, для которого собирается статистика, в формате UTC.
+
+    .. attribute:: files_count
+
+        Суммарное количество файлов.
+
+    .. attribute:: files_size
+
+        Cуммарный объём файлов в байтах.
+    """
     collection = 'statistics.daily'
     structure = {
         '_id': ObjectId,
@@ -50,7 +101,11 @@ class Statistics(ValidationMixin, modeling.Document):
     required = ['user_id', 'timestamp']
 
     @classmethod
-    def _aggregate_statistics(cls, db, group_by, conditions):
+    def aggregate_statistics(cls, db, group_by, conditions):
+        """Агрегирует статистику, группируя по полям, указанным в `group_by`,
+        и фильтруя по условиям, указанным в `conditions`.
+        После агрегации приводит `files_size` к мегабайтам, а `files_count` -- к целому числу.
+        """
         return db[Statistics.collection].group(
             group_by,
             conditions,
@@ -84,23 +139,73 @@ class Statistics(ValidationMixin, modeling.Document):
 
     @classmethod
     def get_timely(cls, db, user_id, **kwargs):
+        """Возвращает статистику для пользователя `user_id`, агрегированную по дням.
+
+        Если `kwargs` содержит поле `type_id`, то статистика считается только для файлов,
+        имеющих заданный :term:`идентификатор контента`. Если `kwargs` содержит поля
+        `start` и/или `end`, агрегироваться будет статистика только между этими датами.
+        
+        :rtype: list({'user_id': ..., 'files_count': ..., 'files_size: ...})
+        """
         conditions = cls._get_conditions(user_id, **kwargs)
         group_by = ['user_id', 'timestamp']
         if 'type_id' in kwargs:
             group_by.append('type_id')
-        return cls._aggregate_statistics(db, group_by, conditions)
+        return cls.aggregate_statistics(db, group_by, conditions)
 
     @classmethod
     def get_summary(cls, db, user_id, **kwargs):
+        """Агрегирует всю доступную статистику для пользователя `user_id`.
+        `kwargs` имеют то же значение, что и в :func:`get_timely`
+
+        :rtype: {'user_id': ..., 'files_count': ..., 'files_size: ...}
+        """
         conditions = cls._get_conditions(user_id, **kwargs)
         group_by = ['user_id']
         if 'type_id' in kwargs:
             group_by.append('type_id')
-        result = cls._aggregate_statistics(db, group_by, conditions)
+        result = cls.aggregate_statistics(db, group_by, conditions)
         return result[0] if result else None
 
 
 class File(ValidationMixin, modeling.Document):
+    """Реализация базовой сущности "файл" (см. :term:`временный файл` и :term:`обычный файл`).
+
+    .. attribute:: user_id
+    
+        :class:`ObjectId` владельца файла.
+    
+    .. attribute:: type_id
+
+        :term:`Идентификатор контента` файла.
+
+    .. attribute:: fileinfo
+
+        Словарь с дополнительной информацией о файле (например, ширина и высота для картинки,
+        кодек для видео и так далее).
+
+    .. attribute:: original
+
+        Если файл получен в результате применения операции, это поле содержит
+        :class:`ObjectId` оригинального файла.
+
+    .. attribute:: label
+
+        Если файл получен в результате применения операции, это поле содержит
+        идентификатор, уникальный среди всех файлов с тем же самым `original`.
+
+    .. attribute:: filename
+
+        Имя файла.
+
+    .. attribute:: content_type
+
+        MIME-type файла.
+
+    .. attribute:: pending
+
+        Является ли файл временным.
+    """
     collection = 'fs.files'
     structure = {
         '_id': ObjectId,
@@ -118,6 +223,8 @@ class File(ValidationMixin, modeling.Document):
 
     @classmethod
     def wrap_incoming(cls, data, db):
+        """Преобразование Mongo- к Python-нотации (``contentType`` -> ``content_type``)
+        для объектов, приходящих из базы данных."""
         data['content_type'] = data.pop('contentType', None)
         data['upload_date'] = data.pop('uploadDate', None)
         data['chunk_size'] = data.pop('chunkSize', None)
@@ -125,6 +232,20 @@ class File(ValidationMixin, modeling.Document):
 
     @classmethod
     def put_to_fs(cls, db, fs, data, **kwargs):
+        """Обновляет поля `fileinfo`, `content_type`, `filename` у kwargs,
+        помещает `data` в GridFS и обновляет статистику.
+        
+        Обычные файлы должны помещаться в GridFS исключительно посредством
+        этого метода.
+
+        :param db: база данных
+        :type db: pymongo.Connection
+        :param fs: файловая система
+        :type fs: gridfs.GridFs
+        :param data: файл
+        :type data: file-like object с атрибутом `name`, содержащим имя файла
+        :param **kwargs: дополнительные параметры, которые станут атрибутами файла в GridFS
+        """
         kwargs.update(file_utils.get_file_data(data))
         kwargs.update({
             'pending': False    
@@ -147,6 +268,23 @@ class File(ValidationMixin, modeling.Document):
 
 
 class PendingFile(File):
+    """Реализация сущности :term:`временный файл`.
+    Наследуется от :class:`File` и вводит следующие дополнительные атрибуты:
+
+    .. attribute:: ttl
+
+        Примерное время в секундах, через которое будут выполнены все `actions`
+        и файл перестанет быть временным.
+
+    .. attribute:: actions
+
+        Список операций, применяемых к `original`.
+
+    .. attribute:: original_content_type
+
+       Денормализация для `original.content_type`.
+
+    """
     structure = dict(File.structure, **{
         'pending': True,
         'ttl': int,
@@ -168,6 +306,11 @@ class PendingFile(File):
 
     @classmethod
     def put_to_fs(cls, db, fs, **kwargs):
+        """Помещает :term:`временный файл` в GridFS.
+        
+        Временные файлы должны помещаться в GridFS исключительно посредством
+        этого метода.
+        """
         kwargs.update({'pending': True})
         cls(**kwargs).validate()
         file_id = fs.put('', **kwargs)

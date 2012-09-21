@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""
+Storage views
+=============
+"""
 import functools
 
 from bson.objectid import ObjectId
@@ -26,6 +31,7 @@ def login_required(func):
 @methods_required(['POST'])
 @login_required
 def index_view():
+    """Вьюшка, сохраняющая файл в хранилище."""
     file = request.files.get('file')
     if not file:
         return error({'msg': 'File wasn\'t found'}), 400
@@ -49,6 +55,7 @@ def index_view():
 @methods_required(['POST'])
 @login_required
 def create_template_view():
+    """Вьюшка, создающая :term:`шаблон`."""
     try:
         template_data = templates.validate_and_get_template(
                 request.form.get('applicable_for'),
@@ -67,6 +74,12 @@ def create_template_view():
 @methods_required(['GET'])
 @login_required
 def id_view(_id=None):
+    """Вьюшка, ответственная за три вещи:
+
+    - Применение операции к файлу `id`, если GET-запрос содержит аргумент `action`
+    - Применение шаблона к файлу `id`, если GET-запрос содержит аргумент `template`
+    - Выдача информации о файле `id` во всех остальных случаях
+    """
     source_file = File.get_one(g.db, {'_id': _id})
     if not source_file:
         return error({'msg': 'File wasn\'t found'}), 400
@@ -76,7 +89,7 @@ def id_view(_id=None):
     try:
         if action_presented and not template_presented:
             target_id = apply_action(source_file, request.args.to_dict())
-            return ok({'status': 'ok', 'id': target_id})
+            return ok({'id': target_id})
         elif template_presented and not action_presented:
             target_id = apply_template(source_file, request.args.to_dict())
             return ok({'id': target_id})
@@ -92,14 +105,35 @@ def id_view(_id=None):
 
 
 def get_gridfs_serve_url(path):
+    """Возвращает путь к gridfs-serve (`path` становится постфиксом ``settings.GRIDFS_SERVE_URL``).
+
+    :param path: путь
+    :type path: basestring
+    """
     return '%s/%s' % (settings.GRIDFS_SERVE_URL, path.lstrip('/'))
 
 
 def get_unistore_nginx_serve_url(path):
+    """Возвращает путь к unistore-nginx-serve
+    (`path` становится постфиксом ``settings.UNISTORE_NGINX_SERVE_URL``).
+
+    Предполагает, что :class:`settings` имеет атрибут ``UNISTORE_NGINX_SERVE_URL``
+    (он опционален).
+
+    :param path: путь
+    :type path: basestring
+    """
     return '%s/%s' % (settings.UNISTORE_NGINX_SERVE_URL, path.lstrip('/'))
 
 
 def can_unistore_serve(file):
+    """Возвращает True, если `file` может быть отдан с помощью
+    unistore-nginx-serve (например, в случае, если `file` -- картинка, для
+    которой заказан ресайз).
+
+    :param file: :term:`временный файл`
+    :type file: :class:`app.models.File`
+    """
     original_content_type = file.original_content_type
     actions = file.actions
     
@@ -117,6 +151,11 @@ def can_unistore_serve(file):
 
 
 def get_pending_file(file):
+    """Возвращает JSON-строку с информацией о `file`.
+    
+    :param file: :term:`временный файл`
+    :type file: :class:`app.models.File` 
+    """
     ttl = file.ttl
     if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL') and can_unistore_serve(file):
         return ok({
@@ -128,6 +167,11 @@ def get_pending_file(file):
 
 
 def get_regular_file(file):
+    """Возвращает JSON-строку с информацией о `file`.
+    
+    :param file: :term:`обычный файл`
+    :type file: :class:`app.models.File` 
+    """
     return ok({
         'information': {
             'name': file.filename,
