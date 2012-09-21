@@ -1,0 +1,33 @@
+{% extends 'base_unauth.html' %}
+
+{% set navigation_bar = [
+    (url_for('admin.index'), 'index', 'Главная'),
+    (url_for('admin.users'), 'users', 'Клиенты'),
+    (url_for('admin.logout'), 'logout', 'Выйти'),
+] -%}
+
+{% set active_page = active_page|default('index') -%}
+
+{% block body %}
+  <div class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+      <div class="container" style="width: auto; padding: 0 20px;">
+        <a class="brand" href="#">Unistore</a>
+        <ul class="nav">
+          {% block menu %}
+            {% for href, id, caption in navigation_bar %}
+              <li{% if id == active_page %} class="active"{% endif%}>
+                <a href="{{ href|e }}">{{ caption|e }}</a>
+              </li>
+            {% endfor %}
+          {% endblock %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    {% block content %}
+    {% endblock %}
+  </div>
+{% endblock %}

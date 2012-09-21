@@ -4,11 +4,12 @@ import shutil
 import unittest
 
 from actions.videos.convert import perform as convert
+from tests.utils import fixture_path
 
 
 class SmokeTest(unittest.TestCase):
-    TEST_VIDEOS_DIR = './tests/videos'
-    TEST_RESULTS_DIR = './tests/result_videos'
+    TEST_VIDEOS_DIR = fixture_path('videos')
+    TEST_RESULTS_DIR = './tests/smoke_tests/results/result_videos'
 
     CONVERT_TARGETS = {
         'ogg': {'vcodec': ['theora'], 'acodec': 'vorbis'},

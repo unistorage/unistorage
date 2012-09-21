@@ -1,16 +1,26 @@
 import unittest
 import sys
 import os.path
+from StringIO import StringIO
 
 import redis
-from flask import g
+from flask import g, url_for
 from webtest import TestApp
 from bson.objectid import ObjectId
 from rq import Queue, Worker, use_connection
 
 import app
 import settings
-import fileutils
+import file_utils
+from app.models import User, Statistics, File
+from app.admin.forms import get_random_token
+from tests.flask_webtest import FlaskTestCase, FlaskTestApp
+
+
+FIXTURES_DIR = './tests/fixtures'
+
+def fixture_path(path):
+    return os.path.join(FIXTURES_DIR, path)
 
 
 class WorkerMixin(object):
@@ -29,7 +39,7 @@ class WorkerMixin(object):
 
 class ContextMixin(object):
     """
-    Creates request context and run `app.before_request`, so that
+    Creates request context and runs `app.before_request`, so that
     `g` and `request` objects becomes available in tests.
     """
     def setUp(self):
@@ -43,27 +53,65 @@ class ContextMixin(object):
         self.ctx.pop()
 
 
-class GridFSMixin(object):
+class GridFSMixin(ContextMixin):
     """
     Provides `put_file(path)` method to put file in GridFS.
     Requires Flask request context (see `ContextMixin`).
     """
-    def put_file(self, path):
-        f = open(path, 'rb')
-        filename = os.path.basename(path)
-        content_type = fileutils.get_content_type(f)
-        return g.fs.put(f.read(), filename=filename, content_type=content_type)
-
-
-class FunctionalTest(unittest.TestCase):
     def setUp(self):
-        super(FunctionalTest, self).setUp()
-        self.app = TestApp(app.app)
-        self.headers = {'Token': settings.TOKENS[0]}
+        super(GridFSMixin, self).setUp()
+        g.db_connection.drop_database(settings.MONGO_DB_NAME)
 
-    def put_file(self, path):
-        files = [('file', os.path.basename(path), open(path, 'rb').read())]
-        r = self.app.post('/', headers=self.headers, upload_files=files)
+    def put_file(self, path, user_id=ObjectId('50516e3e8149950f0fa50462'), type_id=None):
+        path = fixture_path(path)
+        file = StringIO(open(path, 'rb').read())
+        file.name = file.filename = os.path.basename(path)
+        return File.put_to_fs(g.db, g.fs, file, **{
+            'type_id': type_id,
+            'user_id': user_id,
+        })
+
+
+class AdminFunctionalTest(ContextMixin, FlaskTestCase):
+    def setUp(self):
+        super(AdminFunctionalTest, self).setUp()
+        self.app = FlaskTestApp(app.app)
+        g.db_connection.drop_database(settings.MONGO_DB_NAME)
+
+    def login(self):
+        form = self.app.get(url_for('admin.login')).form
+        form.set('login', settings.ADMIN_USERNAME)
+        form.set('password', settings.ADMIN_PASSWORD)
+        form.submit()
+
+
+class StorageFlaskTestApp(FlaskTestApp):
+    def __init__(self, app, test_token, **kwargs):
+        super(StorageFlaskTestApp, self).__init__(app, **kwargs)
+        self.test_token = test_token
+
+    def do_request(self, req, status, expect_errors):
+        req.headers.update({'Token': self.test_token})
+        return super(StorageFlaskTestApp, self).do_request(req, status, expect_errors)
+
+
+class StorageFunctionalTest(ContextMixin, FlaskTestCase):
+    def setUp(self):
+        super(StorageFunctionalTest, self).setUp()
+        g.db_connection.drop_database(settings.MONGO_DB_NAME)
+        
+        token = get_random_token()
+        User({'name': 'Test', 'token': token}).save(g.db)
+        self.app = StorageFlaskTestApp(app.app, token)
+
+    def put_file(self, path, type_id=None):
+        path = fixture_path(path)
+        files = [('file', path)]
+        params = {}
+        if type_id is not None:
+            params.update({'type_id': type_id})
+            
+        r = self.app.post('/', params, upload_files=files)
         self.assertEquals(r.json['status'], 'ok')
         self.assertTrue('id' in r.json)
         return ObjectId(r.json['id'])
@@ -72,7 +120,7 @@ class FunctionalTest(unittest.TestCase):
         self.assertEquals(r.json['information']['fileinfo'][key], value)
 
     def check(self, url, width=None, height=None, mime=None):
-        r = self.app.get(url, headers=self.headers)
+        r = self.app.get(url)
         self.assertEquals(r.json['status'], 'ok')
         if width:
             self.assert_fileinfo(r, 'width', width)

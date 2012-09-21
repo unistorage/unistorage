@@ -1,14 +1,20 @@
 import sys
+import logging.config
 from datetime import timedelta
 
+import yaml
+
+
 DEBUG = False
+SECRET_KEY = 'qwertyuiop[]'
+
+ADMIN_USERNAME = 'admin'
+ADMIN_PASSWORD = 'admin' # Should we put md5 here?
 
 #Mongo
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
 MONGO_DB_NAME = 'grid_fs'
-MONGO_USERS_COLLECTION_NAME = 'users'
-MONGO_TEMPLATES_COLLECTION_NAME = 'templates'
 
 MONGO_REPLICATION_ON = True
 MONGO_REPLICA_SET_URI = 'localhost:27017,localhost:27018'
@@ -48,3 +54,6 @@ if 'test' in sys.argv[0]: # Is there another way?
         from settings_test import *
     except ImportError:
         pass
+
+config = yaml.load(open('./logging.conf'))
+logging.config.dictConfig(config)

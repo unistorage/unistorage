@@ -3,17 +3,18 @@ import logging
 
 import gridfs
 from bson.objectid import ObjectId
-from pymongo import Connection, ReplicaSetConnection
 
 import settings
 from connections import get_mongodb_connection
-from fileutils import get_file_data, get_content_type, convert_to_filename
+from file_utils import get_file_data, get_content_type, convert_to_filename
 from actions import get_action, ActionException
 from actions.utils import get_type_family
+from app.models import File
 
 
 connection = get_mongodb_connection()
-fs = gridfs.GridFS(connection[settings.MONGO_DB_NAME])
+db = connection[settings.MONGO_DB_NAME]
+fs = gridfs.GridFS(db)
 
 
 LOG_TEMPLATE = '''
@@ -27,8 +28,12 @@ LOG_TEMPLATE = '''
 '''
 
 
-def perform_action_list(source_id, target_id, target_kwargs, action_list):
+def perform_actions(source_id, target_id, target_kwargs, action_list):
     source_file = fs.get(source_id)
+    target_file = fs.get(target_id)
+    assert not source_file.pending
+    assert target_file.pending
+
     source_file_name, source_file_ext = os.path.splitext(source_file.name)
 
     curr_file = source_file
@@ -67,8 +72,10 @@ def perform_action_list(source_id, target_id, target_kwargs, action_list):
     target_file_ext = curr_file_ext
     target_file.filename = target_file.name = \
             convert_to_filename('%s.%s' % (target_file_name, target_file_ext))
-    target_kwargs.update(get_file_data(target_file))
-
+    target_kwargs['_id'] = target_id
+    
+    # Remove pending file
     fs.delete(target_id)
-    fs.put(target_file, _id=target_id, **target_kwargs)
+    # Put regular file with the same id
+    File.put_to_fs(db, fs, target_file, **target_kwargs)
     target_file.close()

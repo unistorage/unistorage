@@ -1,3 +1,4 @@
+import os
 import unittest
 import logging.config
 
@@ -5,9 +6,9 @@ import yaml
 from flask import g
 
 from actions.images.resize import perform as resize
-from tasks import ActionException, perform_action_list
-from fileutils import get_content_type
-from tests.utils import GridFSMixin, ContextMixin
+from actions.tasks import ActionException, perform_actions
+from file_utils import get_content_type
+from tests.utils import GridFSMixin, ContextMixin, fixture_path
 
 
 class MockLoggingHandler(logging.Handler):
@@ -29,7 +30,7 @@ class MockLoggingHandler(logging.Handler):
         }
 
 
-class Test(ContextMixin, GridFSMixin, unittest.TestCase):
+class Test(GridFSMixin, ContextMixin, unittest.TestCase):
     def setUp(self):
         super(Test, self).setUp()
         # Mock logger
@@ -47,19 +48,19 @@ class Test(ContextMixin, GridFSMixin, unittest.TestCase):
     
     def test(self):
         """Tests that exception raised by action is logged"""
-        path = './tests/images/some.jpeg'
-        source_file = open(path, 'rb')
+        path = 'images/some.jpeg'
+        source_file = open(fixture_path(path), 'rb')
 
         # Make sure that exception raised
         with self.assertRaises(Exception):
             resize(source_file, 'keep', -123123, 0)
 
         source_id = self.put_file(path)
-        target_id = g.fs.put('')
+        target_id = g.fs.put('', pending=True)
 
         # Make sure that it's logged
         self.assertEquals(len(self.handler.messages['error']), 0)
-        perform_action_list(source_id, target_id, {}, [('resize', ['keep', -123123, 0])])
+        perform_actions(source_id, target_id, {}, [('resize', ['keep', -123123, 0])])
         logged_message = self.handler.messages['error'][0]
         self.handler.reset()
         self.assertTrue('Action failed' in logged_message)

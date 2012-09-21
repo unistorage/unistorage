@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Unistore admin</title>
+    <meta charset="utf-8" />
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
+    <script>window.jQuery ||
+        document.write('{% assets "jquery" %}<script src="{{ ASSET_URL }}"><\/script>{% endassets %}')</script>
+
+    {% block static %}
+      {% assets "bootstrap", "css" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css">
+      {% endassets %}
+    {% endblock %}
+  </head>
+  <body>
+    {% block body %}
+      <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+
+        {% block content %}
+        {% endblock %}
+      </div>
+    {% endblock %}
+  </body>
+</html>

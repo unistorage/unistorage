@@ -1,5 +1,7 @@
-tests/result_images
-tests/result_docs
-tests/result_videos
+tests/smoke_tests/results
 settings_local.py
 *.pyc
+app/static/.webassets-cache
+app/static/gen
+cover
+.coverage
