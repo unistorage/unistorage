@@ -8,8 +8,10 @@ class ActionException(Exception):
 actions = defaultdict(dict) # Map family types to lists of applicable actions
 
 def register_action(action):
-    for type_family in action.type_families_applicable_for:
-        actions[type_family][action.name] = action
+    for required_attr in ('name', 'result_type_family', 'applicable_for',
+            'validate_and_get_args', 'perform'):
+        assert hasattr(action, required_attr)
+    actions[action.applicable_for][action.name] = action
 
 def get_action(type_family, name):
     # Get actions that applicable for given type family
@@ -25,11 +27,17 @@ register_action(images.convert)
 import images.resize
 register_action(images.resize)
 
-import images.make_grayscale
-register_action(images.make_grayscale)
+import images.grayscale
+register_action(images.grayscale)
+
+import images.watermark
+register_action(images.watermark)
 
 import videos.convert
 register_action(videos.convert)
+
+import videos.watermark
+register_action(videos.watermark)
 
 import docs.convert
 register_action(docs.convert)

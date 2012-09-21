@@ -7,7 +7,7 @@ from actions.utils import ValidationError
 
 
 name = 'convert'
-type_families_applicable_for = ['doc']
+applicable_for = 'doc'
 result_type_family = 'doc'
 
 

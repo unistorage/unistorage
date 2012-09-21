@@ -1,6 +1,7 @@
 import os
 import tempfile
 import subprocess
+from StringIO import StringIO
 
 from converter import Converter
 
@@ -10,7 +11,7 @@ from actions.utils import *
 
 
 name = 'convert'
-type_families_applicable_for = ['video']
+applicable_for = 'video'
 result_type_family = 'video'
 
 
@@ -65,6 +66,18 @@ def validate_and_get_args(args):
     return [format, vcodec, acodec]
 
 
+def run_flvtool(file_path):
+    try:
+        proc = subprocess.Popen([settings.FLVTOOL_BIN, '-U', file_path],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError as e:
+        raise ActionException('Failed to start `flvtool`: %s' % settings.FLVTOOL_BIN)
+    stdout_data, stderr_data = proc.communicate()
+    return_code = proc.wait()
+    if return_code != 0:
+        raise ActionException('`flvtool` failed. Stderr: %s' % stderr_data)
+
+
 def perform(source_file, format, vcodec, acodec, only_try=False):
     tmp_source_file = tempfile.NamedTemporaryFile(delete=False)
     tmp_source_file.write(source_file.read())
@@ -88,19 +101,11 @@ def perform(source_file, format, vcodec, acodec, only_try=False):
         for timecode in convertion:
             if only_try:
                 break
-        
-        if format == 'flv':
-            try:
-                proc = subprocess.Popen([settings.FLVTOOL_BIN, '-U', tmp_target_file.name],
-                        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            except OSError as e:
-                raise ActionException('Failed to start flvtool: %s' % settings.FLVTOOL_BIN)
-            _, stderr = proc.communicate()
-            return_code = proc.wait()
-            if return_code != 0:
-                raise ActionException('flvtool (%s) failed. Stderr: %s' % (settings.FLVTOOL_BIN, stderr))
 
-        result = open(tmp_target_file.name)
+        if format == 'flv':
+            run_flvtool(tmp_target_file.name)
+
+        result = StringIO(open(tmp_target_file.name).read())
     finally:
         os.unlink(tmp_target_file.name)
         os.unlink(tmp_source_file.name)

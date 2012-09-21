@@ -3,8 +3,8 @@ from utils import *
 from ..utils import ValidationError
 
 
-name = 'make_grayscale'
-type_families_applicable_for = ['image']
+name = 'grayscale'
+applicable_for = 'image'
 result_type_family = 'image'
 
 

@@ -1,41 +1,16 @@
 import unittest
 
-import actions.videos
-import actions.docs
-import actions.images
+from actions.videos import convert
 from actions.utils import ValidationError
-
-class FileMock(object):
-    def __init__(self, content_type=None):
-        self.content_type = content_type
+from tests.utils import ContextMixin
 
 
-class ValidationTest(unittest.TestCase):
+class ValidationTest(ContextMixin, unittest.TestCase):
     def expect_validation_error(self, error):
         return self.assertRaisesRegexp(ValidationError, error)
     
-    def test_doc_convert_validation(self):
-        validate = actions.docs.convert.validate_and_get_args
-
-        with self.expect_validation_error('`to` must be specified'):
-            validate({})
-
-        with self.expect_validation_error(
-                'Source file can be only converted'):
-            validate({'to': 'gif'})
-
-    def test_image_convert_validation(self):
-        validate = actions.images.convert.validate_and_get_args
-
-        with self.expect_validation_error('`to` must be specified'):
-            validate({})
-
-        with self.expect_validation_error(
-                'Source file can be only converted'):
-            actions.docs.convert.validate_and_get_args({'to': 'gif'})
-
     def test_video_convert_validation(self):
-        validate = actions.videos.convert.validate_and_get_args
+        validate = convert.validate_and_get_args
 
         with self.expect_validation_error('`to` must be specified'):
             validate({})
