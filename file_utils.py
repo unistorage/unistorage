@@ -1,4 +1,5 @@
 import string
+import binascii
 import os.path
 
 import magic
@@ -57,8 +58,10 @@ def get_file_data(file):
     data = {
         'filename': convert_to_filename(file.name),
         'content_type': get_content_type(file),
+        'crc32': binascii.crc32(file.read()) #TODO
     }
 
+    file.seek(0)
     metadata = kaa.metadata.parse(file)
     file.seek(0)
 

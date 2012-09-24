@@ -7,7 +7,7 @@ from tests.utils import StorageFunctionalTest, WorkerMixin
 
 class FunctionalTest(StorageFunctionalTest, WorkerMixin):
     def test(self):
-        original_id = self.put_file('./images/some.jpeg')
+        original_id = self.put_file('images/some.jpeg')
 
         url = '/%s/' % original_id
         self.check(url, width=640, height=480, mime='image/jpeg')
@@ -31,14 +31,14 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
         # and resized image points to it's original.
         resized_image = g.db.fs.files.find_one(resized_image_id)
         original_image = g.db.fs.files.find_one(original_id)
-        self.assertEquals(resized_image['original'], original_id)
+        self.assertEquals(resized_image['original'].id, original_id)
         self.assertTrue(resized_image_id in original_image['modifications'].values())
 
         r = self.check(resized_image_url, width=400, height=300, mime='image/jpeg')
         self.assertEquals(int(r.json['ttl']), settings.TTL)
 
     def test_validation_errors(self):
-        original_id = self.put_file('./images/some.jpeg')
+        original_id = self.put_file('images/some.jpeg')
 
         url = '/%s/' % original_id
 

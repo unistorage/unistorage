@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytz
 from bson import ObjectId
+from bson.dbref import DBRef
 from monk import modeling
 from monk.validation import ValidationError
 
@@ -213,7 +214,7 @@ class File(ValidationMixin, modeling.Document):
         'type_id': basestring,
 
         'fileinfo': dict,
-        'original': ObjectId,
+        'original': DBRef,
         'label': basestring,
         'filename': basestring,
         'content_type': basestring,
@@ -243,10 +244,21 @@ class File(ValidationMixin, modeling.Document):
         return fs.get_version(**kwargs)
 
 
+class FileCollection(ValidationMixin, modeling.Document):
+    collection = 'file_collections'
+    structure = {
+        '_id': ObjectId,
+        'user_id': ObjectId,
+        'files': [ObjectId]
+    }
+    required = ['user_id', 'files']
+
+
 class RegularFile(File):
     """Реализация модели :term:`обычный файл`. Наследуется от :class:`File`."""
     structure = dict(File.structure, **{
         'pending': False,
+        'crc32': int
     })
 
     @classmethod
@@ -274,7 +286,7 @@ class RegularFile(File):
         :param db: база данных
         :type db: pymongo.Connection
         :param fs: файловая система
-        :type fs: gridfs.GridFs
+        :type fs: gridfs.GridFS
         :param data: файл
         :type data: file-like object с атрибутом `name`, содержащим имя файла
         :param **kwargs: дополнительные параметры, которые станут атрибутами файла в GridFS
@@ -308,7 +320,7 @@ class PendingFile(File):
     .. attribute:: ttl
 
         Примерное время в секундах, через которое будут выполнены все `actions` и файл перестанет
-        быть временным.
+        быть временным. FIXME -- new semantics
 
     .. attribute:: actions
 
@@ -322,10 +334,9 @@ class PendingFile(File):
         'pending': True,
         'ttl': int,
         'actions': list,
-        'original_content_type': basestring,
+        'original_content_type': basestring, # XXX
     })
-    required = ('user_id', 'actions', 'label', 'original',
-            'original_content_type', 'pending', 'ttl')
+    required = ('user_id', 'actions', 'label', 'original', 'pending', 'ttl')
 
     @classmethod
     def find(cls, *args, **kwargs):
@@ -356,3 +367,14 @@ class PendingFile(File):
         assert '_id' in kwargs
         if fs.exists(pending=True, **kwargs):
             fs.delete(kwargs['_id'])
+
+    def get_original(self, db):
+        # TODO
+        """Dereference для `self.original`. Лучше использовать :func:`db.dereference()`,
+        но тогда надо найти способ запустить :func:`monk.modelling.wrap_incoming`
+        на полученных данных."""
+        if self.original.collection == File.collection:
+            model_cls = File
+        elif self.original.collection == FileCollection.collection:
+            model_cls = FileCollection
+        return model_cls.get_one(db, {'_id': self.original.id})

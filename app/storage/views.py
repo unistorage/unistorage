@@ -15,7 +15,7 @@ from actions.utils import ValidationError
 from actions.handlers import apply_template, apply_action
 from utils import ok, error, jsonify, methods_required
 from . import bp
-from app.models import File, RegularFile, Template
+from app.models import File, RegularFile, PendingFile, Template, FileCollection
 
 
 def login_required(func):
@@ -100,9 +100,17 @@ def id_view(_id=None):
         return error({'msg': str(e)}), 400
 
     if source_file.pending:
-        return get_pending_file(source_file)
+        return get_pending_file(PendingFile(source_file))
     else:
-        return get_regular_file(source_file)
+        return get_regular_file(RegularFile(source_file))
+
+
+@bp.route('/file_collection')
+@methods_required(['POST'])
+@login_required
+def create_file_collection(_id=None):
+    file_ids = request.form.get('file_ids')
+    # TODO
 
 
 def get_gridfs_serve_url(path):
@@ -128,18 +136,21 @@ def get_unistore_nginx_serve_url(path):
 
 
 def can_unistore_serve(file):
-    """Возвращает True, если `file` может быть отдан с помощью
-    unistore-nginx-serve (например, в случае, если `file` -- картинка, для
-    которой заказан ресайз).
+    """Возвращает True, если `file` может быть отдан с помощью unistore-nginx-serve (например, в
+    случае, если `file` -- картинка, для которой заказан ресайз).
 
     :param file: :term:`временный файл`
     :type file: :class:`app.models.File`
     """
-    original_content_type = file.original_content_type
+    original = file.get_original(g.db)
+    if not isinstance(original, File):
+        return 
+
+    original_content_type = original.content_type
     actions = file.actions
     
     if not original_content_type.startswith('image') or len(actions) > 1:
-        # If source file is not an image or more than one action was applied to it
+        # Если исходный файл -- картинка, и к нему применено более одного действия, то
         return False
     
     action_name, action_args = actions[0]
