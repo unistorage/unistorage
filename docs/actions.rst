@@ -40,3 +40,6 @@ API
 
 .. automodule:: actions.templates
     :members:
+
+.. automodule:: actions.tasks
+    :members:

@@ -2,6 +2,4 @@
 =================
 
 .. automodule:: app.models
-   :members:
-
-
+    :members:

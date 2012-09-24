@@ -3,7 +3,6 @@
 Валидация шаблонов
 ==================
 """
-
 from werkzeug.urls import url_decode
 
 import actions
@@ -11,6 +10,16 @@ from utils import ValidationError
 
 
 def validate_and_get_template_actions(source_type_family, action_args_list):
+    """Рассматривая `source_type_family` как семейство типов исходных файлов, проверяет применимость
+    каждой последующей операции к результату предыдущей. Возвращает "очищенный" список операций и их
+    параметров.
+
+    :param source_type_family: :term:`семейство типов`
+    :param action_args_list: список аргументов операций
+    :type action_args_list: list(dict(action=action_name, **kwargs))
+    :raises: ValidationError
+    :rtype: `list(tuple(action_name, action_cleaned_args))`
+    """
     result = []
     current_type_family = source_type_family
 
@@ -38,14 +47,13 @@ def validate_and_get_template_actions(source_type_family, action_args_list):
     
         
 def validate_and_get_template(args):
-    """Проверяет, что `applicable_for` и `actions` присутствуют в `args`; проверяет
-    совместимость операций, указанных в `actions`. Возвращает "очищенные" данные
-    для создания шаблона.
+    """Проверяет, что `applicable_for` и `actions` присутствуют в `args`; проверяет совместимость
+    операций, указанных в `actions`. Возвращает "очищенные" данные для создания шаблона.
 
     :param args: аргументы
     :type args: `dict(applicable_for=..., actions=list(...))`
     :raises: ValidationError
-    :rtype: `dict(applicable_for=<type_family>,
+    :rtype: `dict(applicable_for=type_family,
                   action_list=list(tuple(action_name, action_cleaned_args)))`
     """
     applicable_for = args.get('applicable_for')

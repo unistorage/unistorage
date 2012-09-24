@@ -15,7 +15,7 @@ from actions.utils import ValidationError
 from actions.handlers import apply_template, apply_action
 from utils import ok, error, jsonify, methods_required
 from . import bp
-from app.models import File, Template
+from app.models import File, RegularFile, Template
 
 
 def login_required(func):
@@ -45,7 +45,7 @@ def index_view():
             return error({'msg': '`type_id` is too long. Maximum length is 32.'}), 400
         kwargs.update({'type_id': type_id})
 
-    file_id = File.put_to_fs(g.db, g.fs, file, **kwargs)
+    file_id = RegularFile.put_to_fs(g.db, g.fs, file, **kwargs)
     return ok({
         'id': file_id
     })

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import date, time, datetime, timedelta
+from datetime import datetime
 
 import pytz
 from bson import ObjectId
@@ -63,11 +63,11 @@ class Template(ValidationMixin, modeling.Document):
 
 
 class Statistics(ValidationMixin, modeling.Document):
-    """Статистика, отражающая суммарный объем и количество файлов,
-    появившихся в хранилище в конкретную дату.
+    """Статистика, отражающая суммарный объем и количество файлов, появившихся в хранилище в
+    конкретную дату.
 
-    Файлы учитываются как залитые пользователем, так и полученные в 
-    результате операций, произведённых им.
+    Файлы учитываются как залитые пользователем, так и полученные в результате операций,
+    произведённых им.
 
     .. attribute:: user_id
 
@@ -102,9 +102,9 @@ class Statistics(ValidationMixin, modeling.Document):
 
     @classmethod
     def aggregate_statistics(cls, db, group_by, conditions):
-        """Агрегирует статистику, группируя по полям, указанным в `group_by`,
-        и фильтруя по условиям, указанным в `conditions`.
-        После агрегации приводит `files_size` к мегабайтам, а `files_count` -- к целому числу.
+        """Агрегирует статистику, группируя по полям, указанным в `group_by`, и фильтруя по
+        условиям, указанным в `conditions`.  После агрегации приводит `files_size` к мегабайтам, а
+        `files_count` -- к целому числу.
         """
         return db[Statistics.collection].group(
             group_by,
@@ -141,9 +141,9 @@ class Statistics(ValidationMixin, modeling.Document):
     def get_timely(cls, db, user_id, **kwargs):
         """Возвращает статистику для пользователя `user_id`, агрегированную по дням.
 
-        Если `kwargs` содержит поле `type_id`, то статистика считается только для файлов,
-        имеющих заданный :term:`идентификатор контента`. Если `kwargs` содержит поля
-        `start` и/или `end`, агрегироваться будет статистика только между этими датами.
+        Если `kwargs` содержит поле `type_id`, то статистика считается только для файлов, имеющих
+        заданный :term:`идентификатор контента`. Если `kwargs` содержит поля `start` и/или `end`,
+        агрегироваться будет статистика только между этими датами.
         
         :rtype: list({'user_id': ..., 'files_count': ..., 'files_size: ...})
         """
@@ -186,13 +186,13 @@ class File(ValidationMixin, modeling.Document):
 
     .. attribute:: original
 
-        Если файл получен в результате применения операции, это поле содержит
-        :class:`ObjectId` оригинального файла.
+        Если файл получен в результате применения операции, это поле содержит :class:`ObjectId`
+        оригинального файла.
 
     .. attribute:: label
 
-        Если файл получен в результате применения операции, это поле содержит
-        идентификатор, уникальный среди всех файлов с тем же самым `original`.
+        Если файл получен в результате применения операции, это поле содержит идентификатор,
+        уникальный среди всех файлов с тем же самым `original`.
 
     .. attribute:: filename
 
@@ -223,7 +223,7 @@ class File(ValidationMixin, modeling.Document):
 
     @classmethod
     def wrap_incoming(cls, data, db):
-        """Преобразование Mongo- к Python-нотации (``contentType`` -> ``content_type``)
+        """Выполняет преобразование Mongo- к Python-нотации (``contentType`` -> ``content_type``)
         для объектов, приходящих из базы данных."""
         data['content_type'] = data.pop('contentType', None)
         data['upload_date'] = data.pop('uploadDate', None)
@@ -232,11 +232,44 @@ class File(ValidationMixin, modeling.Document):
 
     @classmethod
     def put_to_fs(cls, db, fs, data, **kwargs):
-        """Обновляет поля `fileinfo`, `content_type`, `filename` у kwargs,
-        помещает `data` в GridFS и обновляет статистику.
+        raise NotImplementedError
+
+    @classmethod
+    def get_from_fs(cls, db, fs, **kwargs):
+        """Возвращает GridOut-инстанс, соответствующий указанным `kwargs`.
+
+        :rtype: :class:`gridfs.GridOut`
+        """
+        return fs.get_version(**kwargs)
+
+
+class RegularFile(File):
+    """Реализация модели :term:`обычный файл`. Наследуется от :class:`File`."""
+    structure = dict(File.structure, **{
+        'pending': False,
+    })
+
+    @classmethod
+    def find(cls, *args, **kwargs):
+        kwargs.update({'pending': False})
+        return cls.find(*args, **kwargs)
+
+    @classmethod
+    def get_one(cls, *args, **kwargs):
+        kwargs.update({'pending': False})
+        return cls.get_one(*args, **kwargs)
+
+    @classmethod
+    def get_from_fs(cls, db, fs, **kwargs):
+        kwargs.update({'pending': False})
+        return super(RegularFile, cls).get_from_fs(db, fs, **kwargs)
+
+    @classmethod
+    def put_to_fs(cls, db, fs, data, **kwargs):
+        """Обновляет поля `fileinfo`, `content_type`, `filename` у kwargs, помещает `data` в GridFS
+        и обновляет статистику.
         
-        Обычные файлы должны помещаться в GridFS исключительно посредством
-        этого метода.
+        Обычные файлы должны помещаться в GridFS исключительно посредством этого метода.
 
         :param db: база данных
         :type db: pymongo.Connection
@@ -247,9 +280,7 @@ class File(ValidationMixin, modeling.Document):
         :param **kwargs: дополнительные параметры, которые станут атрибутами файла в GridFS
         """
         kwargs.update(file_utils.get_file_data(data))
-        kwargs.update({
-            'pending': False    
-        })
+        kwargs.update({'pending': False})
 
         cls(**kwargs).validate()
         file_id = fs.put(data, **kwargs)
@@ -262,19 +293,22 @@ class File(ValidationMixin, modeling.Document):
             'type_id': kwargs.get('type_id'),
             'timestamp': today_utc_midnight,
         }, {
-            '$inc': {'files_count': 1, 'files_size': fs.get(file_id).length}
+            '$inc': {
+                'files_count': 1,
+                'files_size': fs.get(file_id).length
+            }
         }, upsert=True)
         return file_id
 
 
 class PendingFile(File):
-    """Реализация сущности :term:`временный файл`.
-    Наследуется от :class:`File` и вводит следующие дополнительные атрибуты:
+    """Реализация сущности :term:`временный файл`. Наследуется от :class:`File` и вводит следующие
+    дополнительные атрибуты:
 
     .. attribute:: ttl
 
-        Примерное время в секундах, через которое будут выполнены все `actions`
-        и файл перестанет быть временным.
+        Примерное время в секундах, через которое будут выполнены все `actions` и файл перестанет
+        быть временным.
 
     .. attribute:: actions
 
@@ -283,7 +317,6 @@ class PendingFile(File):
     .. attribute:: original_content_type
 
        Денормализация для `original.content_type`.
-
     """
     structure = dict(File.structure, **{
         'pending': True,
@@ -291,8 +324,8 @@ class PendingFile(File):
         'actions': list,
         'original_content_type': basestring,
     })
-    required = ['user_id', 'actions', 'label', 'original',
-            'original_content_type', 'pending', 'ttl']
+    required = ('user_id', 'actions', 'label', 'original',
+            'original_content_type', 'pending', 'ttl')
 
     @classmethod
     def find(cls, *args, **kwargs):
@@ -305,13 +338,21 @@ class PendingFile(File):
         return cls.get_one(*args, **kwargs)
 
     @classmethod
+    def get_from_fs(cls, db, fs, **kwargs):
+        kwargs.update({'pending': True})
+        return super(PendingFile, cls).get_from_fs(db, fs, **kwargs)
+
+    @classmethod
     def put_to_fs(cls, db, fs, **kwargs):
-        """Помещает :term:`временный файл` в GridFS.
-        
-        Временные файлы должны помещаться в GridFS исключительно посредством
-        этого метода.
+        """Помещает :term:`временный файл` в GridFS. Временные файлы должны помещаться в GridFS
+        исключительно посредством этого метода.
         """
         kwargs.update({'pending': True})
         cls(**kwargs).validate()
-        file_id = fs.put('', **kwargs)
-        return file_id
+        return fs.put('', **kwargs)
+
+    @classmethod
+    def remove_from_fs(cls, db, fs, **kwargs):
+        assert '_id' in kwargs
+        if fs.exists(pending=True, **kwargs):
+            fs.delete(kwargs['_id'])

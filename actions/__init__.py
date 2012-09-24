@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import importlib
 from collections import defaultdict
 
 
@@ -8,6 +9,7 @@ class ActionException(Exception):
 
 actions = defaultdict(dict)
 
+
 def register_action(action):
     """Валидирует и регистрирует `action` в качестве операции."""
     for required_attr in ('name', 'result_type_family', 'applicable_for',
@@ -15,32 +17,23 @@ def register_action(action):
         assert hasattr(action, required_attr)
     actions[action.applicable_for][action.name] = action
 
+
 def get_action(type_family, name):
     """Возвращает операцию с именем `name`, применимую к семейству типов `type_family`."""
-    # Get actions that applicable for given type family
     applicable_actions = actions.get(type_family, {})
-    # Try to get applicable action by name
-    action = applicable_actions.get(name)
-    return action
+    return applicable_actions.get(name)
 
 
-import images.convert
-register_action(images.convert)
+actions_to_register = (
+    'images.convert',
+    'images.resize',
+    'images.grayscale',
+    'images.watermark',
+    'videos.convert',
+    'videos.watermark',
+    'docs.convert',
+)
 
-import images.resize
-register_action(images.resize)
-
-import images.grayscale
-register_action(images.grayscale)
-
-import images.watermark
-register_action(images.watermark)
-
-import videos.convert
-register_action(videos.convert)
-
-import videos.watermark
-register_action(videos.watermark)
-
-import docs.convert
-register_action(docs.convert)
+for action in actions_to_register:
+    action_module = importlib.import_module('.%s' % action, package='actions')
+    register_action(action_module)

@@ -12,7 +12,7 @@ from rq import Queue, Worker, use_connection
 import app
 import settings
 import file_utils
-from app.models import User, Statistics, File
+from app.models import User, Statistics, RegularFile
 from app.admin.forms import get_random_token
 from tests.flask_webtest import FlaskTestCase, FlaskTestApp
 
@@ -66,7 +66,7 @@ class GridFSMixin(ContextMixin):
         path = fixture_path(path)
         file = StringIO(open(path, 'rb').read())
         file.name = file.filename = os.path.basename(path)
-        return File.put_to_fs(g.db, g.fs, file, **{
+        return RegularFile.put_to_fs(g.db, g.fs, file, **{
             'type_id': type_id,
             'user_id': user_id,
         })

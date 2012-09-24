@@ -15,10 +15,9 @@ from app.models import Template, File, PendingFile
 
 
 def apply_actions(source_file, action_list, label):
-    """Проверяет существование модификации `source_file` с меткой `label`.
-    Если она существует -- возвращает её идентификатор; если нет --
-    ставит в очередь применение операций `action_list` к файлу `source_file` и
-    вешает на результирующий файл метку `label`.
+    """Проверяет существование модификации `source_file` с меткой `label`.  Если она существует --
+    возвращает её идентификатор; если нет -- ставит в очередь применение операций `action_list` к
+    файлу `source_file` и вешает на результирующий файл метку `label`.
     
     :param source_file: исходный файл
     :type source_file: :class:`app.models.File`
@@ -36,6 +35,9 @@ def apply_actions(source_file, action_list, label):
 
     ttl_timedelta = settings.AVERAGE_TASK_TIME * (g.q.count + len(action_list))
     ttl = int(ttl_timedelta.total_seconds())
+
+    # Атрибуты, которые должны быть как у временного файла, так и у постоянного (после выполнения
+    # операции)
     target_kwargs = {
         'user_id': request.user['_id'],
         'type_id': source_file.type_id,
@@ -43,20 +45,25 @@ def apply_actions(source_file, action_list, label):
         'label': label,
     }
 
-    target_id = PendingFile.put_to_fs(g.db, g.fs, ttl=ttl, actions=action_list,
-            original_content_type=source_file.content_type, **target_kwargs)
+    # Атрибуты временного файла
+    pending_target_kwargs = {
+        'ttl': ttl,
+        'actions': action_list,
+        'original_content_type': source_file.content_type
+    }
+    pending_target_kwargs.update(target_kwargs)
 
-    g.q.enqueue('actions.tasks.perform_actions',
-            source_id, target_id, target_kwargs, action_list)
+    target_id = PendingFile.put_to_fs(g.db, g.fs, **pending_target_kwargs)
+    g.q.enqueue('actions.tasks.perform_actions', source_id, target_id, target_kwargs)
     g.db[File.collection].update({'_id': source_id},
             {'$set': {'modifications.%s' % label: target_id}})
     return target_id
 
 
 def apply_template(source_file, args):
-    """Проверяет применимость шаблона, указанного в `args`, к `source_file`,
-    ставит применение операций из шаблона в очередь (используя в качестве `label`
-    идентификатор шаблона) и возвращает идентификатор временного файла.
+    """Проверяет применимость шаблона, указанного в `args`, к `source_file`, ставит применение
+    операций из шаблона в очередь (используя в качестве `label` идентификатор шаблона) и возвращает
+    идентификатор временного файла.
 
     :param source_file: исходный файл
     :type source_file: :class:`app.models.File`
@@ -78,9 +85,9 @@ def apply_template(source_file, args):
 
 
 def apply_action(source_file, args):
-    """Проверяет применимость действия, указанного в `args`, к `source_file`,
-    ставит операцию в очередь (используя в качестве `label` сконкатенированные
-    имя операции и её аргументы) и возвращает идентификатор временного файла.
+    """Проверяет применимость действия, указанного в `args`, к `source_file`, ставит операцию в
+    очередь (используя в качестве `label` сконкатенированные имя операции и её аргументы) и
+    возвращает идентификатор временного файла.
 
     :param source_file: исходный файл
     :type source_file: :class:`app.models.File`
