@@ -12,7 +12,7 @@ from rq import Queue, Worker, use_connection
 import app
 import settings
 import file_utils
-from app.models import User, Statistics, File
+from app.models import User, Statistics, RegularFile
 from app.admin.forms import get_random_token
 from tests.flask_webtest import FlaskTestCase, FlaskTestApp
 
@@ -44,7 +44,7 @@ class ContextMixin(object):
     """
     def setUp(self):
         super(ContextMixin, self).setUp()
-        self.ctx = app.app.test_request_context()
+        self.ctx = app.create_app().test_request_context()
         self.ctx.push()
         app.before_request()
 
@@ -66,7 +66,7 @@ class GridFSMixin(ContextMixin):
         path = fixture_path(path)
         file = StringIO(open(path, 'rb').read())
         file.name = file.filename = os.path.basename(path)
-        return File.put_to_fs(g.db, g.fs, file, **{
+        return RegularFile.put_to_fs(g.db, g.fs, file, **{
             'type_id': type_id,
             'user_id': user_id,
         })
@@ -75,7 +75,7 @@ class GridFSMixin(ContextMixin):
 class AdminFunctionalTest(ContextMixin, FlaskTestCase):
     def setUp(self):
         super(AdminFunctionalTest, self).setUp()
-        self.app = FlaskTestApp(app.app)
+        self.app = FlaskTestApp(app.create_app())
         g.db_connection.drop_database(settings.MONGO_DB_NAME)
 
     def login(self):
@@ -102,7 +102,7 @@ class StorageFunctionalTest(ContextMixin, FlaskTestCase):
         
         token = get_random_token()
         User({'name': 'Test', 'token': token}).save(g.db)
-        self.app = StorageFlaskTestApp(app.app, token)
+        self.app = StorageFlaskTestApp(app.create_app(), token)
 
     def put_file(self, path, type_id=None):
         path = fixture_path(path)

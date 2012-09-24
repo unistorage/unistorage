@@ -55,7 +55,7 @@ def get_content_type(file):
 def get_file_data(file):
     file.seek(0)
     data = {
-        'filename': convert_to_filename(file.filename),
+        'filename': convert_to_filename(file.name),
         'content_type': get_content_type(file),
     }
 
