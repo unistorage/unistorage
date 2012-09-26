@@ -27,7 +27,7 @@ def apply_actions(source_file, action_list, label):
     :rtype: :class:`ObjectId` 
     """
     source_id = source_file.get_id()
-    target_file = File.get_one(g.db, {'original': source_file.get_ref(), 'label': label})
+    target_file = File.get_one(g.db, {'original': source_id, 'label': label})
 
     if target_file:
         return target_file.get_id()
@@ -40,7 +40,7 @@ def apply_actions(source_file, action_list, label):
     target_kwargs = {
         'user_id': request.user['_id'],
         'type_id': source_file.type_id,
-        'original': source_file.get_ref(),
+        'original': source_id,
         'label': label,
     }
 

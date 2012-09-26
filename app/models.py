@@ -3,7 +3,6 @@ from datetime import datetime
 
 import pytz
 from bson import ObjectId
-from bson.dbref import DBRef
 from monk import modeling
 from monk.validation import ValidationError
 
@@ -214,7 +213,7 @@ class File(ValidationMixin, modeling.Document):
         'type_id': basestring,
 
         'fileinfo': dict,
-        'original': DBRef,
+        'original': ObjectId,
         'label': basestring,
         'filename': basestring,
         'content_type': basestring,
@@ -244,14 +243,15 @@ class File(ValidationMixin, modeling.Document):
         return fs.get_version(**kwargs)
 
 
-class FileCollection(ValidationMixin, modeling.Document):
-    collection = 'file_collections'
+class ZipCollection(ValidationMixin, modeling.Document):
+    collection = 'zip_collections'
     structure = {
         '_id': ObjectId,
         'user_id': ObjectId,
-        'files': [ObjectId]
+        'file_ids': [ObjectId],
+        'filename': basestring
     }
-    required = ['user_id', 'files']
+    required = ['user_id', 'file_ids', 'filename']
 
 
 class RegularFile(File):
@@ -367,14 +367,3 @@ class PendingFile(File):
         assert '_id' in kwargs
         if fs.exists(pending=True, **kwargs):
             fs.delete(kwargs['_id'])
-
-    def get_original(self, db):
-        # TODO
-        """Dereference для `self.original`. Лучше использовать :func:`db.dereference()`,
-        но тогда надо найти способ запустить :func:`monk.modelling.wrap_incoming`
-        на полученных данных."""
-        if self.original.collection == File.collection:
-            model_cls = File
-        elif self.original.collection == FileCollection.collection:
-            model_cls = FileCollection
-        return model_cls.get_one(db, {'_id': self.original.id})

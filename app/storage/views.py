@@ -7,6 +7,7 @@ import functools
 
 from bson.objectid import ObjectId
 from flask import request, g, abort
+from pymongo.errors import InvalidId 
 
 import settings
 from actions import templates
@@ -15,7 +16,7 @@ from actions.utils import ValidationError
 from actions.handlers import apply_template, apply_action
 from utils import ok, error, jsonify, methods_required
 from . import bp
-from app.models import File, RegularFile, PendingFile, Template, FileCollection
+from app.models import File, RegularFile, PendingFile, Template, ZipCollection
 
 
 def login_required(func):
@@ -33,6 +34,7 @@ def login_required(func):
 def index_view():
     """Вьюшка, сохраняющая файл в хранилище."""
     file = request.files.get('file')
+    file.name = file.filename # XXX
     if not file:
         return error({'msg': 'File wasn\'t found'}), 400
     
@@ -81,6 +83,10 @@ def id_view(_id=None):
     - Применение шаблона к файлу `id`, если GET-запрос содержит аргумент `template`
     - Выдача информации о файле `id` во всех остальных случаях
     """
+    zip_collection = ZipCollection.get_one(g.db, {'_id': _id})
+    if zip_collection:
+        return get_zip(zip_collection)
+
     source_file = File.get_one(g.db, {'_id': _id})
     if not source_file:
         return error({'msg': 'File wasn\'t found'}), 400
@@ -105,12 +111,37 @@ def id_view(_id=None):
         return get_regular_file(RegularFile(source_file))
 
 
-@bp.route('/file_collection')
+@bp.route('/zip')
 @methods_required(['POST'])
 @login_required
-def create_file_collection(_id=None):
-    file_ids = request.form.get('file_ids')
-    # TODO
+def create_zip_view(_id=None):
+    """Вьюшка, создающая ZipCollection"""
+    file_ids = request.form.getlist('file_id')
+    filename = request.form.get('filename')
+    
+    try:
+        if not filename:
+            raise ValidationError('`filename` field is required.')
+        if not file_ids:
+            raise ValidationError('`file_id[]` field is required and must contain at least one id.')
+
+        try:
+            file_ids = map(ObjectId, file_ids)
+        except InvalidId:
+            raise ValidationError('Not all `file_id[]` are correct identifiers.')
+
+        # TODO Проверять, что файлы с указанными айдишниками существуют и не временные?
+    except ValidationError as e:
+        return error({'msg': str(e)}), 400
+
+    zip_collection = ZipCollection({
+        'user_id': request.user.get_id(),
+        'file_ids': file_ids,
+        'filename': filename
+    })
+    return ok({
+        'id': zip_collection.save(g.db)
+    })
 
 
 def get_gridfs_serve_url(path):
@@ -142,11 +173,7 @@ def can_unistore_serve(file):
     :param file: :term:`временный файл`
     :type file: :class:`app.models.File`
     """
-    original = file.get_original(g.db)
-    if not isinstance(original, File):
-        return 
-
-    original_content_type = original.content_type
+    original_content_type = file.original_content_type
     actions = file.actions
     
     if not original_content_type.startswith('image') or len(actions) > 1:
@@ -160,6 +187,22 @@ def can_unistore_serve(file):
         return False
 
     return True
+
+
+def get_zip(zip_collection):
+    """Возвращает JSON-строку с информацией о `zip_collection`.
+    
+    :param file: :term:`zip-коллекция файлов`
+    :type file: :class:`app.models.ZipCollection` 
+    """
+    ttl = 1000 # TODO
+    if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL'):
+        return ok({
+            'ttl': ttl,
+            'uri': get_unistore_nginx_serve_url(str(zip_collection.get_id()))
+        })
+    else:
+        return error(), 503
 
 
 def get_pending_file(file):

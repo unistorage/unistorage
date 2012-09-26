@@ -31,7 +31,7 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
         # and resized image points to it's original.
         resized_image = g.db.fs.files.find_one(resized_image_id)
         original_image = g.db.fs.files.find_one(original_id)
-        self.assertEquals(resized_image['original'].id, original_id)
+        self.assertEquals(resized_image['original'], original_id)
         self.assertTrue(resized_image_id in original_image['modifications'].values())
 
         r = self.check(resized_image_url, width=400, height=300, mime='image/jpeg')
