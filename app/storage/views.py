@@ -150,7 +150,6 @@ def create_zip_view(_id=None):
         'filename': filename
     })
     zip_id = zip_collection.save(g.db)
-    print zip_id
     return ok({
         'id': zip_id,
         'resource_uri': url_for('.zip_view', _id=zip_id)
@@ -214,18 +213,20 @@ def can_unistore_serve(file):
     """
     original_content_type = file.original_content_type
     actions = file.actions
-    
-    if not original_content_type.startswith('image') or len(actions) > 1:
-        # Если исходный файл -- картинка, и к нему применено более одного действия, то
+
+    supported_types = ('image/gif', 'image/png', 'image/jpeg')
+    if not original_content_type in supported_types or len(actions) > 1:
         return False
     
     action_name, action_args = actions[0]
-    mode, w, h = action_args
-        
-    if action_name != 'resize' or mode not in ('keep', 'crop'):
-        return False
+    if action_name == 'resize':
+        mode, w, h = action_args
+        if mode in ('keep', 'crop'):
+            return True
+    elif action_name == 'rotate':
+        return True
 
-    return True
+    return False
 
 
 def get_pending_file(file):

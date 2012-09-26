@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import subprocess
 from StringIO import StringIO
 
@@ -38,6 +39,10 @@ class PILWrapper(object):
     def resize(self, width, height):
         self._image = self._image.resize((width, height), resample=Image.ANTIALIAS)
         return self
+
+    def rotate(self, angle):
+        self._image = self._image.rotate(angle)
+        return self
     
     def crop_to_center(self, target_width, target_height):
         width, height = self._image.size
@@ -72,6 +77,11 @@ class ImageMagickWrapper(object):
 
     def resize(self, width, height):
         self._args.extend(['-resize', '%dx%d!' % (width, height)])
+        return self
+
+    def rotate(self, angle):
+        # 360 - angle, т.к. imagemagick поворачивает по часовой
+        self._args.extend(['-rotate', str(-angle)])
         return self
     
     def crop_to_center(self, width, height):
