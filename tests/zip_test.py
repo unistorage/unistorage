@@ -24,16 +24,16 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
                 '`filename` field is required.')
 
     def test(self):
-        file1_id = self.put_file('images/some.jpeg')
-        file2_id = self.put_file('images/some.png')
-        file3_id = self.put_file('images/some.gif')
+        file1_resource_uri, file1_id = self.put_file('images/some.jpeg')
+        file2_resource_uri, file2_id = self.put_file('images/some.png')
+        file3_resource_uri, file3_id = self.put_file('images/some.gif')
 
         r = self.app.post(url_for('.create_zip_view'), {
             'file_id': [file1_id, file2_id, file3_id],
             'filename': 'images.zip'
         })
-        zip_id = r.json['id']
+        zip_resource_uri = r.json['resource_uri']
 
-        r = self.app.get('/%s/' % zip_id)
+        r = self.app.get(zip_resource_uri)
         self.assertTrue('uns' in r.json['uri'])
         

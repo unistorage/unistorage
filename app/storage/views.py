@@ -4,9 +4,10 @@ Storage views
 =============
 """
 import functools
+from urlparse import urljoin as _urljoin
 
 from bson.objectid import ObjectId
-from flask import request, g, abort
+from flask import request, g, abort, url_for
 from pymongo.errors import InvalidId 
 
 import settings
@@ -17,6 +18,14 @@ from actions.handlers import apply_template, apply_action
 from utils import ok, error, jsonify, methods_required
 from . import bp
 from app.models import File, RegularFile, PendingFile, Template, ZipCollection
+
+
+def urljoin(*args):
+    args = list(args)
+    args[-1] = str(args[-1])
+    if not args[-1].endswith('/'):
+        args[-1] += '/' #args[-1]
+    return _urljoin(*args)
 
 
 def login_required(func):
@@ -49,7 +58,8 @@ def index_view():
 
     file_id = RegularFile.put_to_fs(g.db, g.fs, file, **kwargs)
     return ok({
-        'id': file_id
+        'id': file_id,
+        'resource_uri': url_for('.file_view', _id=file_id)
     })
 
 
@@ -70,38 +80,45 @@ def create_template_view():
         'user_id': request.user['_id']
     })
     template_id = Template(template_data).save(g.db)
-    return ok({'id': template_id})
+    return ok({
+        'id': template_id,
+        'resource_uri': None # Шаблоны можно только создавать
+    })
 
 
 @bp.route('/<ObjectId:_id>/')
 @methods_required(['GET'])
 @login_required
-def id_view(_id=None):
+def file_view(_id=None):
     """Вьюшка, ответственная за три вещи:
 
     - Применение операции к файлу `id`, если GET-запрос содержит аргумент `action`
     - Применение шаблона к файлу `id`, если GET-запрос содержит аргумент `template`
     - Выдача информации о файле `id` во всех остальных случаях
     """
-    zip_collection = ZipCollection.get_one(g.db, {'_id': _id})
-    if zip_collection:
-        return get_zip(zip_collection)
-
     source_file = File.get_one(g.db, {'_id': _id})
+    
     if not source_file:
         return error({'msg': 'File wasn\'t found'}), 400
-    
-    action_presented = 'action' in request.args
-    template_presented = 'template' in request.args
+
     try:
+        action_presented = 'action' in request.args
+        template_presented = 'template' in request.args
+        
+        apply_ = None
         if action_presented and not template_presented:
-            target_id = apply_action(source_file, request.args.to_dict())
-            return ok({'id': target_id})
+            apply_ = apply_action
         elif template_presented and not action_presented:
-            target_id = apply_template(source_file, request.args.to_dict())
-            return ok({'id': target_id})
+            apply_ = apply_template
         elif action_presented and template_presented:
             raise ValidationError('You can\'t specify both `action` and `template`.')
+        
+        if apply_:
+            target_id = apply_(source_file, request.args.to_dict())
+            return ok({
+                'id': target_id,
+                'resource_uri': url_for('.file_view', _id=target_id)
+            })
     except ValidationError as e:
         return error({'msg': str(e)}), 400
 
@@ -139,9 +156,30 @@ def create_zip_view(_id=None):
         'file_ids': file_ids,
         'filename': filename
     })
+    zip_id = zip_collection.save(g.db)
     return ok({
-        'id': zip_collection.save(g.db)
+        'id': zip_id,
+        'resource_uri': url_for('.zip_view', _id=zip_id)
     })
+
+
+@bp.route('/zip/<ObjectId:_id>/')
+@methods_required(['GET'])
+@login_required
+def zip_view(_id):
+    """Вьюшка, отдающая информацию о zip collection"""
+    zip_collection = ZipCollection.get_one(g.db, {'_id': _id})
+    if not zip_collection:
+        return error({'msg': 'Zip collection wasn\'t found'}), 400
+
+    ttl = 1000 # TODO
+    if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL'):
+        return ok({
+            'ttl': ttl,
+            'uri': get_unistore_nginx_serve_url(str(zip_collection.get_id()))
+        })
+    else:
+        return error(), 503
 
 
 def get_gridfs_serve_url(path):
@@ -187,22 +225,6 @@ def can_unistore_serve(file):
         return False
 
     return True
-
-
-def get_zip(zip_collection):
-    """Возвращает JSON-строку с информацией о `zip_collection`.
-    
-    :param file: :term:`zip-коллекция файлов`
-    :type file: :class:`app.models.ZipCollection` 
-    """
-    ttl = 1000 # TODO
-    if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL'):
-        return ok({
-            'ttl': ttl,
-            'uri': get_unistore_nginx_serve_url(str(zip_collection.get_id()))
-        })
-    else:
-        return error(), 503
 
 
 def get_pending_file(file):
