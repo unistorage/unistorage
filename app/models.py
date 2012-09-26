@@ -249,9 +249,10 @@ class ZipCollection(ValidationMixin, modeling.Document):
         '_id': ObjectId,
         'user_id': ObjectId,
         'file_ids': [ObjectId],
-        'filename': basestring
+        'filename': basestring,
+        'created_at': datetime.utcnow
     }
-    required = ['user_id', 'file_ids', 'filename']
+    required = ['user_id', 'file_ids', 'filename', 'created_at']
 
 
 class RegularFile(File):

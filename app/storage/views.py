@@ -4,7 +4,8 @@ Storage views
 =============
 """
 import functools
-from urlparse import urljoin as _urljoin
+import time
+from datetime import datetime
 
 from bson.objectid import ObjectId
 from flask import request, g, abort, url_for
@@ -18,14 +19,6 @@ from actions.handlers import apply_template, apply_action
 from utils import ok, error, jsonify, methods_required
 from . import bp
 from app.models import File, RegularFile, PendingFile, Template, ZipCollection
-
-
-def urljoin(*args):
-    args = list(args)
-    args[-1] = str(args[-1])
-    if not args[-1].endswith('/'):
-        args[-1] += '/' #args[-1]
-    return _urljoin(*args)
 
 
 def login_required(func):
@@ -132,7 +125,7 @@ def file_view(_id=None):
 @methods_required(['POST'])
 @login_required
 def create_zip_view(_id=None):
-    """Вьюшка, создающая ZipCollection"""
+    """Вьюшка, создающая zip collection"""
     file_ids = request.form.getlist('file_id')
     filename = request.form.get('filename')
     
@@ -157,6 +150,7 @@ def create_zip_view(_id=None):
         'filename': filename
     })
     zip_id = zip_collection.save(g.db)
+    print zip_id
     return ok({
         'id': zip_id,
         'resource_uri': url_for('.zip_view', _id=zip_id)
@@ -172,7 +166,14 @@ def zip_view(_id):
     if not zip_collection:
         return error({'msg': 'Zip collection wasn\'t found'}), 400
 
-    ttl = 1000 # TODO
+    to_timestamp = lambda td: time.mktime(td.timetuple())
+    will_expire_at = to_timestamp(zip_collection['created_at'] + settings.ZIP_COLLECTION_TTL)
+    now = to_timestamp(datetime.utcnow())
+    
+    ttl = will_expire_at - now
+    if ttl < 0:
+        return error({'msg': 'Zip collection wasn\'t found'}), 400
+
     if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL'):
         return ok({
             'ttl': ttl,

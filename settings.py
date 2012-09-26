@@ -44,6 +44,8 @@ UNISTORE_NGINX_SERVE_URL = 'http://127.0.0.1/uns'
 TTL = int(timedelta(days=7).total_seconds())
 AVERAGE_TASK_TIME = timedelta(seconds=5)
 
+ZIP_COLLECTION_TTL = timedelta(days=1)
+
 try:
     from settings_local import *
 except ImportError:
