@@ -86,12 +86,12 @@ class AdminFunctionalTest(ContextMixin, FlaskTestCase):
 
 
 class StorageFlaskTestApp(FlaskTestApp):
-    def __init__(self, app, test_token, **kwargs):
+    def __init__(self, app, token, **kwargs):
         super(StorageFlaskTestApp, self).__init__(app, **kwargs)
-        self.test_token = test_token
+        self.token = token
 
     def do_request(self, req, status, expect_errors):
-        req.headers.update({'Token': self.test_token})
+        req.headers.update({'Token': self.token})
         return super(StorageFlaskTestApp, self).do_request(req, status, expect_errors)
 
 

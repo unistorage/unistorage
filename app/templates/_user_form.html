@@ -1,0 +1,19 @@
+{% from 'utils.html' import render_field %}
+
+{% macro user_form(form, action, legend, submit) -%}
+  <form method="POST" action="{{ action }}" class="form-horizontal  user-form">
+    <legend>{{ legend }}</legend>
+    {{ form.id }}
+    {{ render_field(form.name) }}
+    {{ render_field(form.token) }}
+    {{ render_field(form.has_access_to) }}
+    <div class="form-actions">
+      <input type="submit" value="{{ submit }}" class="btn" />
+    </div>
+  </form>
+  <script>
+    $(function() {
+      $('select[name=has_access_to]').chosen();
+    });
+  </script>
+{%- endmacro %}

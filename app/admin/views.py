@@ -3,6 +3,8 @@ import functools
 from datetime import timedelta, datetime
 
 from dateutil import tz
+from bson.objectid import ObjectId
+from flask.ext.principal import RoleNeed
 from flask import (g, request, redirect, url_for,
         render_template, flash, session, abort)
 
@@ -60,9 +62,13 @@ def users():
     if request.method == 'POST':
         form = forms.UserForm(request.form)
         if form.validate():
-            user = User({
+            _id = form.data.get('id')
+
+            user = _id and User.get_one(g.db, {'_id': ObjectId(_id)}) or User()
+            user.update({
                 'name': form.data['name'],
-                'token': form.data['token']
+                'token': form.data['token'],
+                'needs': map(RoleNeed, form.data['has_access_to'])
             })
             user.save(g.db)
             return redirect(url_for('.users'))
@@ -89,6 +95,15 @@ def user_create():
 def user_remove(_id):
     User.get_one(g.db, _id).remove(g.db)
     return redirect(url_for('.users'))
+
+
+@bp.route('/users/<ObjectId:_id>/edit', methods=['GET'])
+@login_required
+def user_edit(_id):
+    user = User.get_one(g.db, _id)
+    return render_template('user_edit.html', **{
+        'form': forms.UserForm(request.form, obj=user)
+    })
 
 
 @bp.route('/users/<ObjectId:user_id>', methods=['GET'])
