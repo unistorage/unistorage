@@ -5,6 +5,7 @@ import pytz
 from bson import ObjectId
 from monk import modeling
 from monk.validation import ValidationError
+from flask.ext.principal import RoleNeed
 
 import file_utils
 
@@ -33,8 +34,31 @@ class User(ValidationMixin, modeling.Document):
         '_id': ObjectId,
         'name': basestring,
         'token': basestring,
+        'needs': [tuple]
     }
     required = ['token']
+
+    @classmethod
+    def wrap_incoming(cls, data, db):
+        # Восстановление tuple, который в Mongo хранится как список
+        needs = data.get('needs', [])
+        data['needs'] = [tuple(role) for role in needs]
+        return super(User, cls).wrap_incoming(data, db)
+
+    @property
+    def provides(self):
+        """ Возвращает полный список требований, реализуемых пользователем:
+
+        * явные, хранящиеся в поле :attr:`needs`;
+        * неявные, связанные с аутентификацией.
+
+        Наличие этого свойства позволяет использовать объект :class:`User` в
+        качестве "identity" для Flask-Principal, в т.ч. в `Permission.allows`.
+        """
+        implicit_needs = [
+            RoleNeed(self.get_id())
+        ]
+        return implicit_needs + self.needs
 
 
 class Template(ValidationMixin, modeling.Document):

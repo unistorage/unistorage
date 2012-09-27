@@ -19,6 +19,7 @@ from actions.handlers import apply_template, apply_action
 from utils import ok, error, jsonify, methods_required
 from . import bp
 from app.models import File, RegularFile, PendingFile, Template, ZipCollection
+from app.perms import AccessPermission
 
 
 def login_required(func):
@@ -92,7 +93,9 @@ def file_view(_id=None):
     source_file = File.get_one(g.db, {'_id': _id})
     
     if not source_file:
-        return error({'msg': 'File wasn\'t found'}), 400
+        return error({'msg': 'File wasn\'t found'}), 404
+    
+    AccessPermission(source_file).test(http_exception=403) 
 
     try:
         action_presented = 'action' in request.args
@@ -163,7 +166,9 @@ def zip_view(_id):
     """Вьюшка, отдающая информацию о zip collection"""
     zip_collection = ZipCollection.get_one(g.db, {'_id': _id})
     if not zip_collection:
-        return error({'msg': 'Zip collection wasn\'t found'}), 400
+        return error({'msg': 'Zip collection wasn\'t found'}), 404
+
+    AccessPermission(zip_collection).test(http_exception=403) 
 
     to_timestamp = lambda td: time.mktime(td.timetuple())
     will_expire_at = to_timestamp(zip_collection['created_at'] + settings.ZIP_COLLECTION_TTL)
@@ -171,7 +176,7 @@ def zip_view(_id):
     
     ttl = will_expire_at - now
     if ttl < 0:
-        return error({'msg': 'Zip collection wasn\'t found'}), 400
+        return error({'msg': 'Zip collection wasn\'t found'}), 404
 
     if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL'):
         return ok({

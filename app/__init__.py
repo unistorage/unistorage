@@ -51,15 +51,18 @@ def create_app():
 
     bootstrap = Bundle('less/bootstrap/bootstrap.less', 'less/bootstrap-chosen.less',
             filters='less', output='gen/bootstrap.css')
-    jquery = Bundle('js/libs/jquery.min.js', output='gen/jquery.js')
     css = Bundle('css/layout.css', output='gen/style.css')
+    
+    jquery = Bundle('js/libs/jquery.min.js', output='gen/jquery.js')
+    common_js = Bundle('js/libs/chosen.jquery.js', output='gen/common.js')
     statistics_js = Bundle('js/statistics.js', 
-            'js/libs/jquery.flot.js', 'js/libs/chosen.jquery.js', output='gen/statistics-js.js')
+            'js/libs/jquery.flot.js', output='gen/statistics-js.js')
 
     assets = Environment(app)
     assets.register('bootstrap', bootstrap)
     assets.register('jquery', jquery)
     assets.register('css', css)
+    assets.register('common_js', common_js)
     assets.register('statistics_js', statistics_js)
 
     return app

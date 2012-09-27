@@ -12,6 +12,9 @@
       {% assets "bootstrap", "css" %}
         <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css">
       {% endassets %}
+      {% assets 'common_js' %}
+        <script src="{{ ASSET_URL }}"></script>
+      {% endassets %}
     {% endblock %}
   </head>
   <body>

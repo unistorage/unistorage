@@ -1,5 +1,6 @@
 from flask import url_for
 
+import settings
 from tests.utils import WorkerMixin, StorageFunctionalTest
 
 
@@ -24,9 +25,9 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
                 '`filename` field is required.')
 
     def test(self):
-        file1_resource_uri, file1_id = self.put_file('images/some.jpeg')
-        file2_resource_uri, file2_id = self.put_file('images/some.png')
-        file3_resource_uri, file3_id = self.put_file('images/some.gif')
+        _, file1_id = self.put_file('images/some.jpeg')
+        _, file2_id = self.put_file('images/some.png')
+        _, file3_id = self.put_file('images/some.gif')
 
         r = self.app.post(url_for('.create_zip_view'), {
             'file_id': [file1_id, file2_id, file3_id],
@@ -35,5 +36,4 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
         zip_resource_uri = r.json['resource_uri']
 
         r = self.app.get(zip_resource_uri)
-        self.assertTrue('uns' in r.json['uri'])
-        
+        self.assertTrue(settings.UNISTORE_NGINX_SERVE_URL in r.json['uri'])
