@@ -29,6 +29,7 @@ actions_to_register = (
     'images.resize',
     'images.grayscale',
     'images.watermark',
+    'images.rotate',
     'videos.convert',
     'videos.watermark',
     'docs.convert',

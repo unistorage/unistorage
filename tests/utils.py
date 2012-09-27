@@ -114,7 +114,7 @@ class StorageFunctionalTest(ContextMixin, FlaskTestCase):
         r = self.app.post('/', params, upload_files=files)
         self.assertEquals(r.json['status'], 'ok')
         self.assertTrue('id' in r.json)
-        return ObjectId(r.json['id'])
+        return r.json['resource_uri'], ObjectId(r.json['id'])
 
     def assert_fileinfo(self, r, key, value):
         self.assertEquals(r.json['information']['fileinfo'][key], value)

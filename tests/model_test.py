@@ -4,7 +4,7 @@ import unittest
 from flask import g
 
 import file_utils
-from app.models import User, Statistics, File
+from app.models import User, Statistics, File, ZipCollection
 from tests.utils import ContextMixin, GridFSMixin
 
 

@@ -3,7 +3,6 @@
 Применение операций и шаблонов
 ==============================
 """
-
 from flask import request, g, jsonify
 from bson.objectid import ObjectId
 
@@ -79,7 +78,7 @@ def apply_template(source_file, args):
     if source_type_family != template['applicable_for']:
         raise ValidationError('Specified template is not applicable for the source file.')
 
-    label = str(template['_id'])
+    label = str(template_id)
     action_list = template['action_list']
     return apply_actions(source_file, action_list, label)
 

@@ -7,17 +7,16 @@ from tests.utils import StorageFunctionalTest, WorkerMixin
 
 class FunctionalTest(StorageFunctionalTest, WorkerMixin):
     def test(self):
-        original_id = self.put_file('./images/some.jpeg')
-
-        url = '/%s/' % original_id
-        self.check(url, width=640, height=480, mime='image/jpeg')
+        original_resource_uri, original_id = self.put_file('images/some.jpeg')
+        self.check(original_resource_uri, width=640, height=480, mime='image/jpeg')
         
-        resize_action_url = url + '?action=resize&mode=keep&w=400'
+        resize_action_url = '%s?action=resize&mode=keep&w=400' % original_resource_uri
         r = self.app.get(resize_action_url)
         self.assertEquals(r.json['status'], 'ok')
-        resized_image_id = ObjectId(r.json['id'])
 
-        resized_image_url = '/%s/' % resized_image_id
+        resized_image_id = ObjectId(r.json['id'])
+        resized_image_url = r.json['resource_uri']
+
         r = self.app.get(resized_image_url)
         self.assertTrue('uri' in r.json)
 
@@ -38,12 +37,10 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
         self.assertEquals(int(r.json['ttl']), settings.TTL)
 
     def test_validation_errors(self):
-        original_id = self.put_file('./images/some.jpeg')
+        original_resource_uri, original_id = self.put_file('images/some.jpeg')
 
-        url = '/%s/' % original_id
-
-        r = self.app.get(url + '?action=lalala', status='*')
+        r = self.app.get(original_resource_uri + '?action=lalala', status='*')
         self.assertEquals(r.json['status'], 'error')
 
-        r = self.app.get(url + '?action=convert&to=lalala', status='*')
+        r = self.app.get(original_resource_uri + '?action=convert&to=lalala', status='*')
         self.assertEquals(r.json['status'], 'error')

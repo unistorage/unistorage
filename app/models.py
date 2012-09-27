@@ -243,10 +243,23 @@ class File(ValidationMixin, modeling.Document):
         return fs.get_version(**kwargs)
 
 
+class ZipCollection(ValidationMixin, modeling.Document):
+    collection = 'zip_collections'
+    structure = {
+        '_id': ObjectId,
+        'user_id': ObjectId,
+        'file_ids': [ObjectId],
+        'filename': basestring,
+        'created_at': datetime.utcnow
+    }
+    required = ['user_id', 'file_ids', 'filename', 'created_at']
+
+
 class RegularFile(File):
     """Реализация модели :term:`обычный файл`. Наследуется от :class:`File`."""
     structure = dict(File.structure, **{
         'pending': False,
+        'crc32': int
     })
 
     @classmethod
@@ -274,7 +287,7 @@ class RegularFile(File):
         :param db: база данных
         :type db: pymongo.Connection
         :param fs: файловая система
-        :type fs: gridfs.GridFs
+        :type fs: gridfs.GridFS
         :param data: файл
         :type data: file-like object с атрибутом `name`, содержащим имя файла
         :param **kwargs: дополнительные параметры, которые станут атрибутами файла в GridFS
@@ -308,7 +321,7 @@ class PendingFile(File):
     .. attribute:: ttl
 
         Примерное время в секундах, через которое будут выполнены все `actions` и файл перестанет
-        быть временным.
+        быть временным. FIXME -- new semantics
 
     .. attribute:: actions
 
@@ -322,10 +335,9 @@ class PendingFile(File):
         'pending': True,
         'ttl': int,
         'actions': list,
-        'original_content_type': basestring,
+        'original_content_type': basestring, # XXX
     })
-    required = ('user_id', 'actions', 'label', 'original',
-            'original_content_type', 'pending', 'ttl')
+    required = ('user_id', 'actions', 'label', 'original', 'pending', 'ttl')
 
     @classmethod
     def find(cls, *args, **kwargs):

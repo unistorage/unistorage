@@ -21,8 +21,6 @@ class ObjectIdConverter(BaseConverter):
         return str(value)
 
 
-
-#@app.before_request
 def before_request():
     g.db_connection = connections.get_mongodb_connection()
     g.db = g.db_connection[settings.MONGO_DB_NAME]
@@ -30,7 +28,6 @@ def before_request():
     g.q = Queue(connection=connections.get_redis_connection())
 
 
-#@app.teardown_request
 def teardown_request(exception):
     if hasattr(g, 'db_connection'):
         g.db_connection.close()
@@ -39,19 +36,18 @@ def teardown_request(exception):
 def create_app():
     app = Flask(__name__)
     app.url_map.converters['ObjectId'] = ObjectIdConverter
-
     app.secret_key = settings.SECRET_KEY
+    app.before_request(before_request)
+    app.teardown_request(teardown_request)
 
     import admin
-    app.register_blueprint(admin.bp, url_prefix='/admin')
     import storage
+    app.register_blueprint(admin.bp, url_prefix='/admin')
     app.register_blueprint(storage.bp)
 
     if settings.DEBUG:
         app.config['PROPAGATE_EXCEPTIONS'] = True
 
-
-    assets = Environment(app)
 
     bootstrap = Bundle('less/bootstrap/bootstrap.less', 'less/bootstrap-chosen.less',
             filters='less', output='gen/bootstrap.css')
@@ -60,12 +56,10 @@ def create_app():
     statistics_js = Bundle('js/statistics.js', 
             'js/libs/jquery.flot.js', 'js/libs/chosen.jquery.js', output='gen/statistics-js.js')
 
+    assets = Environment(app)
     assets.register('bootstrap', bootstrap)
     assets.register('jquery', jquery)
     assets.register('css', css)
     assets.register('statistics_js', statistics_js)
-
-    app.before_request(before_request)
-    app.teardown_request(teardown_request)
 
     return app

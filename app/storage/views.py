@@ -4,9 +4,12 @@ Storage views
 =============
 """
 import functools
+import time
+from datetime import datetime
 
 from bson.objectid import ObjectId
-from flask import request, g, abort
+from flask import request, g, abort, url_for
+from pymongo.errors import InvalidId 
 
 import settings
 from actions import templates
@@ -15,7 +18,7 @@ from actions.utils import ValidationError
 from actions.handlers import apply_template, apply_action
 from utils import ok, error, jsonify, methods_required
 from . import bp
-from app.models import File, RegularFile, Template
+from app.models import File, RegularFile, PendingFile, Template, ZipCollection
 
 
 def login_required(func):
@@ -33,6 +36,7 @@ def login_required(func):
 def index_view():
     """Вьюшка, сохраняющая файл в хранилище."""
     file = request.files.get('file')
+    file.name = file.filename # XXX
     if not file:
         return error({'msg': 'File wasn\'t found'}), 400
     
@@ -47,7 +51,8 @@ def index_view():
 
     file_id = RegularFile.put_to_fs(g.db, g.fs, file, **kwargs)
     return ok({
-        'id': file_id
+        'id': file_id,
+        'resource_uri': url_for('.file_view', _id=file_id)
     })
 
 
@@ -68,13 +73,16 @@ def create_template_view():
         'user_id': request.user['_id']
     })
     template_id = Template(template_data).save(g.db)
-    return ok({'id': template_id})
+    return ok({
+        'id': template_id,
+        'resource_uri': None # Шаблоны можно только создавать
+    })
 
 
 @bp.route('/<ObjectId:_id>/')
 @methods_required(['GET'])
 @login_required
-def id_view(_id=None):
+def file_view(_id=None):
     """Вьюшка, ответственная за три вещи:
 
     - Применение операции к файлу `id`, если GET-запрос содержит аргумент `action`
@@ -82,27 +90,96 @@ def id_view(_id=None):
     - Выдача информации о файле `id` во всех остальных случаях
     """
     source_file = File.get_one(g.db, {'_id': _id})
+    
     if not source_file:
         return error({'msg': 'File wasn\'t found'}), 400
-    
-    action_presented = 'action' in request.args
-    template_presented = 'template' in request.args
+
     try:
+        action_presented = 'action' in request.args
+        template_presented = 'template' in request.args
+        
+        apply_ = None
         if action_presented and not template_presented:
-            target_id = apply_action(source_file, request.args.to_dict())
-            return ok({'id': target_id})
+            apply_ = apply_action
         elif template_presented and not action_presented:
-            target_id = apply_template(source_file, request.args.to_dict())
-            return ok({'id': target_id})
+            apply_ = apply_template
         elif action_presented and template_presented:
             raise ValidationError('You can\'t specify both `action` and `template`.')
+        
+        if apply_:
+            target_id = apply_(source_file, request.args.to_dict())
+            return ok({
+                'id': target_id,
+                'resource_uri': url_for('.file_view', _id=target_id)
+            })
     except ValidationError as e:
         return error({'msg': str(e)}), 400
 
     if source_file.pending:
-        return get_pending_file(source_file)
+        return get_pending_file(PendingFile(source_file))
     else:
-        return get_regular_file(source_file)
+        return get_regular_file(RegularFile(source_file))
+
+
+@bp.route('/zip')
+@methods_required(['POST'])
+@login_required
+def create_zip_view(_id=None):
+    """Вьюшка, создающая zip collection"""
+    file_ids = request.form.getlist('file_id')
+    filename = request.form.get('filename')
+    
+    try:
+        if not filename:
+            raise ValidationError('`filename` field is required.')
+        if not file_ids:
+            raise ValidationError('`file_id[]` field is required and must contain at least one id.')
+
+        try:
+            file_ids = map(ObjectId, file_ids)
+        except InvalidId:
+            raise ValidationError('Not all `file_id[]` are correct identifiers.')
+
+        # TODO Проверять, что файлы с указанными айдишниками существуют и не временные?
+    except ValidationError as e:
+        return error({'msg': str(e)}), 400
+
+    zip_collection = ZipCollection({
+        'user_id': request.user.get_id(),
+        'file_ids': file_ids,
+        'filename': filename
+    })
+    zip_id = zip_collection.save(g.db)
+    return ok({
+        'id': zip_id,
+        'resource_uri': url_for('.zip_view', _id=zip_id)
+    })
+
+
+@bp.route('/zip/<ObjectId:_id>/')
+@methods_required(['GET'])
+@login_required
+def zip_view(_id):
+    """Вьюшка, отдающая информацию о zip collection"""
+    zip_collection = ZipCollection.get_one(g.db, {'_id': _id})
+    if not zip_collection:
+        return error({'msg': 'Zip collection wasn\'t found'}), 400
+
+    to_timestamp = lambda td: time.mktime(td.timetuple())
+    will_expire_at = to_timestamp(zip_collection['created_at'] + settings.ZIP_COLLECTION_TTL)
+    now = to_timestamp(datetime.utcnow())
+    
+    ttl = will_expire_at - now
+    if ttl < 0:
+        return error({'msg': 'Zip collection wasn\'t found'}), 400
+
+    if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL'):
+        return ok({
+            'ttl': ttl,
+            'uri': get_unistore_nginx_serve_url(str(zip_collection.get_id()))
+        })
+    else:
+        return error(), 503
 
 
 def get_gridfs_serve_url(path):
@@ -128,27 +205,28 @@ def get_unistore_nginx_serve_url(path):
 
 
 def can_unistore_serve(file):
-    """Возвращает True, если `file` может быть отдан с помощью
-    unistore-nginx-serve (например, в случае, если `file` -- картинка, для
-    которой заказан ресайз).
+    """Возвращает True, если `file` может быть отдан с помощью unistore-nginx-serve (например, в
+    случае, если `file` -- картинка, для которой заказан ресайз).
 
     :param file: :term:`временный файл`
     :type file: :class:`app.models.File`
     """
     original_content_type = file.original_content_type
     actions = file.actions
-    
-    if not original_content_type.startswith('image') or len(actions) > 1:
-        # If source file is not an image or more than one action was applied to it
+
+    supported_types = ('image/gif', 'image/png', 'image/jpeg')
+    if not original_content_type in supported_types or len(actions) > 1:
         return False
     
     action_name, action_args = actions[0]
-    mode, w, h = action_args
-        
-    if action_name != 'resize' or mode not in ('keep', 'crop'):
-        return False
+    if action_name == 'resize':
+        mode, w, h = action_args
+        if mode in ('keep', 'crop'):
+            return True
+    elif action_name == 'rotate':
+        return True
 
-    return True
+    return False
 
 
 def get_pending_file(file):
