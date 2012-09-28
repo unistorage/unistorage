@@ -11,6 +11,7 @@ before_install:
   - file -C -m ./magic
   - sudo npm install -g less
 install:
-  - pip install -r requirements.txt
-# command to run tests
+  - pip install -r requirements/basic.txt
+  - pip install -r requirements/dev.txt
+  - pip install -r requirements/workers.txt
 script: nosetests

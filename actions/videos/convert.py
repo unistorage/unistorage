@@ -1,7 +1,6 @@
 import os
 import tempfile
 import subprocess
-from StringIO import StringIO
 
 from converter import Converter
 
@@ -105,7 +104,7 @@ def perform(source_file, format, vcodec, acodec, only_try=False):
         if format == 'flv':
             run_flvtool(tmp_target_file.name)
 
-        result = StringIO(open(tmp_target_file.name).read())
+        result = open(tmp_target_file.name)
     finally:
         os.unlink(tmp_target_file.name)
         os.unlink(tmp_source_file.name)

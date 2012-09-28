@@ -302,7 +302,7 @@ class RegularFile(File):
         return super(RegularFile, cls).get_from_fs(db, fs, **kwargs)
 
     @classmethod
-    def put_to_fs(cls, db, fs, data, **kwargs):
+    def put_to_fs(cls, db, fs, file_name, file_content, **kwargs):
         """Обновляет поля `fileinfo`, `content_type`, `filename` у kwargs, помещает `data` в GridFS
         и обновляет статистику.
         
@@ -316,11 +316,11 @@ class RegularFile(File):
         :type data: file-like object с атрибутом `name`, содержащим имя файла
         :param **kwargs: дополнительные параметры, которые станут атрибутами файла в GridFS
         """
-        kwargs.update(file_utils.get_file_data(data))
+        kwargs.update(file_utils.get_file_data(file_content, file_name))
         kwargs.update({'pending': False})
 
         cls(**kwargs).validate()
-        file_id = fs.put(data, **kwargs)
+        file_id = fs.put(file_content, **kwargs)
 
         today_utc_midnight = datetime.utcnow().replace(
                 hour=0, minute=0, second=0, microsecond=0)

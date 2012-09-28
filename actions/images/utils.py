@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import subprocess
-from StringIO import StringIO
+from cStringIO import StringIO
 
 from PIL import Image, ImageOps
 

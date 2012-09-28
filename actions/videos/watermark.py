@@ -1,6 +1,5 @@
 import os
 import tempfile
-from StringIO import StringIO
 
 from flask import g
 from bson.objectid import ObjectId
@@ -95,7 +94,7 @@ def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
         for step in convertation:
             pass
 
-        result = StringIO(open(target_tmp.name).read())
+        result = open(target_tmp.name)
     finally:
         os.unlink(target_tmp.name)
         os.unlink(source_tmp.name)
