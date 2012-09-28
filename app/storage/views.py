@@ -37,7 +37,6 @@ def login_required(func):
 def index_view():
     """Вьюшка, сохраняющая файл в хранилище."""
     file = request.files.get('file')
-    file.name = file.filename # XXX
     if not file:
         return error({'msg': 'File wasn\'t found'}), 400
     
@@ -50,7 +49,7 @@ def index_view():
             return error({'msg': '`type_id` is too long. Maximum length is 32.'}), 400
         kwargs.update({'type_id': type_id})
 
-    file_id = RegularFile.put_to_fs(g.db, g.fs, file, **kwargs)
+    file_id = RegularFile.put_to_fs(g.db, g.fs, file.filename, file, **kwargs)
     return ok({
         'id': file_id,
         'resource_uri': url_for('.file_view', _id=file_id)

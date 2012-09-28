@@ -1,14 +1,18 @@
+# -*- coding: utf-8 -*-
 import string
 import binascii
 import os.path
 
 import magic
 import kaa.metadata
+from kaa.metadata.factory import Factory, R_CLASS
 
 import settings
 
 
 MAGIC_PATH = '%s:%s' % (os.path.abspath('./magic.mgc'), settings.MAGIC_PATH)
+
+m = magic.Magic(mime=True, magic_file=MAGIC_PATH)
 
 
 def get_image_info(metadata):
@@ -40,29 +44,68 @@ handlers = {
 }
 
 
+def get_metadata_parser(file):
+    """Модификация :func:`kaa.metadata.factory.Factory.create_from_file`, не полагающаяся на 
+    наличие поле `name` у `file`."""
+    factory = Factory()
+    parser = None
+    file.seek(0, 0)
+    magic = file.read(10)
+    for length, magicmap in factory.magicmap.items():
+        if magic[:length] in magicmap:
+            for p in magicmap[magic[:length]]:
+                file.seek(0, 0)
+                try:
+                    parser = factory.get_class(p[R_CLASS])
+                    return parser(file)
+                except:
+                    pass
+            return None
+
+    for e in factory.types:
+        if factory.get_class(e[R_CLASS]) == parser:
+            continue
+        file.seek(0,0)
+        try:
+            return factory.get_class(e[R_CLASS])(file)
+        except:
+            pass
+    return None
+
+
+def get_metadata(file):
+    """Аналог функции :func:`kaa.metadata.factory.parse`. Всегда использует
+    :func:`get_metadata_parser` для выбора парсера метаданных."""
+    result = get_metadata_parser(file)
+    if result:
+        result._finalize()
+    return result
+
+
 def convert_to_filename(name):
     valid_chars = '-_.() %s%s' % (string.ascii_letters, string.digits)
     return ''.join(c for c in name if c in valid_chars)
 
 
 def get_content_type(file):
-    m = magic.Magic(mime=True, magic_file=MAGIC_PATH)
     file.seek(0)
-    content_type = m.from_buffer(file.read(2048))
+    content_type = m.from_buffer(file.read())
     file.seek(0)
     return content_type
 
 
-def get_file_data(file):
+def get_file_data(file, file_name=None):
     file.seek(0)
+    file_content = file.read()
+    file.seek(0)
+
     data = {
-        'filename': convert_to_filename(file.name),
-        'content_type': get_content_type(file),
-        'crc32': binascii.crc32(file.read()) #TODO
+        'filename': convert_to_filename(file_name),
+        'content_type': m.from_buffer(file_content),
+        'crc32': binascii.crc32(file_content)
     }
 
-    file.seek(0)
-    metadata = kaa.metadata.parse(file)
+    metadata = get_metadata(file)
     file.seek(0)
 
     if metadata and handlers.has_key(metadata.media):

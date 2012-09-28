@@ -1,7 +1,6 @@
 import unittest
 import sys
 import os.path
-from StringIO import StringIO
 
 import redis
 from flask import g, url_for
@@ -64,9 +63,7 @@ class GridFSMixin(ContextMixin):
 
     def put_file(self, path, user_id=ObjectId('50516e3e8149950f0fa50462'), type_id=None):
         path = fixture_path(path)
-        file = StringIO(open(path, 'rb').read())
-        file.name = file.filename = os.path.basename(path)
-        return RegularFile.put_to_fs(g.db, g.fs, file, **{
+        return RegularFile.put_to_fs(g.db, g.fs, os.path.basename(path), open(path, 'rb'), **{
             'type_id': type_id,
             'user_id': user_id,
         })

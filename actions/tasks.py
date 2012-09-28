@@ -94,8 +94,7 @@ def perform_actions(source_id, target_id, target_kwargs):
 
     target_file = curr_file
     target_file_name = '%s_%s' % (source_file_name, target_kwargs['label'])
-    target_file.name = convert_to_filename('%s.%s' % (target_file_name, curr_file_ext))
     
     PendingFile.remove_from_fs(db, fs, _id=target_id)
-    RegularFile.put_to_fs(db, fs, target_file, _id=target_id, **target_kwargs)
+    RegularFile.put_to_fs(db, fs, target_file_name, target_file, _id=target_id, **target_kwargs)
     target_file.close()

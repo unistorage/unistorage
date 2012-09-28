@@ -1,5 +1,5 @@
 import subprocess
-from StringIO import StringIO
+from cStringIO import StringIO
 
 import settings
 from actions import ActionException
@@ -25,7 +25,7 @@ def validate_and_get_args(args):
 
 
 def perform(source_file, format):
-    args = [settings.OO_WRAPPER_BIN, '--format', format, '--source', '-', '--target', '-']
+    args = [settings.OO_WRAPPER_BIN, '-', '-', '--format', format]
     try:
         proc = subprocess.Popen(args, stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
