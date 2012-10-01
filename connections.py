@@ -14,3 +14,12 @@ def get_mongodb_connection():
 
 def get_redis_connection():
     return Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
+
+
+class MongoDBConnection(object):
+    def __enter__(self):
+        self.connection = get_mongodb_connection()
+        return self.connection
+
+    def __exit__(self, type, value, traceback):
+        self.connection.close()
