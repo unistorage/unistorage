@@ -5,8 +5,8 @@ before_install:
   - sudo bash -c 'echo "deb http://79.172.49.99/debian/ squeeze main" >> /etc/apt/sources.list'
   - sudo apt-get update
   - sudo apt-get -qq install zlib1g zlib1g-dev ffmpeg x264 ubuntu-restricted-extras libmp3lame0 flvtool2 libreoffice
-  - sudo apt-get install -t squeeze $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
-  - sudo apt-get install -t squeeze openoffice.org-ure $(apt-cache --no-generate pkgnames openoffice.org3 | tr '\n' ' ')
+  - sudo apt-get install -t squeeze -y --force-yes $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
+  - sudo apt-get install -t squeeze -y --force-yes openoffice.org-ure $(apt-cache --no-generate pkgnames openoffice.org3 | tr '\n' ' ')
   - sudo ln -s /usr/lib/i386-linux-gnu/libz.so /usr/lib/
   - export PYTHON_VERSION=2.7 
   - cp /usr/share/pyshared/uno.py $VIRTUAL_ENV/lib/python$PYTHON_VERSION/site-packages/ 
