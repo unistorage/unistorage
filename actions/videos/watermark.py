@@ -96,8 +96,11 @@ def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
 
         result = open(target_tmp.name)
     finally:
-        os.unlink(target_tmp.name)
-        os.unlink(source_tmp.name)
-        os.unlink(wm_tmp.name)
+        if target_tmp:
+            os.unlink(target_tmp.name)
+        if source_tmp:
+            os.unlink(source_tmp.name)
+        if wm_tmp:
+            os.unlink(wm_tmp.name)
 
     return result, video_data['format']

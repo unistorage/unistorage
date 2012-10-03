@@ -1,6 +1,6 @@
 import os
 import subprocess
-from StringIO import StringIO
+from cStringIO import StringIO
 
 import gridfs
 from flask import g
