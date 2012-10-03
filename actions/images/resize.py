@@ -1,6 +1,4 @@
-from PIL import Image
-from utils import *
-from ..utils import ValidationError
+from actions.utils import ValidationError
 
 
 name = 'resize'
@@ -33,6 +31,9 @@ def validate_and_get_args(args):
 
 
 def perform(source_file, mode, target_width, target_height):
+    from PIL import Image
+    from utils import wrap, to_int
+
     source_image = Image.open(source_file)
     target_image = wrap(source_image)
 
