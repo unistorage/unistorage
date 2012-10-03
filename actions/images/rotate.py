@@ -1,6 +1,3 @@
-from PIL import Image
-
-from utils import *
 from actions.utils import ValidationError
 
 
@@ -19,5 +16,8 @@ def validate_and_get_args(args):
 
 
 def perform(source_file, angle):
+    from PIL import Image
+    from utils import wrap
+
     source_image = Image.open(source_file)
     return wrap(source_image).rotate(angle).finalize()

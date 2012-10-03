@@ -1,6 +1,4 @@
-from PIL import Image
-from utils import *
-from ..utils import ValidationError
+from actions.utils import ValidationError
 
 
 name = 'convert'
@@ -22,6 +20,9 @@ def validate_and_get_args(args):
 
 
 def perform(source_file, to):
+    from PIL import Image
+    from utils import wrap
+
     source_image = Image.open(source_file)
     target_image = wrap(source_image)
     return target_image.finalize(format=to)

@@ -4,7 +4,6 @@ from StringIO import StringIO
 
 import gridfs
 from flask import g
-from PIL import Image
 
 import actions
 import settings
