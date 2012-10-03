@@ -14,3 +14,4 @@ kaa-base
 kaa-metadata
 
 pyyaml
+PIL
