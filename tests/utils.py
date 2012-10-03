@@ -28,7 +28,7 @@ class WorkerMixin(object):
         old_stderr = sys.stderr
         sys.stderr = sys.stdout # Let worker log be captured by nose
 
-        use_connection(redis.Redis())
+        use_connection(redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT))
         queues = map(Queue, ['default'])
         w = Worker(queues)
         w.work(burst=True)
