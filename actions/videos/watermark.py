@@ -68,6 +68,9 @@ def resize_watermark(wm, wm_bbox):
 
 
 def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
+    source_tmp = None
+    target_tmp = None
+    wm_tmp = None
     try:
         source_tmp = tempfile.NamedTemporaryFile(delete=False)
         source_tmp.write(source_file.read())
