@@ -1,9 +1,12 @@
 import sys
+import os
 import logging.config
 from datetime import timedelta
 
 import yaml
 
+
+PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 DEBUG = False
 SECRET_KEY = 'qwertyuiop[]'
@@ -57,5 +60,6 @@ if 'test' in sys.argv[0]: # Is there another way?
     except ImportError:
         pass
 
-config = yaml.load(open('./logging.conf'))
+logging_conf_path = os.path.join(PROJECT_PATH, 'logging.conf')
+config = yaml.load(open(logging_conf_path))
 logging.config.dictConfig(config)
