@@ -328,7 +328,7 @@ class RegularFile(File):
         db[Statistics.collection].update({
             'user_id': kwargs.get('user_id'),
             'type_id': kwargs.get('type_id'),
-            'timestamp': today_utc_midnight,
+            'timestamp': today_utc_midnight
         }, {
             '$inc': {
                 'files_count': 1,

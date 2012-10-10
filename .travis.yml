@@ -17,4 +17,4 @@ install:
   - pip install -r requirements/basic.txt
   - pip install -r requirements/dev.txt
   - pip install -r requirements/workers.txt
-script: nosetests
+script: nosetests --exclude-dir=./tests/action_tests/docs/ --exclude=./tests/smoke_tests/doc_actions_test.py

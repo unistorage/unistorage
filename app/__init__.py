@@ -1,9 +1,9 @@
 from gridfs import GridFS
-from bson.errors import InvalidId
 from bson import ObjectId
+from bson.errors import InvalidId
 from flask import Flask, g
-from werkzeug.routing import BaseConverter, ValidationError
 from flask.ext.assets import Environment, Bundle
+from werkzeug.routing import BaseConverter, ValidationError
 
 import settings
 import connections

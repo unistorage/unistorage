@@ -23,9 +23,6 @@ MONGO_REPLICATION_ON = True
 MONGO_REPLICA_SET_URI = 'localhost:27017,localhost:27018'
 MONGO_REPLICA_SET_NAME = 'grid_fs_set'
 
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
-
 CELERY_BROKER = 'mongodb://localhost:27017/q/'
 
 # ImageMagick binaries
@@ -47,7 +44,7 @@ GRIDFS_SERVE_URL = 'http://127.0.0.1'
 UNISTORE_NGINX_SERVE_URL = 'http://127.0.0.1/uns'
 
 TTL = int(timedelta(days=7).total_seconds())
-AVERAGE_TASK_TIME = timedelta(seconds=5)
+AVERAGE_TASK_TIME = timedelta(seconds=60)
 
 ZIP_COLLECTION_TTL = timedelta(days=1)
 
