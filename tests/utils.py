@@ -4,7 +4,6 @@ import os.path
 import subprocess
 import signal
 
-import redis
 from flask import g, url_for
 from webtest import TestApp
 from bson.objectid import ObjectId

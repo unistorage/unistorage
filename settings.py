@@ -23,9 +23,6 @@ MONGO_REPLICATION_ON = True
 MONGO_REPLICA_SET_URI = 'localhost:27017,localhost:27018'
 MONGO_REPLICA_SET_NAME = 'grid_fs_set'
 
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
-
 CELERY_BROKER = 'mongodb://localhost:27017/q/'
 
 # ImageMagick binaries
