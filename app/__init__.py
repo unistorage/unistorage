@@ -1,4 +1,3 @@
-from rq import Queue
 from gridfs import GridFS
 from bson.errors import InvalidId
 from bson import ObjectId
@@ -25,7 +24,6 @@ def before_request():
     g.db_connection = connections.get_mongodb_connection()
     g.db = g.db_connection[settings.MONGO_DB_NAME]
     g.fs = GridFS(g.db)
-    g.q = Queue(connection=connections.get_redis_connection())
 
 
 def teardown_request(exception):

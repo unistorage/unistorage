@@ -26,6 +26,8 @@ MONGO_REPLICA_SET_NAME = 'grid_fs_set'
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 
+CELERY_BROKER = 'mongodb://localhost:27017/q/'
+
 # ImageMagick binaries
 CONVERT_BIN = '/usr/bin/convert'
 IDENTIFY_BIN = '/usr/bin/identify'

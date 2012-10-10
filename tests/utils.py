@@ -1,12 +1,15 @@
 import unittest
 import sys
 import os.path
+import subprocess
+import signal
 
 import redis
 from flask import g, url_for
 from webtest import TestApp
 from bson.objectid import ObjectId
-from rq import Queue, Worker, use_connection
+from celery import current_app
+from celery.bin.celeryd import WorkerCommand
 
 import app
 import settings
@@ -14,6 +17,7 @@ import file_utils
 from app.models import User, Statistics, RegularFile
 from app.admin.forms import get_random_token
 from tests.flask_webtest import FlaskTestCase, FlaskTestApp
+from actions.tasks import celery
 
 
 FIXTURES_DIR = './tests/fixtures'
@@ -23,17 +27,11 @@ def fixture_path(path):
 
 
 class WorkerMixin(object):
-    """Provides `run_worker` method to run all tasks from default queue."""
     def run_worker(self):
-        old_stderr = sys.stderr
-        sys.stderr = sys.stdout # Let worker log be captured by nose
-
-        use_connection(redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT))
-        queues = map(Queue, ['default'])
-        w = Worker(queues)
-        w.work(burst=True)
-
-        sys.stderr = old_stderr
+        tests_dir = os.path.dirname(os.path.abspath(__file__))
+        script_name = os.path.join(tests_dir, 'celery_worker_burst.py')
+        subprocess.call('PYTHONPATH=%s:$PYTHONPATH %s' % \
+                (os.getcwd(), script_name), shell=True)
 
 
 class ContextMixin(object):

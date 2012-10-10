@@ -3,12 +3,15 @@
 Применение операций и шаблонов
 ==============================
 """
+from datetime import timedelta
+
 from flask import request, g, jsonify
 from bson.objectid import ObjectId
 
 import settings
 import actions
 from actions import templates
+from actions.tasks import perform_actions
 from utils import ValidationError, get_type_family
 from app.models import Template, File, PendingFile
 
@@ -32,7 +35,8 @@ def apply_actions(source_file, action_list, label):
     if target_file:
         return target_file.get_id()
 
-    ttl_timedelta = settings.AVERAGE_TASK_TIME * (g.q.count + len(action_list))
+    # TODO
+    ttl_timedelta = timedelta(seconds=15) # settings.AVERAGE_TASK_TIME * (g.q.count + len(action_list))
     ttl = int(ttl_timedelta.total_seconds())
 
     # Атрибуты, которые должны быть как у временного файла, так и у постоянного (после выполнения
@@ -53,7 +57,7 @@ def apply_actions(source_file, action_list, label):
     pending_target_kwargs.update(target_kwargs)
 
     target_id = PendingFile.put_to_fs(g.db, g.fs, **pending_target_kwargs)
-    g.q.enqueue('actions.tasks.perform_actions', source_id, target_id, target_kwargs)
+    perform_actions.delay(source_id, target_id, target_kwargs)
     g.db[File.collection].update({'_id': source_id},
             {'$set': {'modifications.%s' % label: target_id}})
     return target_id
