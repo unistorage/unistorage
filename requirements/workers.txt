@@ -1,3 +1,2 @@
-rq==0.3.0
 -e git://github.com/mediasite/python-video-converter.git#egg=python-video-converter
 PIL

@@ -15,11 +15,14 @@ import connections
 from app.models import PendingFile, RegularFile
 from file_utils import get_content_type, convert_to_filename
 from actions.utils import get_type_family
+from celery import Celery
+
 
 
 connection = connections.get_mongodb_connection()
 db = connection[settings.MONGO_DB_NAME]
 fs = gridfs.GridFS(db)
+celery = Celery('tasks', broker=settings.CELERY_BROKER)
 
 
 LOG_TEMPLATE = """
@@ -44,6 +47,7 @@ def resolve_object_ids(args):
     return [try_resolve(arg) for arg in args]
 
 
+@celery.task
 def perform_actions(source_id, target_id, target_kwargs):
     """Проверяет существование обычного файла с идентификатором `source_id` и временного с
     идентификатором `target_id`. Последовательно применяет к обычному файлу операции, записанные
