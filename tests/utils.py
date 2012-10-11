@@ -3,6 +3,7 @@ import sys
 import os.path
 import subprocess
 import signal
+import time
 
 from flask import g, url_for
 from webtest import TestApp
@@ -28,9 +29,20 @@ def fixture_path(path):
 class WorkerMixin(object):
     def run_worker(self):
         tests_dir = os.path.dirname(os.path.abspath(__file__))
-        script_name = os.path.join(tests_dir, 'celery_worker_burst.py')
-        subprocess.call('PYTHONPATH=%s:$PYTHONPATH %s' % \
-                (os.getcwd(), script_name), shell=True)
+        script_name = os.path.join(tests_dir, 'celery_worker.py')
+        subprocess.Popen(
+                ['PYTHONPATH=%s:$PYTHONPATH %s' % (os.getcwd(), script_name)],
+                shell=True)
+
+        while True:
+            time.sleep(1)
+            reserved_tasks = current_app.control.inspect().reserved()
+            if not reserved_tasks:
+                continue
+            for tasks in reserved_tasks.values():
+                if not tasks:
+                    current_app.control.broadcast('shutdown', destination=['test_worker'])
+                    return
 
 
 class ContextMixin(object):
