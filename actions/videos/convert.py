@@ -2,8 +2,6 @@ import os
 import tempfile
 import subprocess
 
-from converter import Converter
-
 import settings
 from actions import ActionException
 from actions.utils import *
@@ -78,6 +76,8 @@ def run_flvtool(file_path):
 
 
 def perform(source_file, format, vcodec, acodec, only_try=False):
+    from converter import Converter
+
     tmp_source_file = tempfile.NamedTemporaryFile(delete=False)
     tmp_source_file.write(source_file.read())
     tmp_source_file.close()
