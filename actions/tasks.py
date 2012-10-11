@@ -71,7 +71,6 @@ def perform_actions(source_id, target_id, target_kwargs):
     curr_file_name = source_file_name
     curr_file_ext = source_file_ext
     curr_content_type = curr_file.content_type
-    print '>>>\n\n', target_kwargs, curr_content_type, '\n\n<<<'
 
     for action_name, action_args in target_file.actions:
         type_family = get_type_family(curr_content_type)
