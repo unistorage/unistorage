@@ -3,7 +3,6 @@ import tempfile
 
 from flask import g
 from bson.objectid import ObjectId
-from converter import FFMpeg, Converter
 
 import settings
 import actions
@@ -46,6 +45,8 @@ def get_watermark_bbox(source_width, source_height, w, h):
 
 
 def get_video_data(video_path):
+    from converter import FFMpeg, Converter
+
     c = Converter(ffmpeg_path=settings.FFMPEG_BIN, ffprobe_path=settings.FFPROBE_BIN)
     data = c.probe(video_path)
     for stream in data.streams:
