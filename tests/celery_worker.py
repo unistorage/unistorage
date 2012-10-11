@@ -8,8 +8,11 @@ from actions.tasks import celery
 
 def main():
     from celery import current_app
-    worker = WorkerCommand(app=current_app).run(
-            app=current_app, concurrency=1, hostname='test_worker')
+    try:
+        worker = WorkerCommand(app=current_app).run(
+                app=current_app, concurrency=1, hostname='test_worker')
+    except:
+        pass
 
 
 sys.stderr = sys.stdout
