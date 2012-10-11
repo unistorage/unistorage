@@ -35,8 +35,7 @@ def apply_actions(source_file, action_list, label):
     if target_file:
         return target_file.get_id()
 
-    # TODO
-    ttl_timedelta = timedelta(seconds=15) # settings.AVERAGE_TASK_TIME * (g.q.count + len(action_list))
+    ttl_timedelta = settings.AVERAGE_TASK_TIME
     ttl = int(ttl_timedelta.total_seconds())
 
     # Атрибуты, которые должны быть как у временного файла, так и у постоянного (после выполнения
