@@ -8,7 +8,6 @@ import time
 from flask import g, url_for
 from webtest import TestApp
 from bson.objectid import ObjectId
-from celery import current_app
 from celery.bin.celeryd import WorkerCommand
 
 import app
@@ -28,6 +27,7 @@ def fixture_path(path):
 
 class WorkerMixin(object):
     def run_worker(self):
+        from celery import current_app
         tests_dir = os.path.dirname(os.path.abspath(__file__))
         script_name = os.path.join(tests_dir, 'celery_worker.py')
         subprocess.Popen(
@@ -35,7 +35,7 @@ class WorkerMixin(object):
                 shell=True)
 
         while True:
-            time.sleep(1)
+            time.sleep(0.1)
             reserved_tasks = current_app.control.inspect().reserved()
             if not reserved_tasks:
                 continue
