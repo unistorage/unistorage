@@ -25,7 +25,7 @@ from app.perms import AccessPermission
 def login_required(func):
     @functools.wraps(func)
     def f(*args, **kwargs):
-        if not request.user:
+        if not hasattr(request, 'user') or not request.user:
             abort(401)
         return func(*args, **kwargs)
     return f
