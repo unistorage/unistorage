@@ -38,8 +38,6 @@ FFPROBE_BIN = '/usr/bin/ffprobe'
 OO_WRAPPER_BIN = 'oowrapper.py'
 FLVTOOL_BIN = '/usr/bin/flvtool2'
 
-MAGIC_PATH = '/etc/magic:/usr/share/misc/magic' # Check your `file --version`
-
 GRIDFS_SERVE_URL = 'http://127.0.0.1'
 UNISTORE_NGINX_SERVE_URL = 'http://127.0.0.1/uns'
 
@@ -47,6 +45,18 @@ TTL = int(timedelta(days=7).total_seconds())
 AVERAGE_TASK_TIME = timedelta(seconds=60)
 
 ZIP_COLLECTION_TTL = timedelta(days=1)
+
+MAGIC_FILE_PATH = ':'.join((
+    os.path.join(PROJECT_PATH, 'magic.mgc'),
+    # Check your `file --version`
+    '/etc/magic',
+    '/usr/share/misc/magic',   
+))
+
+logging_conf_path = os.path.join(PROJECT_PATH, 'logging.conf')
+config = yaml.load(open(logging_conf_path))
+logging.config.dictConfig(config)
+
 
 try:
     from settings_local import *
@@ -58,7 +68,3 @@ if 'test' in sys.argv[0]: # Is there another way?
         from settings_test import *
     except ImportError:
         pass
-
-logging_conf_path = os.path.join(PROJECT_PATH, 'logging.conf')
-config = yaml.load(open(logging_conf_path))
-logging.config.dictConfig(config)

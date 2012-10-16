@@ -10,9 +10,7 @@ from kaa.metadata.factory import Factory, R_CLASS
 import settings
 
 
-MAGIC_PATH = '%s:%s' % (os.path.abspath('./magic.mgc'), settings.MAGIC_PATH)
-
-m = magic.Magic(mime=True, magic_file=MAGIC_PATH)
+m = magic.Magic(mime=True, magic_file=settings.MAGIC_FILE_PATH)
 
 
 def get_image_info(metadata):
