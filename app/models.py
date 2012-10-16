@@ -140,8 +140,8 @@ class Statistics(ValidationMixin, modeling.Document):
             '}',
             finalize='function(entry) {' \
                 'entry.files_size /= (1024 * 1024);' \
-                'entry.files_size = parseFloat(entry.files_size.toFixed(2));' \
-                'entry.files_count = parseInt(entry.files_count);' \
+                'entry.files_size = parseFloat(entry.files_size.toFixed(2)).toString();' \
+                'entry.files_count = parseInt(entry.files_count).toString();' \
             '}'
         )
 

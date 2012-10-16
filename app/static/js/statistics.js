@@ -9,7 +9,6 @@ $(function () {
             min: 0,
             tickFormatter: function (v) { return v.toFixed(2) + ' МБ'; }
         }, {
-            tickSize: 1,
             position: 'right'
         }],
         bars: {
