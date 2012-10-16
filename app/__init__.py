@@ -1,7 +1,7 @@
 from gridfs import GridFS
 from bson import ObjectId
 from bson.errors import InvalidId
-from flask import Flask, g
+from flask import Flask, g, abort
 from flask.ext.assets import Environment, Bundle
 from werkzeug.routing import BaseConverter, ValidationError
 
@@ -21,9 +21,13 @@ class ObjectIdConverter(BaseConverter):
 
 
 def before_request():
-    g.db_connection = connections.get_mongodb_connection()
-    g.db = g.db_connection[settings.MONGO_DB_NAME]
-    g.fs = GridFS(g.db)
+    try:
+        g.db_connection = connections.get_mongodb_connection()
+        g.db = g.db_connection[settings.MONGO_DB_NAME]
+        g.fs = GridFS(g.db)
+    except:
+        abort(500)
+
 
 
 def teardown_request(exception):
