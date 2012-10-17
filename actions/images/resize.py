@@ -1,5 +1,5 @@
 from actions.utils import ValidationError
-
+from actions.common import validate_presence
 
 name = 'resize'
 applicable_for = 'image'
@@ -42,8 +42,8 @@ def perform(source_file, mode, target_width, target_height):
 
     source_width, source_height = map(float, source_image.size)
     # If mode == 'keep', either target_width or target_height can be None
-    factors = target_width / source_width if target_width else 1, \
-              target_height / source_height if target_height else 1
+    factors = [target_width / source_width if target_width else 1,
+               target_height / source_height if target_height else 1]
 
     factor = max(factors) if mode == 'crop' else min(factors)
     width = to_int(source_width * factor)

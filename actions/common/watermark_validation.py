@@ -3,11 +3,7 @@ from flask import g
 from bson.objectid import ObjectId
 
 from actions.utils import ValidationError, get_type_family
-
-
-def validate_presence(args, arg_name):
-    if arg_name not in args:
-        raise ValidationError('`%s` must be specified.' % arg_name)
+from actions.common import validate_presence
 
 
 def validate_and_get_as_dimension(args, arg_name):
@@ -32,8 +28,8 @@ def validate_and_get_args(args):
     for arg_name in ('w', 'h', 'w_pad', 'h_pad', 'corner', 'watermark_id'):
         validate_presence(args, arg_name)
     
-    w, h, w_pad, h_pad = [validate_and_get_as_dimension(args, arg_name) \
-            for arg_name in ('w', 'h', 'w_pad', 'h_pad')]
+    w, h, w_pad, h_pad = [validate_and_get_as_dimension(args, arg_name)
+                          for arg_name in ('w', 'h', 'w_pad', 'h_pad')]
         
     corners = ('ne', 'se', 'sw', 'nw')
     corner = args['corner']

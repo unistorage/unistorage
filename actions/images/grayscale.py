@@ -1,6 +1,3 @@
-from actions.utils import ValidationError
-
-
 name = 'grayscale'
 applicable_for = 'image'
 result_type_family = 'image'

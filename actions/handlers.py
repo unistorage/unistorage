@@ -3,14 +3,11 @@
 Применение операций и шаблонов
 ==============================
 """
-from datetime import timedelta
-
-from flask import request, g, jsonify
+from flask import request, g
 from bson.objectid import ObjectId
 
 import settings
 import actions
-from actions import templates
 from actions.tasks import perform_actions
 from utils import ValidationError, get_type_family
 from app.models import Template, File, PendingFile
@@ -27,7 +24,7 @@ def apply_actions(source_file, action_list, label):
     :type label: basestring
     :param action_list: список операций
     :type action_list: `list(tuple(action_name, action_cleaned_args))`
-    :rtype: :class:`ObjectId` 
+    :rtype: :class:`ObjectId`
     """
     source_id = source_file.get_id()
     target_file = File.get_one(g.db, {'original': source_id, 'label': label})
@@ -57,8 +54,9 @@ def apply_actions(source_file, action_list, label):
 
     target_id = PendingFile.put_to_fs(g.db, g.fs, **pending_target_kwargs)
     perform_actions.delay(source_id, target_id, target_kwargs)
-    g.db[File.collection].update({'_id': source_id},
-            {'$set': {'modifications.%s' % label: target_id}})
+    g.db[File.collection].update(
+        {'_id': source_id},
+        {'$set': {'modifications.%s' % label: target_id}})
     return target_id
 
 
@@ -103,8 +101,8 @@ def apply_action(source_file, args):
     action = actions.get_action(type_family, action_name)
 
     if not action:
-        raise ValidationError('Action %s is not supported for %s (%s).' % \
-                (action_name, type_family, source_file.content_type))
+        raise ValidationError('Action %s is not supported for %s (%s).' %
+                              (action_name, type_family, source_file.content_type))
 
     cleaned_args = action.validate_and_get_args(args)
     label = '_'.join(map(str, [action.name] + cleaned_args))

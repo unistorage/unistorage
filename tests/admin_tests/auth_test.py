@@ -7,7 +7,7 @@ from tests.utils import AdminFunctionalTest
 
 class FunctionalTest(AdminFunctionalTest):
     def setUp(self):
-        super(FunctionalTest, self).setUp();
+        super(FunctionalTest, self).setUp()
         self.index_url = url_for('admin.index')
         self.login_url = url_for('admin.login')
         self.logout_url = url_for('admin.logout')

@@ -86,7 +86,7 @@ class ImageMagickWrapper(object):
     
     def crop_to_center(self, width, height):
         self._args.extend(['-gravity', 'Center',
-                '-crop', '%dx%d+0+0' % (width, height), '+repage'])
+                           '-crop', '%dx%d+0+0' % (width, height), '+repage'])
         return self
 
     def finalize(self, **kwargs):
@@ -104,8 +104,8 @@ class ImageMagickWrapper(object):
 
         try:
             proc = subprocess.Popen(self._args, stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        except OSError as e:
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except OSError:
             raise ActionException('Failed to start ImageMagick\'s convert: %s' % self._args[0])
 
         result, error = proc.communicate(input=proc_input.read())
@@ -120,5 +120,5 @@ def wrap(image):
     if image.format == 'GIF' or is_rgba_png(image):
         wrapper = ImageMagickWrapper
     else:
-        wrapper = PILWrapper 
+        wrapper = PILWrapper
     return wrapper(image)

@@ -2,14 +2,10 @@ import os
 import subprocess
 from cStringIO import StringIO
 
-import gridfs
-from flask import g
-
 import actions
+import actions.common.watermark_validation
 import settings
 from actions import ActionException
-from actions.utils import ValidationError, get_type_family
-from actions.common import watermark_validation
 
 
 name = 'watermark'
@@ -30,8 +26,8 @@ def identify(file, format):
     args = [settings.IDENTIFY_BIN, '-format', format, '-']
     try:
         proc = subprocess.Popen(args, stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except OSError as e:
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError:
         raise ActionException('Failed to start `identify` (%s)' % settings.IDENTIFY_BIN)
     
     proc_input = file.read()
@@ -59,7 +55,7 @@ def perform(source_file, watermark_file, w, h, h_pad, v_pad, corner):
 
     watermark_format = identify(watermark_file, '%m')
     watermark_bbox_geometry = get_watermark_bbox_geometry(
-            source_width, source_height, w, h, h_pad, v_pad)
+        source_width, source_height, w, h, h_pad, v_pad)
 
     fd_in, fd_out = os.pipe()
     args = [settings.COMPOSITE_BIN, '-gravity', CORNER_MAP[corner],
@@ -68,8 +64,8 @@ def perform(source_file, watermark_file, w, h, h_pad, v_pad, corner):
 
     try:
         proc = subprocess.Popen(args, stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except OSError as e:
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError:
         raise ActionException('Failed to start `composite` (%s)' % settings.COMPOSITE_BIN)
     os.write(fd_out, watermark_file.read())
     os.close(fd_out)

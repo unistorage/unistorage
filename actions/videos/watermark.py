@@ -1,13 +1,8 @@
 import os
 import tempfile
 
-from flask import g
-from bson.objectid import ObjectId
-
 import settings
 import actions
-from actions import ActionException
-from actions.utils import ValidationError, get_type_family
 from actions.images.resize import perform as image_resize
 
 
@@ -35,7 +30,7 @@ def get_dimension(value, percents_or_pixels):
 def get_watermark_position(source_width, source_height, h_pad, v_pad, corner):
     wm_h_pad = get_dimension(source_width, h_pad)
     wm_v_pad = get_dimension(source_height, v_pad)
-    return CORNER_MAP[corner] % {'h_pad': h_pad, 'v_pad': v_pad}
+    return CORNER_MAP[corner] % {'h_pad': wm_h_pad, 'v_pad': wm_v_pad}
 
 
 def get_watermark_bbox(source_width, source_height, w, h):
@@ -45,7 +40,7 @@ def get_watermark_bbox(source_width, source_height, w, h):
 
 
 def get_video_data(video_path):
-    from converter import FFMpeg, Converter
+    from converter import Converter
 
     c = Converter(ffmpeg_path=settings.FFMPEG_BIN, ffprobe_path=settings.FFPROBE_BIN)
     data = c.probe(video_path)
@@ -62,14 +57,14 @@ def resize_watermark(wm, wm_bbox):
     resized_wm, resized_wm_ext = image_resize(wm, 'keep', *wm_bbox)
 
     wm_tmp = tempfile.NamedTemporaryFile(
-            suffix='.%s' % resized_wm_ext, delete=False)
+        suffix='.%s' % resized_wm_ext, delete=False)
     wm_tmp.write(resized_wm.read())
     wm_tmp.close()
     return wm_tmp
 
 
 def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
-    from converter import FFMpeg, Converter
+    from converter import FFMpeg
 
     source_tmp = None
     target_tmp = None

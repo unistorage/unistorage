@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import string
 import binascii
-import os.path
 
 import magic
 import kaa.metadata

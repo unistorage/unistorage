@@ -1,4 +1,5 @@
 from actions.utils import ValidationError
+from actions.common import validate_presence
 
 
 name = 'convert'
@@ -7,14 +8,13 @@ result_type_family = 'image'
 
 
 def validate_and_get_args(args):
-    if 'to' not in args:
-        raise ValidationError('`to` must be specified.')
+    validate_presence(args, 'to')
     format = args['to']
 
     supported_formats = ('bmp', 'gif', 'jpeg', 'png', 'tiff')
     if format not in supported_formats:
         raise ValidationError('Source file can be only converted to the one of '
-            'following formats: %s.' % ', '.join(supported_formats))
+                              'following formats: %s.' % ', '.join(supported_formats))
 
     return [format]
 
