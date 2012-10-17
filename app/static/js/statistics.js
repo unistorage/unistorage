@@ -4,7 +4,7 @@ $(function () {
     function drawVisualization() {
         new google.visualization.ColumnChart($('#plot').get(0)).draw(statisticsData,
             {
-                hAxis: {title: 'Year'},
+                hAxis: {title: 'Дата'},
                 vAxes: [{'format': '# МБ'},{'format': '#'}],
                 series:{
                     0: {targetAxisIndex:0},
