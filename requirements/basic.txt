@@ -15,3 +15,6 @@ kaa-metadata
 
 pytz
 pyyaml
+
+# Temporarily:
+git+git://github.com/mitsuhiko/jinja2.git
