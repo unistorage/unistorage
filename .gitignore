@@ -6,3 +6,4 @@ app/static/gen
 cover
 .coverage
 docs/_build
+magic.mgc
