@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 
-import pytz
 from bson import ObjectId
 from monk import modeling
 from monk.validation import ValidationError
@@ -140,8 +139,8 @@ class Statistics(ValidationMixin, modeling.Document):
             '}',
             finalize='function(entry) {' \
                 'entry.files_size /= (1024 * 1024);' \
-                'entry.files_size = parseFloat(entry.files_size.toFixed(2)).toString();' \
-                'entry.files_count = parseInt(entry.files_count).toString();' \
+                'entry.files_size = parseFloat(entry.files_size.toFixed(2));' \
+                'entry.files_count = parseInt(entry.files_count.toFixed(0));' \
             '}'
         )
 
@@ -359,7 +358,7 @@ class PendingFile(File):
         'pending': True,
         'ttl': int,
         'actions': list,
-        'original_content_type': basestring, # XXX
+        'original_content_type': basestring,
     })
     required = ('user_id', 'actions', 'label', 'original', 'pending', 'ttl')
 

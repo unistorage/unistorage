@@ -44,9 +44,10 @@
   {% else %}
     <dl class="dl-horizontal">
       <dt>Количество файлов</dt>
-      <dd>{{ summary.files_count }}</dd>
+      <dd>{{ summary.files_count|int }}</dd>
       <dt>Объём файлов</dt>
-      <dd>{{ summary.files_size }} МБ</dd>
+      {% set size_in_bytes = summary.files_size * 1024 * 1024 %}
+      <dd>{{ size_in_bytes|filesizeformat }}</dd>
     </dl>
 
     <script type="text/javascript">
@@ -56,7 +57,7 @@
                 [
                     moment.utc({{ entry.timestamp.strftime('%s') }} * 1000).format('DD.MM'),
                     {{ entry.files_size }},
-                    {{ entry.files_count }},
+                    {{ entry.files_count|int }}
                 ],
             {%- endfor %}
         ]);
