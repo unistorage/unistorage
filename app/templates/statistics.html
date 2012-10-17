@@ -8,6 +8,11 @@
   {% assets 'statistics_js' %}
     <script src="{{ ASSET_URL }}"></script>
   {% endassets %}
+  <script src=""></script>
+  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+  <script type="text/javascript">
+      google.load('visualization', '1.0', {'packages':['corechart']});
+  </script>
 {% endblock %}
 
 
@@ -45,17 +50,20 @@
     </dl>
 
     <script type="text/javascript">
-        var filesCountData = [
+        var statisticsData = google.visualization.arrayToDataTable([
+            ['День', 'Объем', 'Количество'],
             {% for entry in statistics -%}
-                [{{ entry.timestamp.strftime('%s') }} * 1000, {{ entry.files_count }}],
+                [
+                    moment.utc({{ entry.timestamp.strftime('%s') }} * 1000).format('DD.MM'),
+                    {{ entry.files_size }},
+                    {{ entry.files_count }},
+                ],
             {%- endfor %}
-        ];
+        ]);
 
-        var filesSizeData = [
-            {% for entry in statistics -%}
-                [{{ entry.timestamp.strftime('%s') }} * 1000, {{ entry.files_size }}],
-            {%- endfor %}
-        ];
+        {% for entry in statistics %}
+            statisticsData.setFormattedValue({{ loop.index0 }}, 1, {{ entry.files_size }} + " МБ");
+        {%- endfor %}
     </script>
 
     <div id="plot" style="width:100%;height:500px;"></div>
