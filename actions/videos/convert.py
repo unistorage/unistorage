@@ -7,6 +7,7 @@ from actions import ActionException
 from actions.utils import ValidationError
 from actions.common import validate_presence
 
+
 name = 'convert'
 applicable_for = 'video'
 result_type_family = 'video'
@@ -88,15 +89,15 @@ def perform(source_file, format, vcodec, acodec, only_try=False):
     
     options = {
         'format': format,
-        'audio': {'codec': acodec},
+        'audio': {'codec': acodec, 'samplerate': 44100},
         'video': {'codec': vcodec}
     }
-    options['audio']['samplerate'] = 44100
+    
     if vcodec in ('mpeg1', 'mpeg2', 'divx'):
         options['video']['fps'] = '25'
 
     try:
-        c = Converter(ffmpeg_path=settings.FFMPEG_BIN, ffprobe_path=settings.FFPROBE_BIN)
+        c = Converter(avconv_path=settings.AVCONV_BIN, avprobe_path=settings.AVPROBE_BIN)
         convertion = c.convert(tmp_source_file.name, tmp_target_file.name, options)
         for timecode in convertion:
             if only_try:

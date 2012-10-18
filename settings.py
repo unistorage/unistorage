@@ -31,8 +31,8 @@ IDENTIFY_BIN = '/usr/bin/identify'
 COMPOSITE_BIN = '/usr/bin/composite'
 
 # FFMpeg binaries
-FFMPEG_BIN = '/usr/bin/ffmpeg'
-FFPROBE_BIN = '/usr/bin/ffprobe'
+AVCONV_BIN = '/usr/bin/avconv'
+AVPROBE_BIN = '/usr/bin/avprobe'
 
 # Other binaries
 OO_WRAPPER_BIN = 'oowrapper.py'
