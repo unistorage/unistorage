@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Unistorage.ru by mediasite</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Unistorage.ru</h1>
+          <h2>Universal storage platform</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/mediasite/unistore/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/mediasite/unistore/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/mediasite/unistore" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>unistorage.ru</h1>
+
+<h2>История возникновения</h2>
+
+<p>Изначально платформа разрабатывалась для нужд проектов холдинга 66.ru, но со временем мы поняли, что получающийся продукт достоен того, чтобы показать его за пределами нашей группы разработчиков. Мы уверены, что платформа найдет применение в самых разных проектах.</p>
+
+<h2>Работа с файлами</h2>
+
+<p>Для того, чтобы загрузить файл, надо послать multipart/form-data POST-запрос, содержащий файл в поле <code>file</code>, по адресу <code>http://&lt;api-url&gt;/</code>.<br>
+Также в поле <code>type_id</code> можно указать идентификатор типа контента (строку длиной не более 32 символов).<br>
+Например: <code>curl --form file=@&lt;path-to-file&gt; --header "Token: 01234567890123456789012345678901" localhost:5000</code>.<br>
+Ответом при успешной загрузке будет JSON <code>{id: id, 'status': 'ok', resource_uri: ...}</code>.</p>
+
+<p>Для того, чтобы выполнить операцию над файлом, надо сделать GET-запрос к <code>http://&lt;api-url&gt;/id/</code>, указав имя операции и её параметры.
+Результатом успешного запроса будет JSON <code>{id: id, status: 'ok', resource_uri: ...}</code>. Это означает, что операция поставлена в очередь и будет выполнена в ближайшем будущем, а её результат будет доступен в файле с идентификатором id.</p>
+
+<p>Данные о файле можно получить с помощью GET-запроса к <code>http://&lt;api-url&gt;/&lt;id/&gt;</code>.
+Если файл был загружен пользователем или является результатом успешно выполненной операции над другим файлом -- ответ будет иметь содержать информацию о файле:</p>
+
+<pre><code>{
+  status: 'ok',
+  information: { fileinfo: {height: 480, width: 640},
+                 mimetype: 'image/jpeg',
+                 name: 'some.jpeg',
+                 size: 211258,
+                 uri: 'http://127.0.0.1/503dd7c48149954c99f41a29' },
+  ttl: 604800
+}
+</code></pre>
+
+<p><code>information.uri</code> -- адрес, по которому доступен файл; <code>ttl</code> -- время в секундах, в течении которого актуален данный ответ.</p>
+
+<p>Если id -- результат ещё не выполненной операции, ответ будет содержать статус <code>wait</code>:</p>
+
+<pre><code>{
+  status: 'wait',
+  ttl: 5
+}
+</code></pre>
+
+<p>Также, если подключен <code>unistore-nginx-serve</code>, в случае с ещё не выполненной операцией в ответе может отсутствовать поле <code>information</code>:</p>
+
+<pre><code>{
+  status: 'ok',
+  ttl: 5,
+  uri: 'http://127.0.0.1/some_path/503dd7c48149954c99f41a29'
+}
+</code></pre>
+
+<h2>Операции</h2>
+
+<h3>Изображения</h3>
+
+<h4>Convert</h4>
+
+<p>Формат запроса: ?action=<strong>convert</strong>&amp;to=<strong>format</strong><br>
+Аргументы:  </p>
+
+<ul>
+<li>
+<code>format</code>: bmp, gif, jpeg, png, tiff</li>
+</ul><h4>Resize</h4>
+
+<p>Формат запроса: ?action=<strong>resize</strong>&amp;mode=<strong>mode</strong>&amp;w=<strong>w</strong>&amp;h=<strong>h</strong><br>
+Аргументы:  </p>
+
+<ul>
+<li>
+<code>w</code>: высота</li>
+<li>
+<code>h</code>: ширина</li>
+<li>
+<p><code>mode</code>: keep, crop, resize</p>
+
+<h5>keep</h5>
+
+<p>Изображение ресайзится с сохранением пропорций так, чтобы выполнялось одно из условий:</p>
+
+<ul>
+<li>высота изображения == w, ширина &lt; h</li>
+<li>ширина изображения == h, высота &lt; w</li>
+</ul>
+<p>Можно указывать только одно из измерений.</p>
+
+<h5>crop</h5>
+
+<ol>
+<li>Изображение ресайзится с сохранением пропорций так, чтобы выполнялось одно из условий:
+
+<ul>
+<li>высота изображения == w, ширина &gt; h</li>
+<li>ширина изображения == h, высота &gt; w</li>
+</ul>
+</li>
+<li>Из середины полученного изображения вырезается прямоугольник размером w×h.</li>
+</ol>
+<h5>resize</h5>
+
+<p>Изображение ресайзится до размера на w×h без сохрания пропорций.</p>
+</li>
+</ul><h4>Grayscale</h4>
+
+<p>Формат запроса: ?action=<strong>grayscale</strong><br>
+Аргументы: отсутствуют</p>
+
+<h4>Rotate</h4>
+
+<p>Формат запроса: ?action=<strong>rotate</strong>&amp;angle=<strong>angle</strong><br>
+Аргументы:</p>
+
+<ul>
+<li>
+<code>angle</code>: угол поворота (считается против часовой стрелки), допустимые значения: 90, 180, 270</li>
+</ul><hr><h3>Видео</h3>
+
+<h4>Convert</h4>
+
+<p>Формат запроса: ?action=<strong>convert</strong>&amp;to=<strong>format</strong>&amp;vcodec=<strong>vcodec</strong>&amp;acodec=<strong>acodec</strong><br>
+Аргументы:  </p>
+
+<ul>
+<li>
+<code>to</code>: ogg, webm, flv, avi, mkv, mov, mp4, mpg</li>
+<li>
+<code>vcodec</code>: theora, h264, vp8, divx, h263, flv, mpeg1, mpeg2</li>
+<li>
+<code>acodec</code>: vorbis, mp3</li>
+</ul><p>Некоторые контейнеры поддерживают не все кодеки:</p>
+
+<table>
+<tr>
+<th>Контейнер</th> <th>Видеокодеки</th> <th>Аудиокодеки</th>
+  </tr>
+<tr>
+<td>ogg</td>
+    <td>theora</td>
+    <td>vorbis</td>
+  </tr>
+<tr>
+<td>webm</td>
+    <td>vp8</td>
+    <td>vorbis</td>
+  </tr>
+<tr>
+<td>flv</td>
+    <td>h264, flv</td>
+    <td>vorbis, mp3</td>
+  </tr>
+<tr>
+<td>mp4</td>
+    <td>h264, divx, mpeg1, mpeg2</td>
+    <td>vorbis, mp3</td>
+  </tr>
+</table><p>Конвертировать в ogg и webm можно использовать без указания кодеков:
+<code>?action=convert&amp;to=(ogg|webm)</code></p>
+
+<hr><h3>Изображения и видео</h3>
+
+<h4>Watermark</h4>
+
+<p>Формат запроса: ?action=<strong>watermark</strong>&amp;watermark_id=<strong>watermark_id</strong>&amp;w=<strong>w</strong>&amp;h=<strong>h</strong>&amp;h_pad=<strong>h_pad</strong>&amp;v_pad=<strong>v_pad</strong>&amp;corner=<strong>corner</strong><br>
+Аргументы:  </p>
+
+<ul>
+<li>
+<code>watermark_id</code>: идентификатор ватермарка в unistore</li>
+<li>
+<code>w</code>, <code>h</code>: ширина и высота прямоугольника, в который будет вписан ватермарк перед наложением</li>
+<li>
+<code>w_pad</code>, <code>h_pad</code>: горизонтальный и вертикальный отступы</li>
+<li>
+<code>corner</code>: угол, в который будет помещён ватермарк: <code>ne</code>, <code>se</code>, <code>sw</code>, <code>nw</code>
+</li>
+</ul><p>Значения <code>w</code>, <code>h</code>, <code>w_pad</code>, <code>h_pad</code> могут быть указаны как в процентах от картинки, на которую накладывается ватермарк, так и в пикселях. <code>w=25</code>, например, считается процентами, а <code>w=25px</code> -- пикселями.</p>
+
+<hr><h3>Документы</h3>
+
+<p>Формат запроса: ?action=<strong>convert</strong>&amp;to=<strong>format</strong>  </p>
+
+<ul>
+<li>
+<code>to</code>: doc, docx, odt, pdf, rtf, txt, html</li>
+</ul><h2>Шаблоны</h2>
+
+<p>Шаблон -- упорядоченный набор совместимых операций и их аргументов. Под совместимостью подразумевается возможность каждую последующую операцию применить к результату предыдущей.<br>
+Сервис предоставляет возможность создавать шаблоны, после чего применять их к файлам из хранилища.
+Шаблон можно создать form-urlencoded POST-запросом к <code>/create_template</code>. Корректный запрос возвращает идентификатор созданного шаблона и должен содержать следующие поля:</p>
+
+<ul>
+<li>
+<code>applicable_for</code> -- семейство типов, к которым применим шаблон. Допустимые значения: <code>image</code>, <code>video</code>, <code>doc</code>
+</li>
+<li>
+<code>action[]</code> -- список операций и их аргументов, заданных GET-строками.</li>
+</ul><p>Пример запроса для создания шаблона, который вначале отресайзит картинку, после чего сделает её черно-белой:</p>
+
+<pre><code>applicable_for: image
+action[]: action=resize&amp;mode=keep&amp;w=50&amp;h=50
+action[]: action=grayscale
+</code></pre>
+
+<p>GET-запрос к <code>/&lt;file_id/?template=&lt;template_id&gt;</code> ставит в очередь применение шаблона <code>template_id</code> к файлу <code>file_id</code> и возвращает JSON вида <code>{id: id, status: 'ok'}</code>, где <code>id</code> -- идентификатор результирующего файла.</p>
+
+<h2>Создание zip-архивов</h2>
+
+<p>Для того, чтобы создать zip-архив, надо послать form-urlencoded POST-запрос к <code>/zip/</code>. Корректный запрос возвращает JSON вида <code>{id: id, status: 'ok', resource_uri: ...}</code> и должен содержать следующие поля:</p>
+
+<ul>
+<li>
+<code>file_id[]</code> -- список идентификаторов архивируемых файлов</li>
+<li>
+<code>filename</code> -- имя архива</li>
+</ul><p>Информация об архивах доступна по адресу <code>/zip/&lt;id&gt;/</code> и имеет следующий вид:</p>
+
+<pre><code>{
+  status: 'ok',
+  ttl: 604800,
+  uri: 'http://127.0.0.1/some_path/503dd7c48149954c99f41a29'
+}
+</code></pre>
+
+<p>Архивы перестают быть доступными по истечении своего <code>ttl</code>.</p>
+        </section>
+
+        <footer>
+          Unistorage.ru is maintained by <a href="https://github.com/mediasite">mediasite</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
