@@ -7,6 +7,7 @@ from monk.validation import ValidationError
 from flask.ext.principal import RoleNeed
 
 import file_utils
+from app.date_utils import get_today_utc_midnight
 
 
 class ValidationMixin(object):
@@ -145,48 +146,55 @@ class Statistics(ValidationMixin, modeling.Document):
         )
 
     @classmethod
-    def _get_conditions(cls, user_id, type_id=None, start=None, end=None):
-        conditions = {'user_id': user_id}
+    def _get_conditions(cls, user_id=None, type_id=None, start=None, end=None):
+        conditions = {}
         
         if type_id:
             conditions['type_id'] = type_id
-        
+        if user_id:
+            conditions['user_id'] = user_id
+
         timestamp_conditions = {}
         if start or end:
-            if start: 
+            if start:
                 timestamp_conditions['$gte'] = start
-            if end: 
+            if end:
                 timestamp_conditions['$lte'] = end
             conditions['timestamp'] = timestamp_conditions
         return conditions
 
     @classmethod
-    def get_timely(cls, db, user_id, **kwargs):
-        """Возвращает статистику для пользователя `user_id`, агрегированную по дням.
+    def get_timely(cls, db, **kwargs):
+        """Возвращает статистику, агрегированную по дням.
 
         Если `kwargs` содержит поле `type_id`, то статистика считается только для файлов, имеющих
-        заданный :term:`идентификатор контента`. Если `kwargs` содержит поля `start` и/или `end`,
+        заданный :term:`идентификатор контента`; если `kwargs` содержит поле `user_id`, статистика
+        считается по заданному пользователю. Если `kwargs` содержит поля `start` и/или `end`,
         агрегироваться будет статистика только между этими датами.
         
         :rtype: list({'user_id': ..., 'files_count': ..., 'files_size: ...})
         """
-        conditions = cls._get_conditions(user_id, **kwargs)
-        group_by = ['user_id', 'timestamp']
+        conditions = cls._get_conditions(**kwargs)
+        group_by = ['timestamp']
         if 'type_id' in kwargs:
             group_by.append('type_id')
+        if 'user_id' in kwargs:
+            group_by.append('user_id')
         return cls.aggregate_statistics(db, group_by, conditions)
 
     @classmethod
-    def get_summary(cls, db, user_id, **kwargs):
-        """Агрегирует всю доступную статистику для пользователя `user_id`.
-        `kwargs` имеют то же значение, что и в :func:`get_timely`
+    def get_summary(cls, db, **kwargs):
+        """Агрегирует всю доступную статистику. `kwargs` имеют то же значение,
+        что и в :func:`get_timely`.
 
         :rtype: {'user_id': ..., 'files_count': ..., 'files_size: ...}
         """
-        conditions = cls._get_conditions(user_id, **kwargs)
-        group_by = ['user_id']
+        conditions = cls._get_conditions(**kwargs)
+        group_by = []
         if 'type_id' in kwargs:
             group_by.append('type_id')
+        if 'user_id' in kwargs:
+            group_by.append('user_id')
         result = cls.aggregate_statistics(db, group_by, conditions)
         return result[0] if result else None
 
@@ -321,13 +329,10 @@ class RegularFile(File):
         cls(**kwargs).validate()
         file_id = fs.put(file_content, **kwargs)
 
-        today_utc_midnight = datetime.utcnow().replace(
-                hour=0, minute=0, second=0, microsecond=0)
-
         db[Statistics.collection].update({
             'user_id': kwargs.get('user_id'),
             'type_id': kwargs.get('type_id'),
-            'timestamp': today_utc_midnight
+            'timestamp': get_today_utc_midnight()
         }, {
             '$inc': {
                 'files_count': 1,
