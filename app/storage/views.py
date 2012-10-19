@@ -9,11 +9,10 @@ from datetime import datetime
 
 from bson.objectid import ObjectId
 from flask import request, g, abort, url_for
-from pymongo.errors import InvalidId 
+from pymongo.errors import InvalidId
 
 import settings
 from actions import templates
-from file_utils import get_file_data
 from actions.utils import ValidationError
 from actions.handlers import apply_template, apply_action
 from utils import ok, error, jsonify, methods_required
@@ -75,7 +74,7 @@ def create_template_view():
     template_id = Template(template_data).save(g.db)
     return ok({
         'id': template_id,
-        'resource_uri': None # Шаблоны можно только создавать
+        'resource_uri': None  # Шаблоны можно только создавать
     })
 
 
@@ -94,7 +93,7 @@ def file_view(_id=None):
     if not source_file:
         return error({'msg': 'File wasn\'t found'}), 404
     
-    AccessPermission(source_file).test(http_exception=403) 
+    AccessPermission(source_file).test(http_exception=403)
 
     try:
         action_presented = 'action' in request.args
@@ -135,7 +134,8 @@ def create_zip_view(_id=None):
         if not filename:
             raise ValidationError('`filename` field is required.')
         if not file_ids:
-            raise ValidationError('`file_id[]` field is required and must contain at least one id.')
+            raise ValidationError('`file_id[]` field is required'
+                                  ' and must contain at least one id.')
 
         try:
             file_ids = map(ObjectId, file_ids)
@@ -167,9 +167,9 @@ def zip_view(_id):
     if not zip_collection:
         return error({'msg': 'Zip collection wasn\'t found'}), 404
 
-    AccessPermission(zip_collection).test(http_exception=403) 
+    AccessPermission(zip_collection).test(http_exception=403)
 
-    to_timestamp = lambda td: time.mktime(td.timetuple())
+    to_timestamp = lambda d: time.mktime(d.timetuple())
     will_expire_at = to_timestamp(zip_collection['created_at'] + settings.ZIP_COLLECTION_TTL)
     now = to_timestamp(datetime.utcnow())
     
@@ -180,7 +180,9 @@ def zip_view(_id):
     if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL'):
         return ok({
             'ttl': ttl,
-            'uri': get_unistore_nginx_serve_url(str(zip_collection.get_id()))
+            'information': {
+                'uri': get_unistore_nginx_serve_url(str(zip_collection.get_id()))
+            }
         })
     else:
         return error(), 503
@@ -237,13 +239,15 @@ def get_pending_file(file):
     """Возвращает JSON-строку с информацией о `file`.
     
     :param file: :term:`временный файл`
-    :type file: :class:`app.models.File` 
+    :type file: :class:`app.models.File`
     """
     ttl = file.ttl
     if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL') and can_unistore_serve(file):
         return ok({
             'ttl': ttl,
-            'uri': get_unistore_nginx_serve_url(str(file.get_id()))
+            'information': {
+                'uri': get_unistore_nginx_serve_url(str(file.get_id()))
+            }
         })
     else:
         return jsonify({'status': 'wait', 'ttl': ttl})
@@ -253,7 +257,7 @@ def get_regular_file(file):
     """Возвращает JSON-строку с информацией о `file`.
     
     :param file: :term:`обычный файл`
-    :type file: :class:`app.models.File` 
+    :type file: :class:`app.models.File`
     """
     return ok({
         'information': {
