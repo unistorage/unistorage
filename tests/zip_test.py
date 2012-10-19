@@ -11,18 +11,22 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
         self.assertTrue(error in r.json['msg'])
 
     def test_validation(self):
-        self.assert_error({'filename': 'images.zip'},
-                '`file_id[]` field is required and must contain at least one id.')
+        self.assert_error(
+            {'filename': 'images.zip'},
+            '`file_id[]` field is required and must contain at least one id.')
 
-        self.assert_error({'file_id': [], 'filename': 'images.zip'},
-                '`file_id[]` field is required and must contain at least one id.')
+        self.assert_error(
+            {'file_id': [], 'filename': 'images.zip'},
+            '`file_id[]` field is required and must contain at least one id.')
         
-        self.assert_error({'file_id': ['123'], 'filename': 'images.zip'},
-                'Not all `file_id[]` are correct identifiers')
+        self.assert_error(
+            {'file_id': ['123'], 'filename': 'images.zip'},
+            'Not all `file_id[]` are correct identifiers')
 
         file1_id = self.put_file('images/some.jpeg')
-        self.assert_error({'file_id': [file1_id]},
-                '`filename` field is required.')
+        self.assert_error(
+            {'file_id': [file1_id]},
+            '`filename` field is required.')
 
     def test(self):
         _, file1_id = self.put_file('images/some.jpeg')
@@ -36,4 +40,4 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
         zip_resource_uri = r.json['resource_uri']
 
         r = self.app.get(zip_resource_uri)
-        self.assertTrue(settings.UNISTORE_NGINX_SERVE_URL in r.json['uri'])
+        self.assertTrue(settings.UNISTORE_NGINX_SERVE_URL in r.json['information']['uri'])
