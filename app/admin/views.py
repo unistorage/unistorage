@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 import functools
-from datetime import timedelta, datetime
+from datetime import timedelta
 
 from dateutil import tz
 from bson.objectid import ObjectId
 from flask.ext.principal import RoleNeed
 from flask import (g, request, redirect, url_for,
-        render_template, flash, session, abort)
+                   render_template, flash, session, abort)
+from pytils import numeral
 
-import settings
 import forms
 import who
 from . import bp
 from app.models import User, Statistics
+from app.date_utils import get_today_utc_midnight
 
 
 def login_required(func):
@@ -53,7 +54,21 @@ def logout():
 @bp.route('/', methods=['GET'])
 @login_required
 def index():
-    return render_template('index.html')
+    start = get_today_utc_midnight() - timedelta(days=7)
+
+    annotated_users = []
+    for user in User.find(g.db):
+        user_id = user.get_id()
+        statistics_all_time = Statistics.get_summary(g.db, user_id=user_id)
+        statistics_last_week = Statistics.get_summary(g.db, user_id=user_id, start=start)
+        annotated_users.append((user, statistics_all_time, statistics_last_week))
+    
+    return render_template('index.html', **{
+        'annotated_users': annotated_users,
+        'statistics': Statistics.get_timely(g.db, start=start),
+        'summary': Statistics.get_summary(g.db, start=start),
+        'numeral': numeral
+    })
 
 
 @bp.route('/users', methods=['GET', 'POST'])
@@ -111,23 +126,25 @@ def user_edit(_id):
 def user_statistics(user_id):
     type_ids = Statistics.find(g.db, {
         'user_id': user_id,
-        'type_id': {'$ne':None}
+        'type_id': {'$ne': None}
     }).distinct('type_id')
     
-    args = [user_id]
-    kwargs = {}
+    kwargs = {
+        'user_id': user_id,
+        'start': get_today_utc_midnight() - timedelta(days=7)
+    }
     if request.args.get('type_id'):
         kwargs['type_id'] = request.args['type_id']
     
-    statistics = Statistics.get_timely(g.db, *args, **kwargs)
-    summary = Statistics.get_summary(g.db, *args, **kwargs)
+    statistics = Statistics.get_timely(g.db, **kwargs)
+    summary = Statistics.get_summary(g.db, **kwargs)
 
     local_zone = tz.tzlocal()
     for entry in statistics:
         entry['timestamp'] = entry['timestamp'] \
-                .replace(tzinfo=tz.tzutc()).astimezone(local_zone)
+            .replace(tzinfo=tz.tzutc()).astimezone(local_zone)
     
-    return render_template('statistics.html', **{
+    return render_template('user_statistics.html', **{
         'user': User.get_one(g.db, {'_id': user_id}),
         'type_ids': type_ids,
         'statistics': statistics,

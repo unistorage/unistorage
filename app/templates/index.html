@@ -1,6 +1,67 @@
+{% from "_statistics.html" import render_statistics, render_summary_statistics %}
 {% extends 'base.html' %}
 {% set active_page = "index" %}
 
+
+{% block static %}
+  {{ super() }}
+
+  {% assets 'statistics_js' %}
+    <script src="{{ ASSET_URL }}"></script>
+  {% endassets %}
+  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+  <script type="text/javascript">
+      google.load('visualization', '1.0', {'packages':['corechart']});
+  </script>
+{% endblock %}
+
+
 {% block content %}
-  Index
+  <h3>Общая статистика <small>за последние 7 дней</small></h3>
+
+  {% if not statistics %}
+    <p>Статистика отсутствует.</p>
+  {% else %}
+    {{ render_summary_statistics(summary) }}
+    {{ render_statistics(statistics) }}
+  {% endif %}
+
+  <table class="table table-condensed  statistics">
+    <thead>
+      <tr>
+        <th class="name">Пользователь</th>
+        <th>За всё время</th>
+        <th>За последнюю неделю</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user, statistics_all_time, statistics_last_week in annotated_users %}
+        <tr>
+          <td>
+            <a href="{{ url_for('.user_statistics', user_id=user.get_id()) }}">
+              {{ user.name }}
+            </a>
+          </td>
+          <td>
+            {% if statistics_all_time %}
+              {% set files_count = statistics_all_time.files_count|int %}
+              {{ files_count }} {{ numeral.choose_plural(files_count, ('файл', 'файла', 'файлов')) }} объёмом
+              {{ (statistics_all_time.files_size * 1024 * 1024)|filesizeformat }}
+            {% else %}
+              &mdash;
+            {% endif %}
+          </td>
+          <td>
+            {% if statistics_last_week %}
+              {% set files_count = statistics_last_week.files_count|int %}
+              {{ files_count }} {{ numeral.choose_plural(files_count, ('файл', 'файла', 'файлов')) }} объёмом
+              {{ (statistics_last_week.files_size * 1024 * 1024)|filesizeformat }}
+            {% else %}
+              &mdash;
+            {% endif %}
+          </td>          
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 {% endblock %}

@@ -1,0 +1,37 @@
+{% macro render_statistics(statistics) -%}
+  <div id="plot"></div>
+
+  <script type="text/javascript">
+      (function() {
+
+      var statisticsData = google.visualization.arrayToDataTable([
+          ['День', 'Объем', 'Количество'],
+          {% for entry in statistics -%}
+              [
+                  moment.utc({{ entry.timestamp.strftime('%s') }} * 1000).format('DD.MM'),
+                  {{ entry.files_size }},
+                  {{ entry.files_count|int }}
+              ],
+          {%- endfor %}
+      ]);
+
+      {% for entry in statistics %}
+          statisticsData.setFormattedValue({{ loop.index0 }}, 1, {{ entry.files_size }} + ' МБ');
+      {%- endfor %}
+
+      $(function () {
+          drawVisualization($('#plot').get(0), statisticsData);
+      });
+
+      })();
+  </script>
+{%- endmacro %}
+
+{% macro render_summary_statistics(summary) -%}
+  <dl class="dl-horizontal  statistics summary">
+    <dt>Количество файлов</dt>
+    <dd>{{ summary.files_count|int }}</dd>
+    <dt>Объём файлов</dt>
+    <dd>{{ (summary.files_size * 1024 * 1024)|filesizeformat }}</dd>
+  </dl>
+{%- endmacro %}
