@@ -62,10 +62,14 @@ def index():
         statistics_all_time = Statistics.get_summary(g.db, user_id=user_id)
         statistics_last_week = Statistics.get_summary(g.db, user_id=user_id, start=start)
         annotated_users.append((user, statistics_all_time, statistics_last_week))
+
+    statistics = Statistics.get_timely(g.db, start=start)
+    statistics = fill_missing_entries_with_zeroes(statistics, start=start)
+    statistics = update_timezone_to_local(statistics)
     
     return render_template('index.html', **{
         'annotated_users': annotated_users,
-        'statistics': Statistics.get_timely(g.db, start=start),
+        'statistics': statistics,
         'summary': Statistics.get_summary(g.db, start=start),
         'numeral': numeral
     })
@@ -135,18 +139,46 @@ def user_statistics(user_id):
     }
     if request.args.get('type_id'):
         kwargs['type_id'] = request.args['type_id']
-    
-    statistics = Statistics.get_timely(g.db, **kwargs)
+
     summary = Statistics.get_summary(g.db, **kwargs)
 
-    local_zone = tz.tzlocal()
-    for entry in statistics:
-        entry['timestamp'] = entry['timestamp'] \
-            .replace(tzinfo=tz.tzutc()).astimezone(local_zone)
-    
+    statistics = Statistics.get_timely(g.db, **kwargs)
+    statistics = fill_missing_entries_with_zeroes(statistics, start=kwargs['start'])
+    statistics = update_timezone_to_local(statistics)
+
     return render_template('user_statistics.html', **{
         'user': User.get_one(g.db, {'_id': user_id}),
         'type_ids': type_ids,
         'statistics': statistics,
         'summary': summary
     })
+
+
+def fill_missing_entries_with_zeroes(statistics, start=None):
+    today_utc_midnight = get_today_utc_midnight()
+
+    entries = {}
+    for entry in statistics:
+        timestamp = entry['timestamp']
+        entries[timestamp] = entry
+    
+    result = []
+    entry_timestamp = start or statistics[0]['timestamp']
+    while entry_timestamp <= today_utc_midnight:
+        entry = entries.get(entry_timestamp, {
+            'timestamp': entry_timestamp,
+            'files_count': 0,
+            'files_size': 0
+        })
+
+        result.append(entry)
+        entry_timestamp += timedelta(days=1)
+    
+    return result
+
+
+def update_timezone_to_local(statistics):
+    local_zone = tz.tzlocal()
+    for entry in statistics:
+        entry['timestamp'] = entry['timestamp'].replace(tzinfo=tz.tzutc()).astimezone(local_zone)
+    return statistics
