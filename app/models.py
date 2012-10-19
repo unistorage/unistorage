@@ -165,10 +165,11 @@ class Statistics(ValidationMixin, modeling.Document):
 
     @classmethod
     def get_timely(cls, db, **kwargs):
-        """Возвращает статистику для пользователя `user_id`, агрегированную по дням.
+        """Возвращает статистику, агрегированную по дням.
 
         Если `kwargs` содержит поле `type_id`, то статистика считается только для файлов, имеющих
-        заданный :term:`идентификатор контента`. Если `kwargs` содержит поля `start` и/или `end`,
+        заданный :term:`идентификатор контента`; если `kwargs` содержит поле `user_id`, статистика
+        считается по заданному пользователю. Если `kwargs` содержит поля `start` и/или `end`,
         агрегироваться будет статистика только между этими датами.
         
         :rtype: list({'user_id': ..., 'files_count': ..., 'files_size: ...})
@@ -183,8 +184,8 @@ class Statistics(ValidationMixin, modeling.Document):
 
     @classmethod
     def get_summary(cls, db, **kwargs):
-        """Агрегирует всю доступную статистику для пользователя `user_id`.
-        `kwargs` имеют то же значение, что и в :func:`get_timely`
+        """Агрегирует всю доступную статистику. `kwargs` имеют то же значение,
+        что и в :func:`get_timely`.
 
         :rtype: {'user_id': ..., 'files_count': ..., 'files_size: ...}
         """
