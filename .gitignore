@@ -1,10 +1,10 @@
 tests/smoke_tests/results
+cover
+docs/_build
+app/static/gen
+app/static/.webassets-cache
 settings_local.py
 *.pyc
-app/static/.webassets-cache
-app/static/gen
-cover
 .coverage
-docs/_build
 magic.mgc
 *.sublime-*
