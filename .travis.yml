@@ -24,3 +24,4 @@ install:
   - pip install -r requirements/dev.txt
   - pip install -r requirements/workers.txt
 script: nosetests
+
