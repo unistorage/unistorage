@@ -8,7 +8,9 @@ before_install:
   - sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 2EBC26B60C5A2783
   - sudo apt-get update
   - sudo apt-get install -f
-  - sudo apt-get install libopencore-amrnb0 libopencore-amrwb0 zlib1g zlib1g-dev x264 libmp3lame0 flvtool2
+  - sudo apt-get install libopencore-amrnb0 libopencore-amrwb0 zlib1g zlib1g-dev x264 libmp3lame0 flvtool2 
+  - sudo apt-get install libavutil-extra-51 libavformat-extra-53 libavcodec-extra-53 libavfilter-extra-2 libavdevice-extra-53 ubuntu-restricted-extras
+  - sudo apt-get install non-free-codecs w32codecs aacgain aacplusenc
   - sudo apt-get install ffmpeg
   - avconv -codecs
   - exit 1  
