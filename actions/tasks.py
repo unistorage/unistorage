@@ -3,10 +3,11 @@
 Код, исполняемый воркерами python-rq
 ====================================
 """
-import os.path
 import logging
+import os.path
 
 import gridfs
+from celery import Celery
 from bson.objectid import ObjectId
 
 import settings
@@ -15,7 +16,6 @@ import connections
 from app.models import PendingFile, RegularFile
 from file_utils import get_content_type
 from actions.utils import get_type_family
-from celery import Celery
 
 
 connection = connections.get_mongodb_connection()
@@ -68,8 +68,7 @@ def perform_actions(source_id, target_id, target_kwargs):
     source_file_name, source_file_ext = os.path.splitext(source_file.name)
 
     curr_file = source_file
-    #curr_file_name = source_file_name
-    #curr_file_ext = source_file_ext
+    curr_file_ext = source_file_ext
     curr_content_type = curr_file.content_type
 
     for action_name, action_args in target_file.actions:
@@ -93,7 +92,7 @@ def perform_actions(source_id, target_id, target_kwargs):
             curr_file.close()
 
         curr_file = next_file
-        #curr_file_ext = next_file_ext
+        curr_file_ext = next_file_ext
         curr_content_type = get_content_type(curr_file)
 
     target_file = curr_file
