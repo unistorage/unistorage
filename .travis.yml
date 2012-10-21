@@ -17,7 +17,7 @@ before_install:
   - sudo apt-get install libavformat-extra-53
   - sudo apt-get install libavcodec-extra-53
   - sudo apt-get install libavfilter-extra-2 libavdevice-extra-53 libavformat-dev libavutil-dev ubuntu-restricted-extras
-  - sudo apt-get install non-free-codecs w32codecs aacgain aacplusenc amrnb libamrnb3 libdvdcss2
+  - sudo apt-get install non-free-codecs w32codecs aacgain aacplusenc
   - sudo apt-get install ffmpeg
   - sudo apt-get install -t squeeze -y --force-yes $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
   - sudo apt-get install -t squeeze -y --force-yes openoffice.org-ure $(apt-cache --no-generate pkgnames openoffice.org3 | tr '\n' ' ')
