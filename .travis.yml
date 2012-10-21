@@ -15,11 +15,11 @@ before_install:
   - sudo apt-get install libavformat-extra-53
   - sudo apt-get install libavcodec-extra-53
   - sudo apt-get install libavtools libavfilter-dev libavdevice-extra-53 libavformat-dev libavutil-dev
-
   - sudo apt-get install ffmpeg
   - sudo apt-get install -t squeeze -y --force-yes $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
   - sudo apt-get install -t squeeze -y --force-yes openoffice.org-ure $(apt-cache --no-generate pkgnames openoffice.org3 | tr '\n' ' ')
   - avconv -codecs
+  - exit 1
   - sudo ln -s /usr/lib/i386-linux-gnu/libz.so /usr/lib/
   - file -C -m ./magic
   - sudo npm install -g less
