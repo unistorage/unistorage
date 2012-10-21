@@ -53,17 +53,23 @@ class FunctionalTest(AdminFunctionalTest):
     def to_mb(self, n):
         return n / (1024. * 1024)
 
-    def assert_statistics(self, response, files_number, statistics_len):
+    def assert_statistics(self, response, expected_files_number,
+                          expected_non_zero_entries_number):
         summary = response.context['summary']
         statistics = response.context['statistics']
 
         summary_size = summary['files_size']
-        expected_summary_size = self.to_mb(files_number * self.FILE_SIZE_BYTES)
+        expected_summary_size = self.to_mb(expected_files_number * self.FILE_SIZE_BYTES)
         self.assertAlmostEqual(summary_size, expected_summary_size)
 
         summary_count = summary['files_count']
-        self.assertEquals(summary_count, files_number)
-        self.assertEquals(len(statistics), statistics_len)
+        self.assertEquals(summary_count, expected_files_number)
+
+        non_zero_entries_number = 0
+        for entry in statistics:
+            if entry['files_count'] != 0 or entry['files_size'] != 0:
+                non_zero_entries_number += 1
+        self.assertEquals(non_zero_entries_number, expected_non_zero_entries_number)
     
     def test_empty(self):
         user_id = self.create_user()

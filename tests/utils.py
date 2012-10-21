@@ -15,8 +15,8 @@ import settings
 import file_utils
 from app.models import User, Statistics, RegularFile
 from app.admin.forms import get_random_token
-from tests.flask_webtest import FlaskTestCase, FlaskTestApp
 from actions.tasks import celery
+from tests.flask_webtest import FlaskTestCase, FlaskTestApp
 
 
 FIXTURES_DIR = './tests/fixtures'

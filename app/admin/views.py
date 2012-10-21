@@ -54,7 +54,7 @@ def logout():
 @bp.route('/', methods=['GET'])
 @login_required
 def index():
-    start = get_today_utc_midnight() - timedelta(days=7)
+    start = get_today_utc_midnight() - timedelta(days=6)
 
     annotated_users = []
     for user in User.find(g.db):
@@ -64,9 +64,10 @@ def index():
         annotated_users.append((user, statistics_all_time, statistics_last_week))
 
     statistics = Statistics.get_timely(g.db, start=start)
-    statistics = fill_missing_entries_with_zeroes(statistics, start=start)
-    statistics = update_timezone_to_local(statistics)
-    
+    if statistics:
+        statistics = fill_missing_entries_with_zeroes(statistics, start=start)
+        statistics = update_timezone_to_local(statistics)
+
     return render_template('index.html', **{
         'annotated_users': annotated_users,
         'statistics': statistics,
@@ -135,7 +136,7 @@ def user_statistics(user_id):
     
     kwargs = {
         'user_id': user_id,
-        'start': get_today_utc_midnight() - timedelta(days=7)
+        'start': get_today_utc_midnight() - timedelta(days=6)
     }
     if request.args.get('type_id'):
         kwargs['type_id'] = request.args['type_id']
@@ -143,8 +144,9 @@ def user_statistics(user_id):
     summary = Statistics.get_summary(g.db, **kwargs)
 
     statistics = Statistics.get_timely(g.db, **kwargs)
-    statistics = fill_missing_entries_with_zeroes(statistics, start=kwargs['start'])
-    statistics = update_timezone_to_local(statistics)
+    if statistics:
+        statistics = fill_missing_entries_with_zeroes(statistics, start=kwargs['start'])
+        statistics = update_timezone_to_local(statistics)
 
     return render_template('user_statistics.html', **{
         'user': User.get_one(g.db, {'_id': user_id}),
@@ -170,7 +172,6 @@ def fill_missing_entries_with_zeroes(statistics, start=None):
             'files_count': 0,
             'files_size': 0
         })
-
         result.append(entry)
         entry_timestamp += timedelta(days=1)
     
@@ -180,5 +181,6 @@ def fill_missing_entries_with_zeroes(statistics, start=None):
 def update_timezone_to_local(statistics):
     local_zone = tz.tzlocal()
     for entry in statistics:
-        entry['timestamp'] = entry['timestamp'].replace(tzinfo=tz.tzutc()).astimezone(local_zone)
+        entry['timestamp'] = entry['timestamp'].replace(
+            tzinfo=tz.tzutc()).astimezone(local_zone)
     return statistics
