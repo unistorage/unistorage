@@ -4,6 +4,7 @@ python:
 before_install:
   - sudo bash -c 'echo "deb http://79.172.49.99/debian/ squeeze main" >> /etc/apt/sources.list'
   - sudo apt-get update
+  - sudo apt-cache pkgnames | grep libav
   - sudo apt-get -qq install libavcodec52 libavcodec-extra-52 libavformat52 libavformat-extra-52 libavutil49 libavutil-extra-49 libid3tag0
   - sudo apt-get -qq install libopencore-amrnb0 libopencore-amrwb0 libopencore-amrnb-dev libopencore-amrwb-dev zlib1g zlib1g-dev x264 libmp3lame0 flvtool2
   - sudo apt-get -qq install ffmpeg
