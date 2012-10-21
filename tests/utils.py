@@ -2,7 +2,6 @@ import unittest
 import sys
 import os.path
 import subprocess
-import signal
 import time
 
 from flask import g, url_for
