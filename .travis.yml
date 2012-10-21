@@ -8,6 +8,9 @@ before_install:
   - sudo apt-get install -f
   - sudo apt-get install libavformat-extra-53
   - sudo apt-get install libavcodec-extra-53
+  - sudo apt-get install libavcodec53 
+  - sudo apt-get install libavformat53 
+  - sudo apt-get install libavutil-extra-51
   - sudo apt-get install libopencore-amrnb0 libopencore-amrwb0 libopencore-amrnb-dev libopencore-amrwb-dev zlib1g zlib1g-dev x264 libmp3lame0 flvtool2
   - sudo apt-get install ffmpeg
   - sudo apt-get install -t squeeze -y --force-yes $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
@@ -24,4 +27,3 @@ install:
   - pip install -r requirements/dev.txt
   - pip install -r requirements/workers.txt
 script: nosetests
-
