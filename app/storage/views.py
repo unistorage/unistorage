@@ -133,7 +133,7 @@ def template_view(_id=None):
     })
 
 
-@bp.route('/zip')
+@bp.route('/zip/')
 @methods_required(['POST'])
 @login_required
 def zip_create(_id=None):
