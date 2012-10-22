@@ -85,7 +85,6 @@ def file_view(_id=None):
         if apply_:
             target_id = apply_(source_file, request.args.to_dict())
             return ok({
-                'id': target_id,
                 'resource_uri': url_for('.file_view', _id=target_id)
             })
     except ValidationError as e:
