@@ -42,7 +42,7 @@ def methods_required(methods):
         @functools.wraps(func)
         def f(*args, **kwargs):
             if request.method not in methods:
-                return error({'msg': 'not implemented'}), 501
+                return error({'msg': 'Method %s is not implemented' % request.method}), 501
             else:
                 return func(*args, **kwargs)
         return f
@@ -50,7 +50,7 @@ def methods_required(methods):
 
 
 class ObjectIdJSONEncoder(json.JSONEncoder):
-    """Наследник стандартного :class:`JSONEncoder`, умеющий работать с 
+    """Наследник стандартного :class:`JSONEncoder`, умеющий работать с
     :class:`bson.objectid.ObjectId`."""
     def default(self, obj):
         if isinstance(obj, ObjectId):
@@ -62,7 +62,7 @@ class ObjectIdJSONEncoder(json.JSONEncoder):
 def jsonify(data):
     """Замена стандартного :func:`flask.jsonify`, использующая :class:`ObjectIdJSONEncoder`."""
     return current_app.response_class(
-            json.dumps(data, cls=ObjectIdJSONEncoder), mimetype='application/json')
+        json.dumps(data, cls=ObjectIdJSONEncoder), mimetype='application/json')
 
 
 def ok(response):

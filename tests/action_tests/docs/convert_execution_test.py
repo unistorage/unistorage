@@ -15,7 +15,7 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
 
         converted_doc_url = r.json['resource_uri']
         r = self.app.get(converted_doc_url)
-        mimetype = r.json['information']['mimetype']
+        mimetype = r.json['data']['mimetype']
         self.assertTrue('xml' in mimetype or 'html' in mimetype)
 
     def test_convert_odt_to_pdf(self):

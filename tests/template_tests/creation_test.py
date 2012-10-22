@@ -11,7 +11,7 @@ class FunctionalTest(StorageFunctionalTest):
         self.assertTrue('resource_uri' in r.json)
 
         r = self.app.get(r.json['resource_uri'])
-        information = r.json['information']
+        information = r.json['data']
         self.assertEquals(information['applicable_for'], 'image')
         self.assertEquals(len(information['action_list']), 2)
 

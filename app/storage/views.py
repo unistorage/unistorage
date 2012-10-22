@@ -126,7 +126,7 @@ def template_view(_id=None):
     template = Template.get_one(g.db, {'_id': _id})
     AccessPermission(template).test(http_exception=403)
     return ok({
-        'information': {
+        'data': {
             'applicable_for': template.applicable_for,
             'action_list': template.action_list
         }
@@ -190,7 +190,7 @@ def zip_view(_id):
     if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL'):
         return ok({
             'ttl': ttl,
-            'information': {
+            'data': {
                 'uri': get_unistore_nginx_serve_url(str(zip_collection.get_id()))
             }
         })
@@ -255,7 +255,7 @@ def get_pending_file(file):
     if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL') and can_unistore_serve(file):
         return ok({
             'ttl': ttl,
-            'information': {
+            'data': {
                 'uri': get_unistore_nginx_serve_url(str(file.get_id()))
             }
         })
@@ -270,12 +270,12 @@ def get_regular_file(file):
     :type file: :class:`app.models.File`
     """
     return ok({
-        'information': {
+        'data': {
             'name': file.filename,
             'size': file.length,
             'mimetype': file.content_type,
             'uri': get_gridfs_serve_url(str(file.get_id())),
-            'fileinfo': file.get('fileinfo', {})
+            'extra': file.get('fileinfo', {})
         },
         'ttl': settings.TTL
     })

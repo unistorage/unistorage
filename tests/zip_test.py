@@ -42,4 +42,4 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
         zip_resource_uri = r.json['resource_uri']
 
         r = self.app.get(zip_resource_uri)
-        self.assertTrue(settings.UNISTORE_NGINX_SERVE_URL in r.json['information']['uri'])
+        self.assertTrue(settings.UNISTORE_NGINX_SERVE_URL in r.json['data']['uri'])

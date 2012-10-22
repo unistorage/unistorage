@@ -118,7 +118,7 @@ class StorageFunctionalTest(ContextMixin, FlaskTestCase):
         return r.json['resource_uri']
 
     def assert_fileinfo(self, r, key, value):
-        self.assertEquals(r.json['information']['fileinfo'][key], value)
+        self.assertEquals(r.json['data']['extra'][key], value)
 
     def check(self, url, width=None, height=None, mime=None):
         r = self.app.get(url)
@@ -128,5 +128,5 @@ class StorageFunctionalTest(ContextMixin, FlaskTestCase):
         if height:
             self.assert_fileinfo(r, 'height', height)
         if mime:
-            self.assertEquals(r.json['information']['mimetype'], mime)
+            self.assertEquals(r.json['data']['mimetype'], mime)
         return r

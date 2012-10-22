@@ -70,6 +70,15 @@ def create_app():
     app.register_blueprint(admin.bp, url_prefix='/admin')
     app.register_blueprint(storage.bp)
 
+    @app.errorhandler(404)
+    def not_found_error_handler(e):
+        return storage.utils.error(
+            {'msg': 'The requested URL was not found on the server'}), 404
+
+    @app.errorhandler(500)
+    def server_error_handler(e):
+        return storage.utils.error({'msg': 'Something is wrong. We are working on it'}), 500
+
     if settings.DEBUG:
         app.config['PROPAGATE_EXCEPTIONS'] = True
 
