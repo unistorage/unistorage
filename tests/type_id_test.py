@@ -12,7 +12,8 @@ class FunctionalTest(StorageFunctionalTest):
 
     def test(self):
         type_id = self.get_random_type_id()
-        _, file_id = self.put_file('./images/some.jpeg', type_id=type_id)
+        file_uri = self.put_file('./images/some.jpeg', type_id=type_id)
+        file_id = self.get_id_from_uri(file_uri)
         self.assertEquals(g.fs.get(file_id).type_id, type_id)
 
     def test_too_long(self):

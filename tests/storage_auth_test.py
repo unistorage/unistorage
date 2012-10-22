@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import g
 
+import settings
 from app.models import User
 from app.admin.forms import get_random_token
 from tests.utils import StorageFunctionalTest
@@ -11,6 +12,7 @@ class FunctionalTest(StorageFunctionalTest):
         self.app.token = token
 
     def test(self):
+        g.db_connection.drop_database(settings.MONGO_DB_NAME)
         user1_token = get_random_token()
         user1_id = User({'name': 'User1', 'token': user1_token}).save(g.db)
         
@@ -20,7 +22,7 @@ class FunctionalTest(StorageFunctionalTest):
         # user1
         self.set_token(user1_token)
         # ...загружает файл
-        user1_file_uri, _ = self.put_file('images/some.jpeg')
+        user1_file_uri = self.put_file('images/some.jpeg')
         # ...и имеет доступ к нему
         self.assertEquals(self.app.get(user1_file_uri).status_code, 200)
         

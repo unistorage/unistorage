@@ -3,7 +3,7 @@ from tests.utils import StorageFunctionalTest, WorkerMixin
 
 class FunctionalTest(StorageFunctionalTest, WorkerMixin):
     def test_jpeg(self):
-        original_uri, _ = self.put_file('images/some.jpeg')
+        original_uri = self.put_file('images/some.jpeg')
         self.check(original_uri, width=640, height=480)
 
         rotate_action_url = '%s?action=rotate&angle=90' % original_uri
@@ -14,7 +14,7 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
         self.check(rotated_image.json['resource_uri'], width=480, height=640)
 
     def test_gif(self):
-        original_uri, _ = self.put_file('images/transparent.gif')
+        original_uri = self.put_file('images/transparent.gif')
         self.check(original_uri, width=314, height=400)
 
         rotate_action_url = '%s?action=rotate&angle=270' % original_uri
