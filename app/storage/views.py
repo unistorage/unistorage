@@ -183,7 +183,7 @@ def zip_view(_id):
     will_expire_at = to_timestamp(zip_collection['created_at'] + settings.ZIP_COLLECTION_TTL)
     now = to_timestamp(datetime.utcnow())
     
-    ttl = will_expire_at - now
+    ttl = int(will_expire_at - now)
     if ttl < 0:
         return error({'msg': 'Zip collection wasn\'t found'}), 404
 
