@@ -3,14 +3,12 @@ import sys
 
 from celery.bin.celeryd import WorkerCommand
 
-from actions.tasks import celery
-
 
 def main():
     from celery import current_app
     try:
-        worker = WorkerCommand(app=current_app).run(
-                app=current_app, concurrency=1, hostname='test_worker')
+        WorkerCommand(app=current_app).run(
+            app=current_app, concurrency=1, hostname='test_worker')
     except:
         pass
 

@@ -42,8 +42,9 @@ handlers = {
 
 
 def get_metadata_parser(file):
-    """Модификация :func:`kaa.metadata.factory.Factory.create_from_file`, не полагающаяся на 
-    наличие поле `name` у `file`."""
+    """Модификация :func:`kaa.metadata.factory.Factory.create_from_file`, не полагающаяся на
+    наличие поле `name` у `file`.
+    """
     factory = Factory()
     parser = None
     file.seek(0, 0)
@@ -62,7 +63,7 @@ def get_metadata_parser(file):
     for e in factory.types:
         if factory.get_class(e[R_CLASS]) == parser:
             continue
-        file.seek(0,0)
+        file.seek(0, 0)
         try:
             return factory.get_class(e[R_CLASS])(file)
         except:
@@ -105,7 +106,7 @@ def get_file_data(file, file_name=None):
     metadata = get_metadata(file)
     file.seek(0)
 
-    if metadata and handlers.has_key(metadata.media):
+    if metadata and metadata.media in handlers:
         get_fileinfo = handlers[metadata.media]
         fileinfo = get_fileinfo(metadata.convert())
         data['fileinfo'] = fileinfo

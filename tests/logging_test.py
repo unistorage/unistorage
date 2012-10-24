@@ -1,4 +1,3 @@
-import os
 import unittest
 import logging.config
 
@@ -6,9 +5,7 @@ import yaml
 from flask import g
 
 from actions.images.resize import perform as resize
-from actions import ActionException
 from actions.tasks import perform_actions
-from file_utils import get_content_type
 from tests.utils import GridFSMixin, ContextMixin, fixture_path
 
 

@@ -26,18 +26,17 @@ def validate_and_get_template_actions(source_type_family, action_args_list):
     for index, action_args in enumerate(action_args_list, 1):
         action_name = action_args.get('action')
         if not action_name:
-            raise ValidationError(
-                    'Error on step %d: action is not specified.' % index)
+            raise ValidationError('Error on step %d: action is not specified.' % index)
         
         action = actions.get_action(source_type_family, action_name)
         if not action:
             raise ValidationError(
-                    'Error on step %(index)s: action %(action_name)s '
-                    'is not supported for %(type_family)s.' % {
-                        'action_name': action_name,
-                        'index': index,
-                        'type_family': current_type_family
-                    })
+                'Error on step %(index)s: action %(action_name)s '
+                'is not supported for %(type_family)s.' % {
+                    'action_name': action_name,
+                    'index': index,
+                    'type_family': current_type_family
+                })
 
         action_cleaned_args = action.validate_and_get_args(action_args)
         result.append((action_name, action_cleaned_args))

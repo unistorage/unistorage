@@ -1,5 +1,5 @@
 import gridfs
-from flask import g, current_app
+from flask import g
 
 from app import parse_file_uri
 from actions.utils import ValidationError, get_type_family
