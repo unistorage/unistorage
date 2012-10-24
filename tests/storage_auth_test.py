@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from flask import g
 
+import settings
 from app.models import User
 from app.admin.forms import get_random_token
 from tests.utils import StorageFunctionalTest
 
-import settings
 
 class FunctionalTest(StorageFunctionalTest):
     def set_token(self, token):
@@ -24,7 +24,7 @@ class FunctionalTest(StorageFunctionalTest):
         # user1
         self.set_token(user1_token)
         # ...загружает файл
-        user1_file_uri, _ = self.put_file('images/some.jpeg')
+        user1_file_uri = self.put_file('images/some.jpeg')
         # ...и имеет доступ к нему
         self.assertEquals(self.app.get(user1_file_uri).status_code, 200)
         

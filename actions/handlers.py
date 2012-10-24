@@ -4,13 +4,14 @@
 ==============================
 """
 from flask import request, g
-from bson.objectid import ObjectId
 
 import settings
 import actions
 from actions.tasks import perform_actions
-from utils import ValidationError, get_type_family
+from app import parse_template_uri
 from app.models import Template, File, PendingFile
+from app.perms import AccessPermission
+from utils import ValidationError, get_type_family
 
 
 def apply_actions(source_file, action_list, label):
@@ -72,8 +73,14 @@ def apply_template(source_file, args):
     :raises: ValidationError
     :rtype: :class:`ObjectId`
     """
-    template_id = ObjectId(args['template'])
+    template_uri = args['template']
+    try:
+        template_id = parse_template_uri(template_uri)
+    except ValueError as e:
+        raise ValidationError(e.message)
+
     template = Template.get_one(g.db, {'_id': template_id})
+    AccessPermission(source_file).test(http_exception=403)
 
     source_type_family = get_type_family(source_file.content_type)
     if source_type_family != template['applicable_for']:

@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from flask import g
+from flask import g, url_for
 
 import app
 import file_utils
@@ -14,13 +14,14 @@ class ValidationTest(GridFSMixin, ContextMixin, unittest.TestCase):
     def setUp(self):
         super(ValidationTest, self).setUp()
         self.watermark_id = self.put_file('watermarks/watermark.png')
+        self.watermark_uri = url_for('storage.file_view', _id=self.watermark_id)
     
     def expect_validation_error(self, error):
         return self.assertRaisesRegexp(ValidationError, error)
 
     def get_valid_args(self):
         return {
-            'watermark_id': self.watermark_id,
+            'watermark': self.watermark_uri,
             'w': '45px',
             'h': '30',
             'w_pad': '10px',

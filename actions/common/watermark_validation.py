@@ -1,7 +1,7 @@
 import gridfs
-from flask import g
-from bson.objectid import ObjectId
+from flask import g, current_app
 
+from app import parse_file_uri
 from actions.utils import ValidationError, get_type_family
 from actions.common import validate_presence
 
@@ -25,7 +25,7 @@ def validate_and_get_as_dimension(args, arg_name):
 
 
 def validate_and_get_args(args):
-    for arg_name in ('w', 'h', 'w_pad', 'h_pad', 'corner', 'watermark_id'):
+    for arg_name in ('w', 'h', 'w_pad', 'h_pad', 'corner', 'watermark'):
         validate_presence(args, arg_name)
     
     w, h, w_pad, h_pad = [validate_and_get_as_dimension(args, arg_name)
@@ -36,13 +36,18 @@ def validate_and_get_args(args):
     if corner not in corners:
         raise ValidationError('`corner` must be one of the following: %s.' % ', '.join(corners))
 
-    watermark_id = args['watermark_id']
+    watermark_uri = args['watermark']
     try:
-        watermark = g.fs.get(ObjectId(watermark_id))
+        watermark_id = parse_file_uri(watermark_uri)
+    except ValueError as e:
+        raise ValidationError(e.message)
+
+    try:
+        watermark = g.fs.get(watermark_id)
     except gridfs.errors.NoFile:
         raise ValidationError('File with id %s does not exist.' % watermark_id)
     
     if get_type_family(watermark.content_type) != 'image':
         raise ValidationError('File with id %s is not an image.' % watermark_id)
 
-    return [ObjectId(watermark_id), w, h, w_pad, h_pad, corner]
+    return [watermark_id, w, h, w_pad, h_pad, corner]

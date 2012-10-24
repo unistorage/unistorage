@@ -3,7 +3,6 @@ from repoze.who.api import APIFactory
 from repoze.who.classifiers import default_request_classifier, default_challenge_decider
 
 from app.models import User
-import settings
 
 
 class TokenPlugin(object):
@@ -43,5 +42,5 @@ def make_repoze_who_api_factory():
     challengers = []
 
     return APIFactory(identifiers, authenticators, challengers,
-            mdproviders, default_request_classifier,
-            default_challenge_decider)
+                      mdproviders, default_request_classifier,
+                      default_challenge_decider)

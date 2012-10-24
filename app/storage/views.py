@@ -7,9 +7,7 @@ import functools
 import time
 from datetime import datetime
 
-from bson.objectid import ObjectId
 from flask import request, g, abort, url_for
-from pymongo.errors import InvalidId
 
 import settings
 from actions import templates
@@ -17,6 +15,7 @@ from actions.utils import ValidationError
 from actions.handlers import apply_template, apply_action
 from utils import ok, error, jsonify, methods_required
 from . import bp
+from app import parse_file_uri
 from app.models import File, RegularFile, PendingFile, Template, ZipCollection
 from app.perms import AccessPermission
 
@@ -33,7 +32,7 @@ def login_required(func):
 @bp.route('/')
 @methods_required(['POST'])
 @login_required
-def index_view():
+def file_create():
     """Вьюшка, сохраняющая файл в хранилище."""
     file = request.files.get('file')
     if not file:
@@ -50,31 +49,7 @@ def index_view():
 
     file_id = RegularFile.put_to_fs(g.db, g.fs, file.filename, file, **kwargs)
     return ok({
-        'id': file_id,
         'resource_uri': url_for('.file_view', _id=file_id)
-    })
-
-
-@bp.route('/create_template')
-@methods_required(['POST'])
-@login_required
-def create_template_view():
-    """Вьюшка, создающая :term:`шаблон`."""
-    try:
-        template_data = templates.validate_and_get_template({
-            'applicable_for': request.form.get('applicable_for'),
-            'actions': request.form.getlist('action[]'),
-        })
-    except ValidationError as e:
-        return error({'msg': str(e)}), 400
-    
-    template_data.update({
-        'user_id': request.user['_id']
-    })
-    template_id = Template(template_data).save(g.db)
-    return ok({
-        'id': template_id,
-        'resource_uri': None  # Шаблоны можно только создавать
     })
 
 
@@ -110,7 +85,6 @@ def file_view(_id=None):
         if apply_:
             target_id = apply_(source_file, request.args.to_dict())
             return ok({
-                'id': target_id,
                 'resource_uri': url_for('.file_view', _id=target_id)
             })
     except ValidationError as e:
@@ -122,27 +96,64 @@ def file_view(_id=None):
         return get_regular_file(RegularFile(source_file))
 
 
-@bp.route('/zip')
+@bp.route('/template/')
 @methods_required(['POST'])
 @login_required
-def create_zip_view(_id=None):
+def template_create():
+    """Вьюшка, создающая :term:`шаблон`."""
+    try:
+        template_data = templates.validate_and_get_template({
+            'applicable_for': request.form.get('applicable_for'),
+            'actions': request.form.getlist('action[]'),
+        })
+    except ValidationError as e:
+        return error({'msg': str(e)}), 400
+    
+    template_data.update({
+        'user_id': request.user['_id']
+    })
+    template_id = Template(template_data).save(g.db)
+    return ok({
+        'resource_uri': url_for('.template_view', _id=template_id)
+    })
+
+
+@bp.route('/template/<ObjectId:_id>/')
+@methods_required(['GET'])
+@login_required
+def template_view(_id=None):
+    """Вьюшка, показывавающая :term:`шаблон`."""
+    template = Template.get_one(g.db, {'_id': _id})
+    AccessPermission(template).test(http_exception=403)
+    return ok({
+        'data': {
+            'applicable_for': template.applicable_for,
+            'action_list': template.action_list
+        }
+    })
+
+
+@bp.route('/zip/')
+@methods_required(['POST'])
+@login_required
+def zip_create(_id=None):
     """Вьюшка, создающая zip collection"""
-    file_ids = request.form.getlist('file_id')
+    files = request.form.getlist('file')
     filename = request.form.get('filename')
     
     try:
         if not filename:
             raise ValidationError('`filename` field is required.')
-        if not file_ids:
-            raise ValidationError('`file_id[]` field is required'
-                                  ' and must contain at least one id.')
+        if not files:
+            raise ValidationError('`file[]` field is required'
+                                  ' and must contain at least one file URI.')
 
         try:
-            file_ids = map(ObjectId, file_ids)
-        except InvalidId:
-            raise ValidationError('Not all `file_id[]` are correct identifiers.')
+            file_ids = map(parse_file_uri, files)
+        except ValueError:
+            raise ValidationError('Not all `file[]` are correct file URIs.')
 
-        # TODO Проверять, что файлы с указанными айдишниками существуют и не временные?
+        # TODO Проверять, что файлы с указанными URI существуют и не временные?
     except ValidationError as e:
         return error({'msg': str(e)}), 400
 
@@ -153,7 +164,6 @@ def create_zip_view(_id=None):
     })
     zip_id = zip_collection.save(g.db)
     return ok({
-        'id': zip_id,
         'resource_uri': url_for('.zip_view', _id=zip_id)
     })
 
@@ -173,14 +183,14 @@ def zip_view(_id):
     will_expire_at = to_timestamp(zip_collection['created_at'] + settings.ZIP_COLLECTION_TTL)
     now = to_timestamp(datetime.utcnow())
     
-    ttl = will_expire_at - now
+    ttl = int(will_expire_at - now)
     if ttl < 0:
         return error({'msg': 'Zip collection wasn\'t found'}), 404
 
     if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL'):
         return ok({
             'ttl': ttl,
-            'information': {
+            'data': {
                 'uri': get_unistore_nginx_serve_url(str(zip_collection.get_id()))
             }
         })
@@ -245,7 +255,7 @@ def get_pending_file(file):
     if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL') and can_unistore_serve(file):
         return ok({
             'ttl': ttl,
-            'information': {
+            'data': {
                 'uri': get_unistore_nginx_serve_url(str(file.get_id()))
             }
         })
@@ -260,12 +270,12 @@ def get_regular_file(file):
     :type file: :class:`app.models.File`
     """
     return ok({
-        'information': {
+        'data': {
             'name': file.filename,
             'size': file.length,
             'mimetype': file.content_type,
             'uri': get_gridfs_serve_url(str(file.get_id())),
-            'fileinfo': file.get('fileinfo', {})
+            'extra': file.get('fileinfo', {})
         },
         'ttl': settings.TTL
     })
