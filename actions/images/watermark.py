@@ -23,7 +23,7 @@ CORNER_MAP = {
 
 
 def identify(file, format):
-    args = [settings.IDENTIFY_BIN, '-format', format, '-']
+    args = [settings.IDENTIFY_BIN, '-format', '%s\n' % format, '-']
     try:
         proc = subprocess.Popen(args, stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -36,7 +36,7 @@ def identify(file, format):
     stdout_data, stderr_data = proc.communicate(input=proc_input)
     if proc.returncode != 0:
         raise ActionException('`identify` failed: %s' % stderr_data)
-    return stdout_data.strip()
+    return stdout_data.split('\n')[0].strip()
 
 
 def get_watermark_bbox_geometry(source_width, source_height, w, h, h_pad, v_pad):

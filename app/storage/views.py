@@ -124,7 +124,11 @@ def template_create():
 def template_view(_id=None):
     """Вьюшка, показывавающая :term:`шаблон`."""
     template = Template.get_one(g.db, {'_id': _id})
+    
+    if not template:
+        return error({'msg': 'Template wasn\'t found'}), 404
     AccessPermission(template).test(http_exception=403)
+
     return ok({
         'data': {
             'applicable_for': template.applicable_for,

@@ -4,6 +4,7 @@ from actions.images.convert import perform as convert
 from actions.images.resize import perform as resize
 from actions.images.grayscale import perform as grayscale
 from actions.images.rotate import perform as rotate
+from actions.images.watermark import perform as watermark
 from tests.utils import fixture_path
 from tests.smoke_tests import SmokeTest
 
@@ -62,6 +63,19 @@ class Test(SmokeTest):
             result, ext = rotate(source_file, 90)
             
             target_name = '%s_rotated.%s' % (source_name, ext)
+            target_path = os.path.join(results_dir, target_name)
+            with open(target_path, 'w') as target_file:
+                target_file.write(result.getvalue())
+
+    def test_watermark(self):
+        results_dir = os.path.join(TEST_TARGET_DIR, 'watermark')
+        os.makedirs(results_dir)
+
+        for source_name, source_file in self.source_files():
+            watermark_file = open(os.path.join(fixture_path('watermarks'), 'watermark.png'))
+            result, ext = watermark(source_file, watermark_file, 100, 100, 10, 10, 'ne')
+            
+            target_name = '%s_watermarked.%s' % (source_name, ext)
             target_path = os.path.join(results_dir, target_name)
             with open(target_path, 'w') as target_file:
                 target_file.write(result.getvalue())

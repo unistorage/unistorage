@@ -80,6 +80,9 @@ def apply_template(source_file, args):
         raise ValidationError(e.message)
 
     template = Template.get_one(g.db, {'_id': template_id})
+    
+    if not template:
+        raise ValidationError('Template with id %s does not exist.' % template_id)
     AccessPermission(source_file).test(http_exception=403)
 
     source_type_family = get_type_family(source_file.content_type)
