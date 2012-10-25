@@ -257,7 +257,8 @@ def get_pending_file(file):
     """
     ttl = file.ttl
     if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL') and can_unistore_serve(file):
-        return ok({
+        return jsonify({
+            'status': 'just_uri',
             'ttl': ttl,
             'data': {
                 'uri': get_unistore_nginx_serve_url(str(file.get_id()))
