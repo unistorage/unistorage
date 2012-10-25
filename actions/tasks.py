@@ -3,20 +3,19 @@
 Код, исполняемый воркерами python-rq
 ====================================
 """
-import os.path
 import logging
+import os.path
 
 import gridfs
+from celery import Celery
 from bson.objectid import ObjectId
 
 import settings
 import actions
 import connections
 from app.models import PendingFile, RegularFile
-from file_utils import get_content_type, convert_to_filename
+from file_utils import get_content_type
 from actions.utils import get_type_family
-from celery import Celery
-
 
 
 connection = connections.get_mongodb_connection()
@@ -58,7 +57,8 @@ def perform_actions(source_id, target_id, target_kwargs):
     :type source_id: :class:`ObjectId`
     :param target_id: идентификатор результирующего файла (файл должен быть временным)
     :type target_id: :class:`ObjectId`
-    :param target_kwargs: атрибуты, которые появятся у результирующего файла после применения операций
+    :param target_kwargs: атрибуты, которые появятся у результирующего файла после
+    применения операций
     :type target_kwargs: dict
     """
     source_file = RegularFile.get_from_fs(db, fs, _id=source_id)
@@ -68,7 +68,6 @@ def perform_actions(source_id, target_id, target_kwargs):
     source_file_name, source_file_ext = os.path.splitext(source_file.name)
 
     curr_file = source_file
-    curr_file_name = source_file_name
     curr_file_ext = source_file_ext
     curr_content_type = curr_file.content_type
 

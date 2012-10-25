@@ -65,6 +65,6 @@ class FlaskTestCase(unittest.TestCase):
             self.fail('No templates used to render the response')
         template_names = [t.name for t in response.templates]
         self.assertTrue(template_name in template_names,
-            'Template "%s" was not a template used to render'
-            ' the response. Actual template(s) used: %s' %
-                (template_name, ', '.join(template_names)))
+                        'Template "%s" was not a template used to render'
+                        ' the response. Actual template(s) used: %s' %
+                        (template_name, ', '.join(template_names)))

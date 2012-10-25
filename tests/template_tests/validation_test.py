@@ -1,10 +1,18 @@
 import unittest
 
+from flask import g
+
 import actions.templates
 from actions.utils import ValidationError
+from tests.utils import ContextMixin, GridFSMixin
 
 
-class ValidationTest(unittest.TestCase):
+class ValidationTest(GridFSMixin, ContextMixin, unittest.TestCase):
+    def setUp(self):
+        super(ValidationTest, self).setUp()
+        self.file_id = self.put_file('images/some.jpeg')
+        print self.file_id
+
     def expect_validation_error(self, error):
         return self.assertRaisesRegexp(ValidationError, error)
 
@@ -43,3 +51,15 @@ class ValidationTest(unittest.TestCase):
                 'applicable_for': 'video',
                 'actions': ['action=convert&to=webm', 'action=resize&mode=keep&w=100&h=100'],
             })
+
+    def test_apply_template_uri_validation(self):
+        from actions.handlers import apply_template
+
+        corrupted_template_uri = '/template/asds123'
+        with self.expect_validation_error('%s is not a template URI.' % corrupted_template_uri):
+            apply_template(g.fs.get(self.file_id), {'template': corrupted_template_uri})
+
+        inexistent_template_id = '5087a78f8149954b38d1cbc2'
+        inexistent_template_uri = '/template/%s/' % inexistent_template_id
+        with self.expect_validation_error('Template with id %s does not exist.' % inexistent_template_id):
+            apply_template(g.fs.get(self.file_id), {'template': inexistent_template_uri})

@@ -1,4 +1,5 @@
 from actions.utils import ValidationError
+from actions.common import validate_presence
 
 
 name = 'resize'
@@ -7,12 +8,11 @@ result_type_family = 'image'
 
 
 def validate_and_get_args(args):
-    if 'mode' not in args:
-        raise ValidationError('`mode` must be specified.')
-    
-    if args['mode'] not in ('keep', 'crop', 'resize'):
-        raise ValidationError('Unknown `mode`. Available options: "keep", "crop" and "resize".')
+    validate_presence(args, 'mode')
     mode = args['mode']
+    
+    if mode not in ('keep', 'crop', 'resize'):
+        raise ValidationError('Unknown `mode`. Available options: "keep", "crop" and "resize".')
     
     w = args.get('w', None)
     h = args.get('h', None)
@@ -42,8 +42,8 @@ def perform(source_file, mode, target_width, target_height):
 
     source_width, source_height = map(float, source_image.size)
     # If mode == 'keep', either target_width or target_height can be None
-    factors = target_width / source_width if target_width else 1, \
-              target_height / source_height if target_height else 1
+    factors = [target_width / source_width if target_width else 1,
+               target_height / source_height if target_height else 1]
 
     factor = max(factors) if mode == 'crop' else min(factors)
     width = to_int(source_width * factor)

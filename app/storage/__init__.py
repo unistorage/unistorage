@@ -1,6 +1,4 @@
-from flask.ext.principal import (
-    Principal, Identity, AnonymousIdentity, identity_loaded, identity_changed
-)
+from flask.ext.principal import Principal, Identity, identity_loaded
 
 import who
 from utils import StorageBlueprint, error
@@ -8,11 +6,10 @@ from utils import StorageBlueprint, error
 
 bp = StorageBlueprint('storage', __name__)
 principal = Principal(bp, use_sessions=False)
+who_api_factory = who.make_repoze_who_api_factory()
 
 from views import *
 
-
-who_api_factory = who.make_repoze_who_api_factory()
 
 @bp.errorhandler(401)
 def unauthorized_error_handler(e):

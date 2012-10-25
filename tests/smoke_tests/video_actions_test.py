@@ -1,50 +1,52 @@
 import os
-import glob
-import shutil
-import unittest
 
 from actions.videos.convert import perform as convert
+from actions.videos.watermark import perform as watermark
 from tests.utils import fixture_path
+from tests.smoke_tests import SmokeTest
 
 
-class SmokeTest(unittest.TestCase):
-    TEST_VIDEOS_DIR = fixture_path('videos')
-    TEST_RESULTS_DIR = './tests/smoke_tests/results/result_videos'
+TEST_SOURCE_DIR = fixture_path('videos')
+TEST_TARGET_DIR = './tests/smoke_tests/results/result_videos'
 
-    CONVERT_TARGETS = {
-        'ogg': {'vcodec': ['theora'], 'acodec': 'vorbis'},
-        'webm': {'vcodec': ['vp8'], 'acodec': 'vorbis'},
-        'flv': {'vcodec': ['h264', 'flv'], 'acodec': 'mp3'},
-        'mp4': {'vcodec': ['h264', 'divx'], 'acodec': 'mp3'},
-        'mkv': {'vcodec': ['h263', 'mpeg1', 'mpeg2'], 'acodec': 'mp3'},
-    }
+CONVERT_TARGETS = {
+    'ogg': {'vcodec': ['theora'], 'acodec': 'vorbis'},
+    'webm': {'vcodec': ['vp8'], 'acodec': 'vorbis'},
+    'flv': {'vcodec': ['h264', 'flv'], 'acodec': 'mp3'},
+    'mp4': {'vcodec': ['h264', 'divx'], 'acodec': 'mp3'},
+    'mkv': {'vcodec': ['h263', 'mpeg1', 'mpeg2'], 'acodec': 'mp3'},
+}
 
+
+class Test(SmokeTest):
     @classmethod
     def setUpClass(cls):
-        cls.CONVERT_RESULTS_DIR = os.path.join(cls.TEST_RESULTS_DIR, 'convert')
-
-        if os.path.exists(cls.TEST_RESULTS_DIR):
-            shutil.rmtree(cls.TEST_RESULTS_DIR)
-        os.mkdir(cls.TEST_RESULTS_DIR)
-        os.mkdir(cls.CONVERT_RESULTS_DIR)
+        super(Test, cls).setUpClass(TEST_SOURCE_DIR, TEST_TARGET_DIR)
 
     def test_convert(self):
-        for source_file_name in os.listdir(self.TEST_VIDEOS_DIR):
-            source_file_path = os.path.join(self.TEST_VIDEOS_DIR, source_file_name)
-            
-            for format in self.CONVERT_TARGETS:
-                acodec = self.CONVERT_TARGETS[format]['acodec']
-                for vcodec in self.CONVERT_TARGETS[format]['vcodec']:
-                    with open(source_file_path) as source_file:
-                        if __name__ == 'main':
-                            print 'Converting %s to %s using %s...' % (source_file_name, format, vcodec)
-                        result, _ = convert(source_file, format, vcodec, acodec, only_try=True)
-                        target_file_path = os.path.join(self.CONVERT_RESULTS_DIR,
-                                '%s_using_%s.%s' % (source_file_name, vcodec, format))
+        results_dir = os.path.join(TEST_TARGET_DIR, 'convert')
+        os.makedirs(results_dir)
 
-                        with open(target_file_path, 'w') as target_file:
-                            target_file.write(result.read())
+        for format in CONVERT_TARGETS:
+            acodec = CONVERT_TARGETS[format]['acodec']
+            for vcodec in CONVERT_TARGETS[format]['vcodec']:
+                for source_name, source_file in self.source_files():
+                    result, ext = convert(source_file, format, vcodec, acodec, only_try=True)
 
-if __name__ == '__main__':
-    unittest.main() 
-    print 'Done\n!See results in %s' % SmokeTest.TEST_RESULTS_DIR
+                    target_name = '%s_using_vcodec_%s_acodec_%s.%s' % (source_name, vcodec, acodec, ext)
+                    target_path = os.path.join(results_dir, target_name)
+                    with open(target_path, 'w') as target_file:
+                        target_file.write(result.read())
+
+    def test_watermark(self):
+        results_dir = os.path.join(TEST_TARGET_DIR, 'watermark')
+        os.makedirs(results_dir)
+
+        for source_name, source_file in self.source_files():
+            watermark_file = open(os.path.join(fixture_path('watermarks'), 'watermark.png'))
+            result, ext = watermark(source_file, watermark_file, 100, 100, 10, 10, 'ne')
+
+            target_name = '%s_w_watermark.%s' % (source_name, ext)
+            target_path = os.path.join(results_dir, target_name)
+            with open(target_path, 'w') as target_file:
+                target_file.write(result.read())

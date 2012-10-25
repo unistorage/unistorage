@@ -29,9 +29,9 @@ class UserForm(wtf.Form):
     id = wtf.HiddenField()
     name = wtf.TextField(u'Имя пользователя', [wtf.validators.Required()])
     token = wtf.TextField(u'Токен доступа', [wtf.validators.Regexp(r'\w{32}')],
-            default=get_random_token)
+                          default=get_random_token)
     has_access_to = wtf.SelectMultipleField(
-            u'Другие пользователи, к файлам которых разрешён доступ', coerce=ObjectId)
+        u'Другие пользователи, к файлам которых разрешён доступ', coerce=ObjectId)
 
     def __init__(self, *args, **kwargs):
         super(UserForm, self).__init__(*args, **kwargs)

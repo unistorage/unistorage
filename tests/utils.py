@@ -1,24 +1,19 @@
-import unittest
-import sys
 import os.path
 import subprocess
 import time
 
 from flask import g, url_for
-from webtest import TestApp
 from bson.objectid import ObjectId
-from celery.bin.celeryd import WorkerCommand
 
 import app
 import settings
-import file_utils
-from app.models import User, Statistics, RegularFile
+from app.models import User, RegularFile
 from app.admin.forms import get_random_token
-from actions.tasks import celery
 from tests.flask_webtest import FlaskTestCase, FlaskTestApp
 
 
 FIXTURES_DIR = './tests/fixtures'
+
 
 def fixture_path(path):
     return os.path.join(FIXTURES_DIR, path)
@@ -30,8 +25,7 @@ class WorkerMixin(object):
         tests_dir = os.path.dirname(os.path.abspath(__file__))
         script_name = os.path.join(tests_dir, 'celery_worker.py')
         subprocess.Popen(
-                ['PYTHONPATH=%s:$PYTHONPATH %s' % (os.getcwd(), script_name)],
-                shell=True)
+            ['PYTHONPATH=%s:$PYTHONPATH %s' % (os.getcwd(), script_name)], shell=True)
 
         while True:
             time.sleep(0.1)
@@ -58,6 +52,9 @@ class ContextMixin(object):
     def tearDown(self):
         super(ContextMixin, self).tearDown()
         self.ctx.pop()
+
+    def get_id_from_uri(self, resource_uri):
+        return ObjectId(resource_uri.rstrip('/').split('/')[-1])
 
 
 class GridFSMixin(ContextMixin):
@@ -118,11 +115,10 @@ class StorageFunctionalTest(ContextMixin, FlaskTestCase):
             
         r = self.app.post('/', params, upload_files=files)
         self.assertEquals(r.json['status'], 'ok')
-        self.assertTrue('id' in r.json)
-        return r.json['resource_uri'], ObjectId(r.json['id'])
+        return r.json['resource_uri']
 
     def assert_fileinfo(self, r, key, value):
-        self.assertEquals(r.json['information']['fileinfo'][key], value)
+        self.assertEquals(r.json['data']['extra'][key], value)
 
     def check(self, url, width=None, height=None, mime=None):
         r = self.app.get(url)
@@ -132,5 +128,5 @@ class StorageFunctionalTest(ContextMixin, FlaskTestCase):
         if height:
             self.assert_fileinfo(r, 'height', height)
         if mime:
-            self.assertEquals(r.json['information']['mimetype'], mime)
+            self.assertEquals(r.json['data']['mimetype'], mime)
         return r
