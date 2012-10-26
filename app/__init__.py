@@ -79,8 +79,12 @@ def create_app():
     def server_error_handler(e):
         return storage.utils.error({'msg': 'Something is wrong. We are working on it'}), 500
 
-    if settings.DEBUG:
+    if settings.DEBUG or True:
         app.config['PROPAGATE_EXCEPTIONS'] = True
+        
+        import logging
+        for handler in logging.getLogger('app_error_logger').handlers:
+            app.logger.addHandler(handler)
 
     bootstrap = Bundle('less/bootstrap/bootstrap.less', 'less/bootstrap-chosen.less',
             filters='less', output='gen/bootstrap.css')

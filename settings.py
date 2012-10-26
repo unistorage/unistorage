@@ -12,6 +12,7 @@ PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 DEBUG = False
 SECRET_KEY = 'qwertyuiop[]'
+ADMINS = ['anthony.romanovich@gmail.com']
 
 
 # Логин и пароль от интерфейса администратора (/admin/)
@@ -65,8 +66,11 @@ MAGIC_FILE_PATH = ':'.join((
     '/usr/share/misc/magic',
 ))
 
+
 logging_conf_path = os.path.join(PROJECT_PATH, 'logging.conf')
 config = yaml.load(open(logging_conf_path))
+config['handlers']['mail']['toaddrs'] = ADMINS
+
 logging.config.dictConfig(config)
 
 
