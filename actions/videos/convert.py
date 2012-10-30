@@ -79,6 +79,7 @@ def run_flvtool(file_path):
 
 def perform(source_file, format, vcodec, acodec, only_try=False):
     from converter import Converter
+    c = Converter(avconv_path=settings.AVCONV_BIN, avprobe_path=settings.AVPROBE_BIN)
 
     tmp_source_file = tempfile.NamedTemporaryFile(delete=False)
     tmp_source_file.write(source_file.read())
@@ -94,10 +95,19 @@ def perform(source_file, format, vcodec, acodec, only_try=False):
     }
     
     if vcodec in ('mpeg1', 'mpeg2', 'divx'):
-        options['video']['fps'] = '25'
+        options['video']['fps'] = 25
+
+    data = c.probe(tmp_source_file.name)
+    for stream in data.streams:
+        if stream.type == 'audio':
+            channels = stream.audio_channels
+    
+    if acodec == 'mp3' and channels > 2:
+        channels = 2
+
+    options['audio']['channels'] = channels
 
     try:
-        c = Converter(avconv_path=settings.AVCONV_BIN, avprobe_path=settings.AVPROBE_BIN)
         convertion = c.convert(tmp_source_file.name, tmp_target_file.name, options)
         for timecode in convertion:
             if only_try:
