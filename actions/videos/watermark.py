@@ -3,13 +3,34 @@ import tempfile
 
 import settings
 import actions
+from file_utils import get_video_data
+from actions.utils import ValidationError
+from actions.videos.utils import run_flvtool 
 from actions.images.resize import perform as image_resize
-
 
 name = 'watermark'
 applicable_for = 'video'
 result_type_family = 'video'
-validate_and_get_args = actions.common.watermark_validation.validate_and_get_args
+
+
+def validate_and_get_args(args, source_file=None):
+    from converter import Converter
+    c = Converter()  # XXX
+
+    result = actions.common.watermark_validation.validate_and_get_args(args)
+    
+    data = source_file.fileinfo
+    if not data['video'] or not data['audio']:
+        raise ValidationError('Source video file must contain at least one audio and video stream')
+    vcodec = data['video']['codec']
+    acodec = data['audio']['codec']
+    
+    if acodec not in c.audio_codecs.keys():
+        raise ValidationError('Sorry, we can\'t handle audio stream encoded using %s' % acodec)
+    if vcodec not in c.video_codecs.keys():
+        raise ValidationError('Sorry, we can\'t handle video stream encoded using %s' % vcodec)
+
+    return result
 
 
 CORNER_MAP = {
@@ -57,10 +78,13 @@ def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
         source_tmp.flush()
 
         with tempfile.NamedTemporaryFile(mode='rb') as target_tmp:
-            video_data = source_file.fileinfo
+            data = get_video_data(file_content)
+            video_data = data['video']
+            audio_data = data['audio']
 
-            video_width = video_data['video']['width']
-            video_height = video_data['video']['height']
+            video_width = video_data['width']
+            video_height = video_data['height']
+
             wm_position = get_watermark_position(video_width, video_height, h_pad, v_pad, corner)
             wm_bbox = get_watermark_bbox(video_width, video_height, w, h)
 
@@ -72,17 +96,17 @@ def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
                 converter = Converter(avconv_path=settings.AVCONV_BIN,
                                       avprobe_path=settings.AVPROBE_BIN)
 
-                fps = video_data['video']['fps']
+                fps = video_data['fps']
                 options = converter.parse_options({
-                    'format': video_data['format'],
+                    'format': data['format'],
                     'video': {
-                        'codec': video_data['video']['codec'],
-                        'fps': fps and float('%.3f' % fps) or None,
+                        'codec': video_data['codec'],
+                        'fps': fps and '%.3f' % fps or None,
                     },
                     'audio': {
-                        'codec': video_data['audio']['codec'],
-                        'bitrate': video_data['audio']['bitrate'] or 128,
-                        'samplerate': video_data['audio']['samplerate'],
+                        'codec': audio_data['codec'],
+                        'bitrate': audio_data['bitrate'] or 128,
+                        'samplerate': audio_data['samplerate'],
                     },
                 })
 
@@ -92,8 +116,11 @@ def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
                 for step in convertation:
                     pass
                 
+                if data['format'] == 'flv':
+                    run_flvtool(target_tmp.name)
+                
                 result = open(target_tmp.name)
-                return result, video_data['format']
+                return result, data['format']
             finally:
                 if wm_tmp:
                     os.unlink(wm_tmp.name)

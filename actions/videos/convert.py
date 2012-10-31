@@ -6,14 +6,14 @@ import settings
 from actions import ActionException
 from actions.utils import ValidationError
 from actions.common import validate_presence
-
+from actions.videos.utils import run_flvtool 
 
 name = 'convert'
 applicable_for = 'video'
 result_type_family = 'video'
 
 
-def validate_and_get_args(args):
+def validate_and_get_args(args, source_file=None):
     validate_presence(args, 'to')
     format = args['to']
 
@@ -51,30 +51,17 @@ def validate_and_get_args(args):
     format_supported_acodecs = acodec_restrictions.get(format, all_supported_acodecs)
     
     if vcodec is None:
-        raise ValidationError('vcodec must be specified.')
+        raise ValidationError('`vcodec` must be specified.')
     elif vcodec not in format_supported_vcodecs:
         raise ValidationError('Format %s allows only following video codecs: %s' %
                               (format, ', '.join(format_supported_vcodecs)))
     if acodec is None:
-        raise ValidationError('acodec must be specified.')
+        raise ValidationError('`acodec` must be specified.')
     elif acodec not in format_supported_acodecs:
         raise ValidationError('Format %s allows only following audio codecs: %s' %
                               (format, ', '.join(format_supported_acodecs)))
 
     return [format, vcodec, acodec]
-
-
-def run_flvtool(file_path):
-    try:
-        proc = subprocess.Popen([settings.FLVTOOL_BIN, '-U', file_path],
-                                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-    except OSError:
-        raise ActionException('Failed to start `flvtool`: %s' % settings.FLVTOOL_BIN)
-    stdout_data, stderr_data = proc.communicate()
-    return_code = proc.wait()
-    if return_code != 0:
-        raise ActionException('`flvtool` failed. Stderr: %s' % stderr_data)
 
 
 def perform(source_file, format, vcodec, acodec, only_try=False):

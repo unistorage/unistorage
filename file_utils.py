@@ -29,18 +29,9 @@ def get_audio_info(metadata):
     return fileinfo
 
 
-def get_video_info(metadata):
-    fileinfo = {}
-    video = metadata['video'][0]
-    for key in ('width', 'height', 'codec', 'length'):
-        fileinfo[key] = video[key]
-    return fileinfo
-
-
 handlers = {
     kaa.metadata.MEDIA_IMAGE: get_image_info,
-    kaa.metadata.MEDIA_AUDIO: get_audio_info,
-    kaa.metadata.MEDIA_AV: get_video_info
+    kaa.metadata.MEDIA_AUDIO: get_audio_info
 }
 
 
@@ -95,7 +86,7 @@ def get_content_type(file):
     return content_type
 
 
-def get_video_data(file_content, file_name):
+def get_video_data(file_content, file_name=None):
     from converter import Converter
     converter = Converter(avconv_path=settings.AVCONV_BIN,
                           avprobe_path=settings.AVPROBE_BIN)
@@ -105,12 +96,15 @@ def get_video_data(file_content, file_name):
         tmp_file.flush()
         data = converter.probe(tmp_file.name)
 
-    extension = os.path.splitext(file_name)[1]
+    extension = None
+    if file_name and '.' in file_name:
+        extension = os.path.splitext(file_name)[1]
+
     formats = data.format.format.split(',')
     format = extension in formats and extension or formats[0]
 
     result = {
-        'format': converter.get_format_from_avconv_name(format),
+        'format': converter.get_format_from_avconv_name(format),  # XXX
         'audio': {},
         'video': {}
     }
@@ -120,17 +114,17 @@ def get_video_data(file_content, file_name):
         result['video'] = {
             'width': video.video_width,
             'height': video.video_height,
-            'codec': converter.get_vcodec_from_avconv_name(video.codec),
             'fps': video.video_fps,
+            'codec': converter.get_vcodec_from_avconv_name(video.codec),  # XXX
             'bitrate': data.video_bitrate,
         }
 
     audio = data.audio
     if audio:
         result['audio'] = {
-            'codec': converter.get_acodec_from_avconv_name(audio.codec),
-            'samplerate': audio.audio_samplerate,
+            'codec': converter.get_acodec_from_avconv_name(audio.codec),  # XXX
             'bitrate': data.audio_bitrate,
+            'samplerate': audio.audio_samplerate,
         }
     return result
 
@@ -151,7 +145,7 @@ def get_file_data(file, file_name=None):
 
     if metadata:
         if metadata.media == kaa.metadata.MEDIA_AV:
-            data['fileinfo'] = get_video_data(file_content, file_name)
+            data['fileinfo'] = get_video_data(file_content, file_name=file_name)
         elif metadata.media in handlers:
             get_fileinfo = handlers[metadata.media]
             fileinfo = get_fileinfo(metadata.convert())
