@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import string
 import binascii
+import tempfile
+import os
+import os.path
 
 import magic
 import kaa.metadata
@@ -92,6 +95,46 @@ def get_content_type(file):
     return content_type
 
 
+def get_video_data(file_content, file_name):
+    from converter import Converter
+    converter = Converter(avconv_path=settings.AVCONV_BIN,
+                          avprobe_path=settings.AVPROBE_BIN)
+
+    with tempfile.NamedTemporaryFile(mode='wb') as tmp_file:
+        tmp_file.write(file_content)
+        tmp_file.flush()
+        data = converter.probe(tmp_file.name)
+
+    extension = os.path.splitext(file_name)[1]
+    formats = data.format.format.split(',')
+    format = extension in formats and extension or formats[0]
+
+    result = {
+        'format': converter.get_format_from_avconv_name(format),
+        'audio': {},
+        'video': {}
+    }
+
+    video = data.video
+    if video:
+        result['video'] = {
+            'width': video.video_width,
+            'height': video.video_height,
+            'codec': converter.get_vcodec_from_avconv_name(video.codec),
+            'fps': video.video_fps,
+            'bitrate': data.video_bitrate,
+        }
+
+    audio = data.audio
+    if audio:
+        result['audio'] = {
+            'codec': converter.get_acodec_from_avconv_name(audio.codec),
+            'samplerate': audio.audio_samplerate,
+            'bitrate': data.audio_bitrate,
+        }
+    return result
+
+
 def get_file_data(file, file_name=None):
     file.seek(0)
     file_content = file.read()
@@ -106,9 +149,11 @@ def get_file_data(file, file_name=None):
     metadata = get_metadata(file)
     file.seek(0)
 
-    if metadata and metadata.media in handlers:
-        get_fileinfo = handlers[metadata.media]
-        fileinfo = get_fileinfo(metadata.convert())
-        data['fileinfo'] = fileinfo
-    
+    if metadata:
+        if metadata.media == kaa.metadata.MEDIA_AV:
+            data['fileinfo'] = get_video_data(file_content, file_name)
+        elif metadata.media in handlers:
+            get_fileinfo = handlers[metadata.media]
+            fileinfo = get_fileinfo(metadata.convert())
+            data['fileinfo'] = fileinfo
     return data

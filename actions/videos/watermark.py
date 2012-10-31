@@ -39,43 +39,6 @@ def get_watermark_bbox(source_width, source_height, w, h):
     return (wm_width, wm_height)
 
 
-def get_video_data(video_path):
-    from converter import Converter
-
-    c = Converter(avconv_path=settings.AVCONV_BIN,
-                  avprobe_path=settings.AVPROBE_BIN)
-    data = c.probe(video_path)
-
-    extension = os.path.splitext(video_path)[1]
-    formats = data.format.format.split(',')
-    format = extension in formats and extension or formats[0]
-
-    result = {
-        'format': c.get_format_from_avconv_name(format),
-        'audio': {},
-        'video': {}
-    }
-
-    video = data.video
-    if video:
-        result['video'] = {
-            'width': video.video_width,
-            'height': video.video_height,
-            'codec': c.get_vcodec_from_avconv_name(video.codec),
-            'fps': video.video_fps,
-            'bitrate': data.video_bitrate,
-        }
-
-    audio = data.audio
-    if audio:
-        result['audio'] = {
-            'codec': c.get_acodec_from_avconv_name(audio.codec),
-            'samplerate': audio.audio_samplerate,
-            'bitrate': data.audio_bitrate,
-        }
-    return result
-
-
 def resize_watermark(wm, wm_bbox):
     resized_wm, resized_wm_ext = image_resize(wm, 'keep', *wm_bbox)
 
@@ -88,56 +51,49 @@ def resize_watermark(wm, wm_bbox):
 def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
     from converter import Converter
 
-    source_tmp = None
-    target_tmp = None
-    wm_tmp = None
-    try:
-        source_tmp = tempfile.NamedTemporaryFile(delete=False)
-        source_tmp.write(source_file.read())
-        source_tmp.close()
+    file_content = source_file.read()
+    with tempfile.NamedTemporaryFile() as source_tmp:
+        source_tmp.write(file_content)
+        source_tmp.flush()
 
-        target_tmp = tempfile.NamedTemporaryFile(delete=False)
-        target_tmp.close()
+        with tempfile.NamedTemporaryFile(mode='rb') as target_tmp:
+            video_data = source_file.fileinfo
 
-        video_data = get_video_data(source_tmp.name)
+            video_width = video_data['video']['width']
+            video_height = video_data['video']['height']
+            wm_position = get_watermark_position(video_width, video_height, h_pad, v_pad, corner)
+            wm_bbox = get_watermark_bbox(video_width, video_height, w, h)
 
-        video_width = video_data['video']['width']
-        video_height = video_data['video']['height']
-        wm_position = get_watermark_position(video_width, video_height, h_pad, v_pad, corner)
-        wm_bbox = get_watermark_bbox(video_width, video_height, w, h)
-        wm_tmp = resize_watermark(wm_file, wm_bbox)
+            wm_tmp = None
+            try:
+                wm_tmp = resize_watermark(wm_file, wm_bbox)
 
-        vf_params = 'movie=%s [wm];[in][wm] overlay=%s [out]' % (wm_tmp.name, wm_position)
-        c = Converter(avconv_path=settings.AVCONV_BIN,
-                      avprobe_path=settings.AVPROBE_BIN)
+                vf_params = 'movie=%s [wm];[in][wm] overlay=%s [out]' % (wm_tmp.name, wm_position)
+                converter = Converter(avconv_path=settings.AVCONV_BIN,
+                                      avprobe_path=settings.AVPROBE_BIN)
 
-        fps = video_data['video']['fps']
-        options = c.parse_options({
-            'format': video_data['format'],
-            'video': {
-                'codec': video_data['video']['codec'],
-                'fps': fps and float('%.3f' % fps) or None,
-            },
-            'audio': {
-                'codec': video_data['audio']['codec'],
-                'bitrate': video_data['audio']['bitrate'] or 128,
-                'samplerate': video_data['audio']['samplerate'],
-            },
-        })
+                fps = video_data['video']['fps']
+                options = converter.parse_options({
+                    'format': video_data['format'],
+                    'video': {
+                        'codec': video_data['video']['codec'],
+                        'fps': fps and float('%.3f' % fps) or None,
+                    },
+                    'audio': {
+                        'codec': video_data['audio']['codec'],
+                        'bitrate': video_data['audio']['bitrate'] or 128,
+                        'samplerate': video_data['audio']['samplerate'],
+                    },
+                })
 
-        options.extend(['-vf', '%s' % vf_params])
-        convertation = c.avconv.convert(source_tmp.name, target_tmp.name, options)
+                options.extend(['-vf', '%s' % vf_params])
+                convertation = converter.avconv.convert(source_tmp.name, target_tmp.name, options)
 
-        for step in convertation:
-            pass
-
-        result = open(target_tmp.name)
-    finally:
-        if target_tmp:
-            os.unlink(target_tmp.name)
-        if source_tmp:
-            os.unlink(source_tmp.name)
-        if wm_tmp:
-            os.unlink(wm_tmp.name)
-
-    return result, video_data['format']
+                for step in convertation:
+                    pass
+                
+                result = open(target_tmp.name)
+                return result, video_data['format']
+            finally:
+                if wm_tmp:
+                    os.unlink(wm_tmp.name)

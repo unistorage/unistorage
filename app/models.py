@@ -15,7 +15,7 @@ class ValidationMixin(object):
         super(ValidationMixin, self).validate()
         for field in self.required:
             if not self[field]:
-                raise ValidationError('field %s is required' % field)
+                raise ValidationError('Field %s is required.' % field)
 
 
 class User(ValidationMixin, modeling.Document):
@@ -36,7 +36,7 @@ class User(ValidationMixin, modeling.Document):
         'token': basestring,
         'needs': [tuple]
     }
-    required = ['token']
+    required = ('token',)
 
     @classmethod
     def wrap_incoming(cls, data, db):
@@ -83,7 +83,7 @@ class Template(ValidationMixin, modeling.Document):
         'applicable_for': basestring,
         'action_list': list
     }
-    required = ['user_id', 'applicable_for', 'action_list']
+    required = ('user_id', 'applicable_for', 'action_list')
 
 
 class Statistics(ValidationMixin, modeling.Document):
@@ -250,7 +250,7 @@ class File(ValidationMixin, modeling.Document):
         'content_type': basestring,
         'pending': bool
     }
-    required = ['user_id', 'filename', 'content_type']
+    required = ('user_id', 'filename', 'content_type')
 
     @classmethod
     def wrap_incoming(cls, data, db):
@@ -259,7 +259,12 @@ class File(ValidationMixin, modeling.Document):
         data['content_type'] = data.pop('contentType', None)
         data['upload_date'] = data.pop('uploadDate', None)
         data['chunk_size'] = data.pop('chunkSize', None)
-        return super(File, cls).wrap_incoming(data, db)
+
+        fileinfo = data.pop('fileinfo', None)  # Избегаем валидации средствами monk
+        result = super(File, cls).wrap_incoming(data, db)
+        result.fileinfo = fileinfo
+
+        return result
 
     @classmethod
     def put_to_fs(cls, db, fs, data, **kwargs):

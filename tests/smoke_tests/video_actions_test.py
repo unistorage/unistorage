@@ -7,6 +7,7 @@ from tests.smoke_tests import SmokeTest
 
 
 TEST_SOURCE_DIR = fixture_path('../../tmp_fixtures')
+TEST_SOURCE_DIR = fixture_path('./videos')
 TEST_TARGET_DIR = './tests/smoke_tests/results/result_videos'
 
 CONVERT_TARGETS = {
@@ -23,22 +24,22 @@ class Test(SmokeTest):
     def setUpClass(cls):
         super(Test, cls).setUpClass(TEST_SOURCE_DIR, TEST_TARGET_DIR)
 
-    # def test_convert(self):
-    #     results_dir = os.path.join(TEST_TARGET_DIR, 'convert')
-    #     os.makedirs(results_dir)
+    def test_convert(self):
+        results_dir = os.path.join(TEST_TARGET_DIR, 'convert')
+        os.makedirs(results_dir)
 
-    #     for format in CONVERT_TARGETS:
-    #         acodec = CONVERT_TARGETS[format]['acodec']
-    #         for vcodec in CONVERT_TARGETS[format]['vcodec']:
-    #             for source_name, source_file in self.source_files():
-    #                 print '.', source_name
-    #                 result, ext = convert(source_file, format, vcodec, acodec, only_try=True)
+        for format in CONVERT_TARGETS:
+            acodec = CONVERT_TARGETS[format]['acodec']
+            for vcodec in CONVERT_TARGETS[format]['vcodec']:
+                for source_name, source_file in self.source_files():
+                    print '.', source_name
+                    result, ext = convert(source_file, format, vcodec, acodec, only_try=True)
 
-    #                 target_name = '%s_using_vcodec_%s_acodec_%s.%s' % \
-    #                     (source_name, vcodec, acodec, ext)
-    #                 target_path = os.path.join(results_dir, target_name)
-    #                 with open(target_path, 'w') as target_file:
-    #                     target_file.write(result.read())
+                    target_name = '%s_using_vcodec_%s_acodec_%s.%s' % \
+                        (source_name, vcodec, acodec, ext)
+                    target_path = os.path.join(results_dir, target_name)
+                    with open(target_path, 'w') as target_file:
+                        target_file.write(result.read())
 
     def test_watermark(self):
         results_dir = os.path.join(TEST_TARGET_DIR, 'watermark')
