@@ -119,8 +119,7 @@ def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
                 if data['format'] == 'flv':
                     run_flvtool(target_tmp.name)
                 
-                result = open(target_tmp.name)
-                return result, data['format']
+                return open(target_tmp.name), data['format']
             finally:
                 if wm_tmp:
                     os.unlink(wm_tmp.name)
