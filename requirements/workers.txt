@@ -1,2 +1,2 @@
--e git://github.com/mediasite/python-video-converter.git@31c4d70c2455683edd9dc85116d287325f302eca#egg=python-video-converter
+-e git://github.com/mediasite/python-video-converter.git@a3f534cc7a80f9d9e9e1f4d766d9e608930fe577#egg=python-video-converter
 PIL
