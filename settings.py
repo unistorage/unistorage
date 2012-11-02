@@ -49,9 +49,8 @@ OO_WRAPPER_BIN = 'oowrapper.py'
 FLVTOOL_BIN = '/usr/bin/flvtool2'
 
 
-# Пути к gridfs-serve и unistore-nginx-serve
-GRIDFS_SERVE_URL = 'http://127.0.0.1'
-UNISTORE_NGINX_SERVE_URL = 'http://127.0.0.1/uns'
+# Путь к gridfs-serve
+GRIDFS_SERVE_URL = 'http://127.0.0.1/'
 
 
 TTL = int(timedelta(days=7).total_seconds())  # TTL ответов со статусом "ok"

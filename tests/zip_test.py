@@ -8,8 +8,6 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
     def assert_error(self, data, error):
         r = self.app.post(url_for('.zip_create'), data, status='*')
         self.assertEquals(r.json['status'], 'error')
-        print error
-        print r.json['msg']
         self.assertTrue(error in r.json['msg'])
 
     def test_validation(self):

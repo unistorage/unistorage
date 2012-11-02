@@ -81,19 +81,20 @@ def index():
 def users():
     if request.method == 'POST':
         form = forms.UserForm(request.form)
+        _id = form.data.get('id')
         if form.validate():
-            _id = form.data.get('id')
-
             user = _id and User.get_one(g.db, {'_id': ObjectId(_id)}) or User()
             user.update({
                 'name': form.data['name'],
                 'token': form.data['token'],
-                'needs': map(RoleNeed, form.data['has_access_to'])
+                'needs': map(RoleNeed, form.data['has_access_to']),
+                'domains': form.data['domains']
             })
             user.save(g.db)
             return redirect(url_for('.users'))
         else:
-            return render_template('user_create.html', **{
+            template = _id and 'user_edit.html' or 'user_create.html'
+            return render_template(template, **{
                 'form': form
             })
 
@@ -121,8 +122,9 @@ def user_remove(_id):
 @login_required
 def user_edit(_id):
     user = User.get_one(g.db, _id)
+    form = forms.UserForm(request.form, obj=user)
     return render_template('user_edit.html', **{
-        'form': forms.UserForm(request.form, obj=user)
+        'form': form
     })
 
 
