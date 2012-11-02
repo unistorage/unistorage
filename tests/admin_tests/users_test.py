@@ -78,6 +78,46 @@ class Test(AdminFunctionalTest):
         user1_needs = User.get_one(g.db, {'_id': user1.get_id()}).needs
         self.assertEquals(user1_needs, [('role', user2.get_id())])
 
+    def test_domains(self):
+        self.login()
+
+        # Создаём пользователя
+        form = self.app.get(url_for('admin.user_create')).form
+        form.set('name', 'Test1')
+        response = form.submit().follow()
+
+        user = User.find(g.db, {})[0]
+        user_id = user.get_id()
+
+        # Открываем форму редактирования пользователя
+        response = response.click(href='%s/edit' % user_id)
+        form = response.form
+       
+        # Добавляем домен
+        domain = 'http://s.66.ru/'
+        fields = form.submit_fields()
+        fields.append(('domains-0', domain))
+        response = form.response.goto(form.action, method=form.method, params=fields).follow()
+
+        # Удостоверимся, что он сохранился
+        user_domains = User.get_one(g.db, {'_id': user_id}).domains
+        self.assertIn(domain, user_domains)
+        
+        # Открываем форму снова
+        response = response.click(href='%s/edit' % user_id)
+        form = response.form
+        self.assertEquals(form.get('domains-0').value, domain)
+
+        # Удаляем домен
+        fields = form.submit_fields()        
+        fields.remove(('domains-0', domain))
+        fields.append(('domains-0', ''))
+        response = form.response.goto(form.action, method=form.method, params=fields).follow()
+
+        # Удостоверимся, что он удалился
+        user_domains = User.get_one(g.db, {'_id': user_id}).domains
+        self.assertNotIn(domain, user_domains)
+
     def test_remove(self):
         self.login()
         

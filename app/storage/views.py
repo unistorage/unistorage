@@ -5,6 +5,8 @@ Storage views
 """
 import functools
 import time
+import random
+from urlparse import urljoin
 from datetime import datetime
 
 from flask import request, g, abort, url_for
@@ -91,9 +93,9 @@ def file_view(_id=None):
         return error({'msg': str(e)}), 400
 
     if source_file.pending:
-        return get_pending_file(PendingFile(source_file))
+        return get_pending_file(request.user, PendingFile(source_file))
     else:
-        return get_regular_file(RegularFile(source_file))
+        return get_regular_file(request.user, RegularFile(source_file))
 
 
 @bp.route('/template/')
@@ -142,20 +144,21 @@ def template_view(_id=None):
 @login_required
 def zip_create(_id=None):
     """Вьюшка, создающая zip collection"""
-    files = request.form.getlist('file')
+    files_field = 'file[]'
+    files = request.form.getlist(files_field)
     filename = request.form.get('filename')
     
     try:
         if not filename:
             raise ValidationError('`filename` field is required.')
         if not files:
-            raise ValidationError('`file[]` field is required'
-                                  ' and must contain at least one file URI.')
+            raise ValidationError('`%s` field is required'
+                                  ' and must contain at least one file URI.' % files_field)
 
         try:
             file_ids = map(parse_file_uri, files)
         except ValueError:
-            raise ValidationError('Not all `file[]` are correct file URIs.')
+            raise ValidationError('Not all `%s` are correct file URIs.' % files_field)
 
         # TODO Проверять, что файлы с указанными URI существуют и не временные?
     except ValidationError as e:
@@ -190,41 +193,33 @@ def zip_view(_id):
     ttl = int(will_expire_at - now)
     if ttl < 0:
         return error({'msg': 'Zip collection wasn\'t found'}), 404
-
-    if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL'):
-        return ok({
-            'ttl': ttl,
-            'data': {
-                'uri': get_unistore_nginx_serve_url(str(zip_collection.get_id()))
-            }
-        })
-    else:
-        return error(), 503
+    
+    return ok({
+        'ttl': ttl,
+        'data': {
+            'url': get_gridfs_serve_url(request.user, zip_collection,
+                                        through_nginx_serve=True)
+        }
+    })
 
 
-def get_gridfs_serve_url(path):
-    """Возвращает путь к gridfs-serve (`path` становится постфиксом ``settings.GRIDFS_SERVE_URL``).
-
-    :param path: путь
-    :type path: basestring
+def get_gridfs_serve_url(user, file, through_nginx_serve=False):
+    """Возвращает путь к gridfs-serve, либо к unistore-nginx-serve (в случае, если
+    through_nginx_serve = True).
     """
-    return '%s/%s' % (settings.GRIDFS_SERVE_URL, path.lstrip('/'))
+    base_url = user.domains and random.choice(user.domains) or settings.GRIDFS_SERVE_URL
+
+    if not base_url.endswith('/'):
+        base_url += '/'
+
+    if through_nginx_serve:
+        base_url = urljoin(base_url, '/uns/')
+
+    file_id = str(file.get_id())
+    return urljoin(base_url, file_id)
 
 
-def get_unistore_nginx_serve_url(path):
-    """Возвращает путь к unistore-nginx-serve
-    (`path` становится постфиксом ``settings.UNISTORE_NGINX_SERVE_URL``).
-
-    Предполагает, что :class:`settings` имеет атрибут ``UNISTORE_NGINX_SERVE_URL``
-    (он опционален).
-
-    :param path: путь
-    :type path: basestring
-    """
-    return '%s/%s' % (settings.UNISTORE_NGINX_SERVE_URL, path.lstrip('/'))
-
-
-def can_unistore_serve(file):
+def can_unistore_nginx_serve(file):
     """Возвращает True, если `file` может быть отдан с помощью unistore-nginx-serve (например, в
     случае, если `file` -- картинка, для которой заказан ресайз).
 
@@ -249,26 +244,26 @@ def can_unistore_serve(file):
     return False
 
 
-def get_pending_file(file):
+def get_pending_file(user, file):
     """Возвращает JSON-строку с информацией о `file`.
     
     :param file: :term:`временный файл`
     :type file: :class:`app.models.File`
     """
     ttl = file.ttl
-    if hasattr(settings, 'UNISTORE_NGINX_SERVE_URL') and can_unistore_serve(file):
+    if can_unistore_nginx_serve(file):
         return jsonify({
             'status': 'just_uri',
             'ttl': ttl,
             'data': {
-                'uri': get_unistore_nginx_serve_url(str(file.get_id()))
+                'url': get_gridfs_serve_url(user, file, through_nginx_serve=True)
             }
         })
     else:
         return jsonify({'status': 'wait', 'ttl': ttl})
 
 
-def get_regular_file(file):
+def get_regular_file(user, file):
     """Возвращает JSON-строку с информацией о `file`.
     
     :param file: :term:`обычный файл`
@@ -279,7 +274,7 @@ def get_regular_file(file):
             'name': file.filename,
             'size': file.length,
             'mimetype': file.content_type,
-            'uri': get_gridfs_serve_url(str(file.get_id())),
+            'url': get_gridfs_serve_url(user, file),
             'extra': file.get('fileinfo', {})
         },
         'ttl': settings.TTL

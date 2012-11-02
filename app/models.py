@@ -28,13 +28,22 @@ class User(ValidationMixin, modeling.Document):
     .. attribute:: token
 
         Токен для авторизации.
+    
+    .. attribute:: needs
+
+        Роли пользователя (Flask Principal needs).
+    
+    .. attribute:: domains
+
+        Домены-алиасы для gridfs-serve.
     """
     collection = 'users'
     structure = {
         '_id': ObjectId,
         'name': basestring,
         'token': basestring,
-        'needs': [tuple]
+        'needs': [tuple],
+        'domains': [basestring]
     }
     required = ['token']
 

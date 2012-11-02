@@ -18,7 +18,7 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
         resized_image_id = self.get_id_from_uri(resized_image_uri)
 
         r = self.app.get(resized_image_uri)
-        self.assertTrue('uri' in r.json['data'])
+        self.assertTrue('url' in r.json['data'])
 
         # Make sure that consequent calls return the same id for the same action
         r = self.app.get(resize_action_url)

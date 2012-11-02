@@ -22,12 +22,12 @@
           <td>{{ user.token }}</td>
           <td class="actions">
 
-            <a class="btn btn-mini  edit-user"
+            <a class="btn  edit-user"
                href="{{ url_for('.user_edit', _id=user._id) }}">
               <i class="icon-edit"></i>
             </a>
 
-            <a class="btn btn-danger btn-mini  remove-user"
+            <a class="btn btn-danger  remove-user"
                href="{{ url_for('.user_remove', _id=user._id) }}">
               <i class="icon-remove icon-white"></i>
             </a>

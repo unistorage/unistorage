@@ -15,3 +15,18 @@ body {
 table.statistics th.name {
 	width: 200px;
 }
+
+#domains ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+  #domains ul .btn.remove {
+    margin-left: 6px;
+  }
+
+    #domains ul li.control-group {
+      padding: 0;
+      margin: 6px 0;
+    }

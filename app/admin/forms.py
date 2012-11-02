@@ -25,6 +25,30 @@ def get_user_choices(excepted_user=None):
     return [(user.get_id(), user.name) for user in User.find(g.db, spec)]
 
 
+class DomainListWidget(object):
+    def __call__(self, field, **kwargs):
+        html = ['<ul>']
+        for subfield in field:
+            additional_classes = subfield.errors and 'error' or ''
+            html.append('<li class="control-group %s">' % additional_classes)
+            html.append(subfield())
+            html.append('</li>')
+        html.append('</ul>')
+        return wtf.widgets.HTMLString(''.join(html))
+
+
+class DomainList(wtf.fields.FieldList):
+    widget = DomainListWidget()
+    
+    def _extract_indices(self, prefix, formdata):
+        offset = len(prefix) + 1
+        for k, v in formdata.iteritems():
+            if k.startswith(prefix):
+                k = k[offset:].split('-', 1)[0]
+                if k.isdigit() and v:
+                    yield int(k)
+
+
 class UserForm(wtf.Form):
     id = wtf.HiddenField()
     name = wtf.TextField(u'Имя пользователя', [wtf.validators.Required()])
@@ -32,6 +56,7 @@ class UserForm(wtf.Form):
                           default=get_random_token)
     has_access_to = wtf.SelectMultipleField(
         u'Другие пользователи, к файлам которых разрешён доступ', coerce=ObjectId)
+    domains = DomainList(wtf.TextField(u'', [wtf.validators.URL()]), label=u'Домены')
 
     def __init__(self, *args, **kwargs):
         super(UserForm, self).__init__(*args, **kwargs)
