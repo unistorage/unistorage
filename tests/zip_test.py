@@ -16,16 +16,16 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
             '`file[]` field is required and must contain at least one file URI.')
 
         self.assert_error(
-            {'file_id': [], 'filename': 'images.zip'},
+            {'file[]': [], 'filename': 'images.zip'},
             '`file[]` field is required and must contain at least one file URI.')
         
         self.assert_error(
-            {'file': ['123'], 'filename': 'images.zip'},
+            {'file[]': ['123'], 'filename': 'images.zip'},
             'Not all `file[]` are correct file URIs.')
 
         file_uri = self.put_file('images/some.jpeg')
         self.assert_error(
-            {'file': [file_uri]},
+            {'file[]': [file_uri]},
             '`filename` field is required.')
 
     def test(self):
@@ -34,10 +34,10 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
         file3_uri = self.put_file('images/some.gif')
 
         r = self.app.post(url_for('.zip_create'), {
-            'file': [file1_uri, file2_uri, file3_uri],
+            'file[]': [file1_uri, file2_uri, file3_uri],
             'filename': 'images.zip'
         })
         zip_resource_uri = r.json['resource_uri']
 
         r = self.app.get(zip_resource_uri)
-        self.assertTrue(settings.UNISTORE_NGINX_SERVE_URL in r.json['data']['uri'])
+        self.assertTrue('uns' in r.json['data']['url'])

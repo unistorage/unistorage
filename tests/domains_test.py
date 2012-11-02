@@ -11,9 +11,9 @@ class FunctionalTest(StorageFunctionalTest):
         # Заливаем файл
         file_uri = self.put_file('images/some.jpeg')
         # Берём адрес бинарного содержимого файла
-        file_content_uri = self.app.get(file_uri).json['data']['uri']
+        file_content_url = self.app.get(file_uri).json['data']['url']
         # Смотрим, что он начинается с адреса, указанного в настройках
-        self.assertTrue(file_content_uri.startswith(settings.GRIDFS_SERVE_URL))
+        self.assertTrue(file_content_url.startswith(settings.GRIDFS_SERVE_URL))
 
         # Указываем пользователю список доменов
         user = User.get_one(g.db, {})
@@ -21,6 +21,6 @@ class FunctionalTest(StorageFunctionalTest):
         user.save(g.db)
 
         # Перезапрашиваем адрес
-        file_content_uri = self.app.get(file_uri).json['data']['uri']
+        file_content_url = self.app.get(file_uri).json['data']['url']
         # Удостоверяемся, что адрес начинается с одного из доменов, указанных в user.domains
-        self.assertTrue(any([file_content_uri.startswith(domain) for domain in user.domains]))
+        self.assertTrue(any([file_content_url.startswith(domain) for domain in user.domains]))

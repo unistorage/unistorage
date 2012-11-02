@@ -144,20 +144,21 @@ def template_view(_id=None):
 @login_required
 def zip_create(_id=None):
     """Вьюшка, создающая zip collection"""
-    files = request.form.getlist('file')
+    files_field = 'file[]'
+    files = request.form.getlist(files_field)
     filename = request.form.get('filename')
     
     try:
         if not filename:
             raise ValidationError('`filename` field is required.')
         if not files:
-            raise ValidationError('`file[]` field is required'
-                                  ' and must contain at least one file URI.')
+            raise ValidationError('`%s` field is required'
+                                  ' and must contain at least one file URI.' % files_field)
 
         try:
             file_ids = map(parse_file_uri, files)
         except ValueError:
-            raise ValidationError('Not all `file[]` are correct file URIs.')
+            raise ValidationError('Not all `%s` are correct file URIs.' % files_field)
 
         # TODO Проверять, что файлы с указанными URI существуют и не временные?
     except ValidationError as e:
@@ -196,7 +197,7 @@ def zip_view(_id):
     return ok({
         'ttl': ttl,
         'data': {
-            'uri': get_gridfs_serve_url(request.user, zip_collection,
+            'url': get_gridfs_serve_url(request.user, zip_collection,
                                         through_nginx_serve=True)
         }
     })
@@ -255,7 +256,7 @@ def get_pending_file(user, file):
             'status': 'just_uri',
             'ttl': ttl,
             'data': {
-                'uri': get_gridfs_serve_url(user, file, through_nginx_serve=True)
+                'url': get_gridfs_serve_url(user, file, through_nginx_serve=True)
             }
         })
     else:
@@ -273,7 +274,7 @@ def get_regular_file(user, file):
             'name': file.filename,
             'size': file.length,
             'mimetype': file.content_type,
-            'uri': get_gridfs_serve_url(user, file),
+            'url': get_gridfs_serve_url(user, file),
             'extra': file.get('fileinfo', {})
         },
         'ttl': settings.TTL
