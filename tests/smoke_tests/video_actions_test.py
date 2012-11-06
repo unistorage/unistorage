@@ -17,30 +17,30 @@ class Test(SmokeTest):
     def setUpClass(cls):
         super(Test, cls).setUpClass(TEST_SOURCE_DIR, TEST_TARGET_DIR)
 
-    def test_convert(self):
-        results_dir = os.path.join(TEST_TARGET_DIR, 'convert')
-        os.makedirs(results_dir)
+#    def test_convert(self):
+        #results_dir = os.path.join(TEST_TARGET_DIR, 'convert')
+        #os.makedirs(results_dir)
 
-        convert_targets = {
-            'ogg': {'vcodec': ['theora'], 'acodec': 'vorbis'},
-            'webm': {'vcodec': ['vp8'], 'acodec': 'vorbis'},
-            'flv': {'vcodec': ['h264', 'flv'], 'acodec': 'mp3'},
-            'mp4': {'vcodec': ['h264', 'divx'], 'acodec': 'mp3'},
-            'mkv': {'vcodec': ['h263', 'mpeg1', 'mpeg2'], 'acodec': 'mp3'},
-        }
+        #convert_targets = {
+            #'ogg': {'vcodec': ['theora'], 'acodec': 'vorbis'},
+            #'webm': {'vcodec': ['vp8'], 'acodec': 'vorbis'},
+            #'flv': {'vcodec': ['h264', 'flv'], 'acodec': 'mp3'},
+            #'mp4': {'vcodec': ['h264', 'divx'], 'acodec': 'mp3'},
+            #'mkv': {'vcodec': ['h263', 'mpeg1', 'mpeg2'], 'acodec': 'mp3'},
+        #}
 
-        for format in convert_targets:
-            acodec = convert_targets[format]['acodec']
-            for vcodec in convert_targets[format]['vcodec']:
-                for source_name, source_file in self.source_files():
-                    print '.', source_name
-                    result, ext = convert(source_file, format, vcodec, acodec, only_try=True)
+        #for format in convert_targets:
+            #acodec = convert_targets[format]['acodec']
+            #for vcodec in convert_targets[format]['vcodec']:
+                #for source_name, source_file in self.source_files():
+                    #print '.', source_name
+                    #result, ext = convert(source_file, format, vcodec, acodec, only_try=True)
 
-                    target_name = '%s_using_vcodec_%s_acodec_%s.%s' % \
-                        (source_name, vcodec, acodec, ext)
-                    target_path = os.path.join(results_dir, target_name)
-                    with open(target_path, 'w') as target_file:
-                        target_file.write(result.read())
+                    #target_name = '%s_using_vcodec_%s_acodec_%s.%s' % \
+                        #(source_name, vcodec, acodec, ext)
+                    #target_path = os.path.join(results_dir, target_name)
+                    #with open(target_path, 'w') as target_file:
+                        #target_file.write(result.read())
 
     def test_watermark(self):
         results_dir = os.path.join(TEST_TARGET_DIR, 'watermark')

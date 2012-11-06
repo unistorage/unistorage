@@ -7,6 +7,8 @@ from actions import ActionException
 from actions.utils import ValidationError
 from actions.common import validate_presence
 from actions.videos.utils import run_flvtool 
+from actions.videos.avconv import avprobe, avconv
+
 
 name = 'convert'
 applicable_for = 'video'
@@ -65,40 +67,40 @@ def validate_and_get_args(args, source_file=None):
 
 
 def perform(source_file, format, vcodec, acodec, only_try=False):
-    from converter import Converter
-    c = Converter(avconv_path=settings.AVCONV_BIN, avprobe_path=settings.AVPROBE_BIN)
+    source_file_ext = '' 
+    if hasattr(source_file, 'filename'):
+        source_file_name, source_file_ext = os.path.splitext(source_file.filename)
 
-    tmp_source_file = tempfile.NamedTemporaryFile(delete=False)
+    tmp_source_file = tempfile.NamedTemporaryFile(suffix=source_file_ext, delete=False)
     tmp_source_file.write(source_file.read())
     tmp_source_file.close()
 
     tmp_target_file = tempfile.NamedTemporaryFile(delete=False)
     tmp_target_file.close()
     
-    options = {
-        'format': format,
-        'audio': {'codec': acodec, 'samplerate': 44100},
-        'video': {'codec': vcodec}
-    }
-    
-    if vcodec in ('mpeg1', 'mpeg2', 'divx'):
-        options['video']['fps'] = 25
-
-    data = c.probe(tmp_source_file.name)
-    for stream in data.streams:
-        if stream.type == 'audio':
-            channels = stream.audio_channels
-    
-    if acodec == 'mp3' and channels > 2:
-        channels = 2
-
-    options['audio']['channels'] = channels
-
     try:
-        convertion = c.convert(tmp_source_file.name, tmp_target_file.name, options)
-        for timecode in convertion:
-            if only_try:
-                break
+        options = {
+            'format': format,
+            'audio': {
+                'codec': acodec,
+                'sample_rate': 44100
+            },
+            'video': {
+                'codec': vcodec
+            }
+        }
+        
+        if vcodec in ('mpeg1', 'mpeg2', 'divx'):
+            options['video']['fps'] = 25
+
+        data = avprobe(tmp_source_file.name)
+        channels = data.get('audio', {}).get('channels')
+        if acodec == 'mp3' and channels > 2:
+            channels = 2
+
+        options['audio']['channels'] = channels
+
+        avconv(tmp_source_file.name, tmp_target_file.name, options)
 
         if format == 'flv':
             run_flvtool(tmp_target_file.name)

@@ -1,5 +1,6 @@
 import os
 import tempfile
+import cPickle as pickle
 
 import settings
 import actions
@@ -7,28 +8,44 @@ from file_utils import get_video_data
 from actions.utils import ValidationError
 from actions.videos.utils import run_flvtool 
 from actions.images.resize import perform as image_resize
+from actions.videos.avconv import avprobe, avconv, vcodec_encoders, acodec_encoders
+
 
 name = 'watermark'
 applicable_for = 'video'
 result_type_family = 'video'
 
 
-def validate_and_get_args(args, source_file=None):
-    from converter import Converter
-    c = Converter()  # XXX
+with open(settings.AVCONV_DB_PATH) as f:
+    avconv_db = pickle.load(f)
 
+
+def validate_and_get_args(args, source_file=None):
     result = actions.common.watermark_validation.validate_and_get_args(args)
-    
+
     data = source_file.fileinfo
     if not data['video'] or not data['audio']:
         raise ValidationError('Source video file must contain at least one audio and video stream')
-    vcodec = data['video']['codec']
-    acodec = data['audio']['codec']
     
-    if acodec not in c.audio_codecs.keys():
-        raise ValidationError('Sorry, we can\'t handle audio stream encoded using %s' % acodec)
-    if vcodec not in c.video_codecs.keys():
-        raise ValidationError('Sorry, we can\'t handle video stream encoded using %s' % vcodec)
+    acodec_name = data['audio']['codec']
+    vcodec_name = data['video']['codec']
+    
+    acodec = avconv_db['acodecs'].get(acodec_name)
+    acodec_encoder = acodec
+    if acodec_name in acodec_encoders:
+        acodec_encoder_name = acodec_encoders[acodec_name]
+        acodec_encoder = avconv_db['acodecs'].get(acodec_encoder_name)
+
+    if not acodec or not acodec['decoding'] or not acodec_encoder['encoding']:
+        raise ValidationError('Sorry, we can\'t handle audio stream encoded using %s' % acodec_name)
+    
+    vcodec = avconv_db['vcodecs'].get(vcodec_name)
+    vcodec_encoder = vcodec
+    if vcodec_name in vcodec_encoders:
+        vcodec_encoder_name = vcodec_encoders[vcodec_name]
+        vcodec_encoder = avconv_db['vcodecs'].get(vcodec_encoder_name)
+    if not vcodec or not vcodec['decoding'] or not vcodec_encoder['encoding']:
+        raise ValidationError('Sorry, we can\'t handle video stream encoded using %s' % vcodec_name)
 
     return result
 
@@ -70,55 +87,36 @@ def resize_watermark(wm, wm_bbox):
 
 
 def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
-    from converter import Converter
+    source_file_ext = '' 
+    if hasattr(source_file, 'filename'):
+        source_file_name, source_file_ext = os.path.splitext(source_file.filename)
 
     file_content = source_file.read()
-    with tempfile.NamedTemporaryFile() as source_tmp:
+    with tempfile.NamedTemporaryFile(suffix=source_file_ext) as source_tmp:
         source_tmp.write(file_content)
         source_tmp.flush()
 
         with tempfile.NamedTemporaryFile(mode='rb') as target_tmp:
-            data = get_video_data(file_content)
-            video_data = data['video']
-            audio_data = data['audio']
-
-            video_width = video_data['width']
-            video_height = video_data['height']
-
+            data = avprobe(source_tmp.name)
+            video_width = data['video']['width']
+            video_height = data['video']['height']
             wm_position = get_watermark_position(video_width, video_height, h_pad, v_pad, corner)
             wm_bbox = get_watermark_bbox(video_width, video_height, w, h)
-
             wm_tmp = None
             try:
                 wm_tmp = resize_watermark(wm_file, wm_bbox)
-
                 vf_params = 'movie=%s [wm];[in][wm] overlay=%s [out]' % (wm_tmp.name, wm_position)
-                converter = Converter(avconv_path=settings.AVCONV_BIN,
-                                      avprobe_path=settings.AVPROBE_BIN)
+                data['video']['filters'] = vf_params
 
-                fps = video_data['fps']
-                options = converter.parse_options({
-                    'format': data['format'],
-                    'video': {
-                        'codec': video_data['codec'],
-                        'fps': fps and '%.3f' % fps or None,
-                    },
-                    'audio': {
-                        'codec': audio_data['codec'],
-                        'bitrate': audio_data['bitrate'] or 128,
-                        'samplerate': audio_data['samplerate'],
-                    },
-                })
+                data['audio']['bitrate'] = data['audio'].get('bitrate') or '128k'
 
-                options.extend(['-vf', '%s' % vf_params])
-                convertation = converter.avconv.convert(source_tmp.name, target_tmp.name, options)
+                fps = data['video'].get('fps')
+                if fps:
+                    data['video']['fps'] = '%.3f' % fps
 
-                for step in convertation:
-                    pass
-                
+                avconv(source_tmp.name, target_tmp.name, data)
                 if data['format'] == 'flv':
                     run_flvtool(target_tmp.name)
-                
                 return open(target_tmp.name), data['format']
             finally:
                 if wm_tmp:

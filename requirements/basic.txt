@@ -17,5 +17,7 @@ pytz
 pyyaml
 pytils
 
+sh==1.05
+
 # Temporarily:
 git+git://github.com/mitsuhiko/jinja2.git

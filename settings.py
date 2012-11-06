@@ -66,6 +66,8 @@ MAGIC_FILE_PATH = ':'.join((
     '/usr/share/misc/magic',
 ))
 
+AVCONV_DB_PATH = os.path.join(PROJECT_PATH, 'avconv.db')
+
 
 logging_conf_path = os.path.join(PROJECT_PATH, 'logging.conf')
 config = yaml.load(open(logging_conf_path))
