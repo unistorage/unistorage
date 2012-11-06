@@ -2,12 +2,12 @@
 import string
 import binascii
 import tempfile
-import os
 import os.path
 
 import magic
 import kaa.metadata
 from kaa.metadata.factory import Factory, R_CLASS
+from werkzeug.datastructures import FileStorage
 
 from actions.videos.avconv import avprobe
 import settings
@@ -110,7 +110,13 @@ def get_file_data(file, file_name=None):
 
     if metadata:
         if metadata.media == kaa.metadata.MEDIA_AV:
-            data['fileinfo'] = get_video_data(file_content, file_name=file_name)
+            if isinstance(file, FileStorage) and \
+                    hasattr(file.stream, 'name') and \
+                    os.path.exists(file.stream.name):
+                video_data = avprobe(file.stream.name)
+            else:
+                video_data = get_video_data(file_content, file_name=file_name)
+            data['fileinfo'] = video_data
         elif metadata.media in handlers:
             get_fileinfo = handlers[metadata.media]
             fileinfo = get_fileinfo(metadata.convert())

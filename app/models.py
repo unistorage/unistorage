@@ -314,8 +314,8 @@ class RegularFile(File):
         return super(RegularFile, cls).get_from_fs(db, fs, **kwargs)
 
     @classmethod
-    def put_to_fs(cls, db, fs, file_name, file_content, **kwargs):
-        """Обновляет поля `fileinfo`, `content_type`, `filename` у kwargs, помещает `data` в GridFS
+    def put_to_fs(cls, db, fs, file_name, file, **kwargs):
+        """Обновляет поля `fileinfo`, `content_type`, `filename` у kwargs, помещает `file` в GridFS
         и обновляет статистику.
         
         Обычные файлы должны помещаться в GridFS исключительно посредством этого метода.
@@ -324,15 +324,15 @@ class RegularFile(File):
         :type db: pymongo.Connection
         :param fs: файловая система
         :type fs: gridfs.GridFS
-        :param data: файл
-        :type data: file-like object с атрибутом `name`, содержащим имя файла
+        :param file_storage: файл
+        :type file_storage: file-like object или :class:`werkzeug.datastructures.FileStorage`
         :param **kwargs: дополнительные параметры, которые станут атрибутами файла в GridFS
         """
-        kwargs.update(file_utils.get_file_data(file_content, file_name))
+        kwargs.update(file_utils.get_file_data(file, file_name))
         kwargs.update({'pending': False})
 
         cls(**kwargs).validate()
-        file_id = fs.put(file_content, **kwargs)
+        file_id = fs.put(file, **kwargs)
 
         db[Statistics.collection].update({
             'user_id': kwargs.get('user_id'),
