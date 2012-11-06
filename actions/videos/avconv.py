@@ -2,9 +2,16 @@
 import re
 import json
 import os.path
+import cPickle as pickle
 from cStringIO import StringIO
 
 import sh
+
+import settings
+
+
+with open(settings.AVCONV_DB_PATH) as f:
+    avconv_db = pickle.load(f)
 
 
 def parse_float(val):
@@ -28,8 +35,6 @@ def extract_video_data(stream, stderr_data):
             return n and d and n / d
         elif '.' in val:
             return parse_float(val)
-    stream.setdefault(None)
-    stderr_data.setdefault(None)
     return {
         'width': parse_int(stream.get('width')),
         'height': parse_int(stream.get('height')),
@@ -41,8 +46,6 @@ def extract_video_data(stream, stderr_data):
 
 
 def extract_audio_data(stream, stderr_data):
-    stream.setdefault(None)
-    stderr_data.setdefault(None)
     return {
         'channels': parse_int(stream.get('channels')),
         'sample_rate': parse_float(stream.get('sample_rate')),
@@ -99,35 +102,38 @@ def avprobe(fname):
     }
 
 
-acodec_encoders = {
-    'vorbis': 'libvorbis',
-    'amrnb': 'libopencore_amrnb',
-    'mp3': 'libmp3lame'
+encoders = {
+    'acodecs': {
+        'vorbis': 'libvorbis',
+        'amrnb': 'libopencore_amrnb',
+        'mp3': 'libmp3lame'
+    },
+    'vcodecs': {
+        'theora': 'libtheora',
+        'h264': 'libx264',
+        'divx': 'mpeg4',
+        'vp8': 'libvpx',
+        'h263': 'h263p',
+        'mpeg1': 'mpeg1video',
+        'mpeg2': 'mpeg2video'
+    }
 }
 
-acodecs_additional_args = {
-    'aac': ['-strict', 'experimental']
+
+encoder_args = {
+    'acodecs': {
+        'aac': ['-strict', 'experimental']
+    },
+    'vcodecs': {
+        'h263p': ['-threads', '1'],
+        'libx264': ['-flags', '+loop', '-cmp', '+chroma', '-partitions',
+                    '+parti4x4+partp8x8+partb8x8', '-subq', '5', '-trellis', '1', '-refs', '1',
+                    '-coder', '0', '-me_range', '16', '-g', '300', '-keyint_min', '25',
+                    '-sc_threshold', '40', '-i_qfactor', '0.71', '-rc_eq', "'blurCplx^(1-qComp)'",
+                    '-qcomp', '0.6', '-qmin', '10', '-qmax', '51', '-qdiff', '4', '-level', '30']
+    }
 }
 
-vcodec_encoders = {
-    'theora': 'libtheora',
-    'h264': 'libx264',
-    'divx': 'mpeg4',
-    'vp8': 'libvpx',
-    'h263': 'h263p',
-    'mpeg1': 'mpeg1video',
-    'mpeg2': 'mpeg2video'
-}
-
-vcodecs_additional_args = {
-    'h263': ['-threads', '1'],
-    'h264':  '-flags +loop -cmp +chroma '
-             '-partitions +parti4x4+partp8x8+partb8x8 -subq 5 -trellis 1 '
-             '-refs 1 -coder 0 -me_range 16 -g 300 -keyint_min 25 '
-             '-sc_threshold 40 -i_qfactor 0.71 -rc_eq \'blurCplx^(1-qComp)\' '
-             '-qcomp 0.6 -qmin 10 -qmax 51 -qdiff 4 -level 30'.split()
-}
-# TODO additional args for aliases?
 
 format_aliases = {
     'mpeg': 'mpegts',
@@ -135,44 +141,43 @@ format_aliases = {
     'mkv': 'matroska'
 }
 
+
 def avconv(source_fname, target_fname, options):
     args = []
 
     audio_options = options.get('audio')
     if audio_options:
         codec = audio_options['codec']
-        bitrate = audio_options.get('bitrate')
-        sample_rate = audio_options.get('sample_rate')
-        channels = audio_options.get('channels')
+        encoder_name = encoders['acodecs'].get(codec, codec)
+        args.extend(['-acodec', encoder_name])
         
-        avconv_codec_name = acodec_encoders.get(codec, codec) 
-        args.extend(['-acodec', avconv_codec_name])
+        bitrate = audio_options.get('bitrate')
         if bitrate:
             args.extend(['-ab', str(bitrate)])
+        sample_rate = audio_options.get('sample_rate')
         if sample_rate:
             args.extend(['-ar', str(sample_rate)])
+        channels = audio_options.get('channels')
         if channels:
             args.extend(['-ac', str(channels)])
-        additional_args = acodecs_additional_args.get(codec, [])
-        args.extend(additional_args)
+        args.extend(encoder_args['acodecs'].get(encoder_name, []))
 
     video_options = options.get('video')
     if video_options:
         codec = video_options['codec']
-        bitrate = video_options.get('bitrate')
-        fps = video_options.get('fps')
-        filters = video_options.get('filters')
+        encoder_name = encoders['vcodecs'].get(codec, codec)
+        args.extend(['-vcodec', encoder_name])
 
-        avconv_codec_name = vcodec_encoders.get(codec, codec)
-        args.extend(['-vcodec', avconv_codec_name])
+        fps = video_options.get('fps')
         if fps:
             args.extend(['-r', str(fps)])
+        bitrate = video_options.get('bitrate')
         if bitrate:
             args.extend(['-b', str(bitrate)])
+        filters = video_options.get('filters')
         if filters:
             args.extend(['-vf', filters])
-        additional_args = vcodecs_additional_args.get(codec, [])
-        args.extend(additional_args)
+        args.extend(encoder_args['vcodecs'].get(encoder_name, []))
 
     format = options['format']
     avconv_format_name = format_aliases.get(format, format)
@@ -183,3 +188,17 @@ def avconv(source_fname, target_fname, options):
     process = avconv(*args)
     process.wait()
     return process.exit_code
+
+
+def get_codec_supported_actions(codec_type, codec_name):
+    key = (codec_type == 'audio' and 'acodecs') or \
+          (codec_type == 'video' and 'vcodecs')
+
+    codec = avconv_db[key].get(codec_name)
+
+    if codec_name in encoders[key]:
+        encoder_name = encoders[key][codec_name]
+        encoder = avconv_db[key].get(encoder_name)
+        codec['encoding'] = codec['encoding'] or encoder['encoding']
+
+    return codec

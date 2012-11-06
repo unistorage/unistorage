@@ -9,6 +9,7 @@ import magic
 import kaa.metadata
 from kaa.metadata.factory import Factory, R_CLASS
 
+from actions.videos.avconv import avprobe
 import settings
 
 
@@ -87,46 +88,10 @@ def get_content_type(file):
 
 
 def get_video_data(file_content, file_name=None):
-    from converter import Converter
-    converter = Converter(avconv_path=settings.AVCONV_BIN,
-                          avprobe_path=settings.AVPROBE_BIN)
-
     with tempfile.NamedTemporaryFile(mode='wb') as tmp_file:
         tmp_file.write(file_content)
         tmp_file.flush()
-        data = converter.probe(tmp_file.name)
-
-    extension = None
-    if file_name and '.' in file_name:
-        extension = os.path.splitext(file_name)[1]
-
-    formats = data.format.format.split(',')
-    format = extension in formats and extension or formats[0]
-
-    result = {
-        'format': converter.get_format_from_avconv_name(format),  # XXX
-        'audio': {},
-        'video': {}
-    }
-
-    video = data.video
-    if video:
-        result['video'] = {
-            'width': video.video_width,
-            'height': video.video_height,
-            'fps': video.video_fps,
-            'codec': converter.get_vcodec_from_avconv_name(video.codec),  # XXX
-            'bitrate': data.video_bitrate,
-        }
-
-    audio = data.audio
-    if audio:
-        result['audio'] = {
-            'codec': converter.get_acodec_from_avconv_name(audio.codec),  # XXX
-            'bitrate': data.audio_bitrate,
-            'samplerate': audio.audio_samplerate,
-        }
-    return result
+        return avprobe(tmp_file.name)
 
 
 def get_file_data(file, file_name=None):

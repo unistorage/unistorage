@@ -1,23 +1,16 @@
 import os
 import tempfile
-import cPickle as pickle
 
-import settings
 import actions
-from file_utils import get_video_data
 from actions.utils import ValidationError
-from actions.videos.utils import run_flvtool 
+from actions.videos.utils import run_flvtool
 from actions.images.resize import perform as image_resize
-from actions.videos.avconv import avprobe, avconv, vcodec_encoders, acodec_encoders
+from actions.videos.avconv import avprobe, avconv, get_codec_supported_actions
 
 
 name = 'watermark'
 applicable_for = 'video'
 result_type_family = 'video'
-
-
-with open(settings.AVCONV_DB_PATH) as f:
-    avconv_db = pickle.load(f)
 
 
 def validate_and_get_args(args, source_file=None):
@@ -28,23 +21,13 @@ def validate_and_get_args(args, source_file=None):
         raise ValidationError('Source video file must contain at least one audio and video stream')
     
     acodec_name = data['audio']['codec']
-    vcodec_name = data['video']['codec']
-    
-    acodec = avconv_db['acodecs'].get(acodec_name)
-    acodec_encoder = acodec
-    if acodec_name in acodec_encoders:
-        acodec_encoder_name = acodec_encoders[acodec_name]
-        acodec_encoder = avconv_db['acodecs'].get(acodec_encoder_name)
-
-    if not acodec or not acodec['decoding'] or not acodec_encoder['encoding']:
+    acodec = get_codec_supported_actions('audio', acodec_name)
+    if not acodec or not acodec['decoding'] or not acodec['encoding']:
         raise ValidationError('Sorry, we can\'t handle audio stream encoded using %s' % acodec_name)
     
-    vcodec = avconv_db['vcodecs'].get(vcodec_name)
-    vcodec_encoder = vcodec
-    if vcodec_name in vcodec_encoders:
-        vcodec_encoder_name = vcodec_encoders[vcodec_name]
-        vcodec_encoder = avconv_db['vcodecs'].get(vcodec_encoder_name)
-    if not vcodec or not vcodec['decoding'] or not vcodec_encoder['encoding']:
+    vcodec_name = data['video']['codec']
+    vcodec = get_codec_supported_actions('video', vcodec_name)
+    if not vcodec or not vcodec['decoding'] or not vcodec['encoding']:
         raise ValidationError('Sorry, we can\'t handle video stream encoded using %s' % vcodec_name)
 
     return result
@@ -87,7 +70,7 @@ def resize_watermark(wm, wm_bbox):
 
 
 def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
-    source_file_ext = '' 
+    source_file_ext = ''
     if hasattr(source_file, 'filename'):
         source_file_name, source_file_ext = os.path.splitext(source_file.filename)
 

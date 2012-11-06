@@ -96,5 +96,4 @@ if __name__ == '__main__':
     }
     with open(settings.AVCONV_DB_PATH, 'w') as f:
         pickle.dump(data, f)
-    from pprint import pprint
-    pprint(vcodecs)
+

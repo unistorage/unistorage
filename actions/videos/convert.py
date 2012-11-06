@@ -1,12 +1,10 @@
 import os
 import tempfile
-import subprocess
 
-import settings
 from actions import ActionException
 from actions.utils import ValidationError
 from actions.common import validate_presence
-from actions.videos.utils import run_flvtool 
+from actions.videos.utils import run_flvtool
 from actions.videos.avconv import avprobe, avconv
 
 
@@ -67,7 +65,7 @@ def validate_and_get_args(args, source_file=None):
 
 
 def perform(source_file, format, vcodec, acodec, only_try=False):
-    source_file_ext = '' 
+    source_file_ext = ''
     if hasattr(source_file, 'filename'):
         source_file_name, source_file_ext = os.path.splitext(source_file.filename)
 

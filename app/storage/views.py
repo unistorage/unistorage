@@ -34,6 +34,9 @@ def login_required(func):
 @login_required
 def file_create():
     """Вьюшка, сохраняющая файл в хранилище."""
+    import pdb; pdb.set_trace()
+    print request.files
+    return
     file = request.files.get('file')
     if not file:
         return error({'msg': 'File wasn\'t found'}), 400
