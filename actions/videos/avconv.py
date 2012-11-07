@@ -73,7 +73,7 @@ def avprobe(fname):
     stderr = StringIO()
     stdout = StringIO()
 
-    avprobe = sh.Command('/usr/bin/avprobe')
+    avprobe = sh.Command(settings.AVPROBE_BIN)
     process = avprobe('-print_format', 'json', '-show_format', '-show_streams',
                       fname, _out=stdout, _err=stderr)
     process.wait()
@@ -184,7 +184,7 @@ def avconv(source_fname, target_fname, options):
     args.extend(['-f', avconv_format_name])
 
     args = ['-i', source_fname] + args + ['-y', target_fname]
-    avconv = sh.Command('/usr/bin/avconv')
+    avconv = sh.Command(settings.AVCONV_BIN)
     process = avconv(*args)
     process.wait()
     return process.exit_code

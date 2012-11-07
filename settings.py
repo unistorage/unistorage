@@ -39,8 +39,8 @@ COMPOSITE_BIN = '/usr/bin/composite'
 
 
 # Бинарники avconv
-AVCONV_BIN = '/usr/bin/avconv'
-AVPROBE_BIN = '/usr/bin/avprobe'
+AVCONV_BIN = '/usr/bin/ffmpeg'
+AVPROBE_BIN = '/usr/bin/ffprobe'
 
 
 # Остальные бинарники
