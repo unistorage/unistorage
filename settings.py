@@ -30,8 +30,7 @@ MONGO_REPLICATION_ON = True
 MONGO_REPLICA_SET_URI = 'localhost:27017,localhost:27018'
 MONGO_REPLICA_SET_NAME = 'grid_fs_set'
 
-CELERY_BROKER = 'mongodb://localhost:27017/q/'
-
+CELERY_BROKER = 'mongodb://localhost:27017,localhost:27018/q/#grid_fs_set'
 
 # Бинарники ImageMagick
 CONVERT_BIN = '/usr/bin/convert'

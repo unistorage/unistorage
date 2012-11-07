@@ -7,6 +7,7 @@ repoze.who==2.0
 
 pymongo==2.3
 monk==0.5.1
+git+git://github.com/mediasite/kombu.git@2.4#egg=kombu
 celery==3.0.11
 
 python-magic==0.4.2
