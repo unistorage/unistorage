@@ -12,6 +12,7 @@ before_install:
   - sudo apt-get install libavutil-extra-51 libavformat-extra-53 libavcodec-extra-53 libavfilter-extra-2 libavdevice-extra-53 ubuntu-restricted-extras
   - sudo apt-get install non-free-codecs w32codecs aacgain aacplusenc
   - sudo add-apt-repository 'deb http://ppa.launchpad.net/jon-severinsson/ffmpeg/ubuntu precise main'
+  - sudo apt-cache policy ffmpeg
   - sudo apt-get install ffmpeg=6:0.10.5-0ubuntu0jon1
   - sudo apt-get install -t squeeze -y --force-yes $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
   - sudo apt-get install -t squeeze -y --force-yes openoffice.org-ure $(apt-cache --no-generate pkgnames openoffice.org3 | tr '\n' ' ')
