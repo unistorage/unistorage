@@ -30,8 +30,7 @@ MONGO_REPLICATION_ON = True
 MONGO_REPLICA_SET_URI = 'localhost:27017,localhost:27018'
 MONGO_REPLICA_SET_NAME = 'grid_fs_set'
 
-CELERY_BROKER = 'mongodb://localhost:27017/q/'
-
+CELERY_BROKER = 'mongodb://localhost:27017,localhost:27018/q/#grid_fs_set'
 
 # Бинарники ImageMagick
 CONVERT_BIN = '/usr/bin/convert'
@@ -40,8 +39,8 @@ COMPOSITE_BIN = '/usr/bin/composite'
 
 
 # Бинарники avconv
-AVCONV_BIN = '/usr/bin/avconv'
-AVPROBE_BIN = '/usr/bin/avprobe'
+AVCONV_BIN = '/usr/bin/ffmpeg'
+AVPROBE_BIN = '/usr/bin/ffprobe'
 
 
 # Остальные бинарники
@@ -64,6 +63,8 @@ MAGIC_FILE_PATH = ':'.join((
     '/etc/magic',
     '/usr/share/misc/magic',
 ))
+
+AVCONV_DB_PATH = os.path.join(PROJECT_PATH, 'avconv.db')
 
 
 logging_conf_path = os.path.join(PROJECT_PATH, 'logging.conf')

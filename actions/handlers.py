@@ -114,7 +114,7 @@ def apply_action(source_file, args):
         raise ValidationError('Action %s is not supported for %s (%s).' %
                               (action_name, type_family, source_file.content_type))
 
-    cleaned_args = action.validate_and_get_args(args)
+    cleaned_args = action.validate_and_get_args(args, source_file=source_file)
     label = '_'.join(map(str, [action.name] + cleaned_args))
     action_list = [(action.name, cleaned_args)]
     return apply_actions(source_file, action_list, label)

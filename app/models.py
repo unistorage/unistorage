@@ -15,7 +15,7 @@ class ValidationMixin(object):
         super(ValidationMixin, self).validate()
         for field in self.required:
             if not self[field]:
-                raise ValidationError('field %s is required' % field)
+                raise ValidationError('Field %s is required.' % field)
 
 
 class User(ValidationMixin, modeling.Document):
@@ -45,7 +45,7 @@ class User(ValidationMixin, modeling.Document):
         'needs': [tuple],
         'domains': [basestring]
     }
-    required = ['token']
+    required = ('token',)
 
     @classmethod
     def wrap_incoming(cls, data, db):
@@ -92,7 +92,7 @@ class Template(ValidationMixin, modeling.Document):
         'applicable_for': basestring,
         'action_list': list
     }
-    required = ['user_id', 'applicable_for', 'action_list']
+    required = ('user_id', 'applicable_for', 'action_list')
 
 
 class Statistics(ValidationMixin, modeling.Document):
@@ -259,7 +259,7 @@ class File(ValidationMixin, modeling.Document):
         'content_type': basestring,
         'pending': bool
     }
-    required = ['user_id', 'filename', 'content_type']
+    required = ('user_id', 'filename', 'content_type')
 
     @classmethod
     def wrap_incoming(cls, data, db):
@@ -268,7 +268,12 @@ class File(ValidationMixin, modeling.Document):
         data['content_type'] = data.pop('contentType', None)
         data['upload_date'] = data.pop('uploadDate', None)
         data['chunk_size'] = data.pop('chunkSize', None)
-        return super(File, cls).wrap_incoming(data, db)
+
+        fileinfo = data.pop('fileinfo', None)  # Избегаем валидации средствами monk
+        result = super(File, cls).wrap_incoming(data, db)
+        result.fileinfo = fileinfo
+
+        return result
 
     @classmethod
     def put_to_fs(cls, db, fs, data, **kwargs):
@@ -318,8 +323,8 @@ class RegularFile(File):
         return super(RegularFile, cls).get_from_fs(db, fs, **kwargs)
 
     @classmethod
-    def put_to_fs(cls, db, fs, file_name, file_content, **kwargs):
-        """Обновляет поля `fileinfo`, `content_type`, `filename` у kwargs, помещает `data` в GridFS
+    def put_to_fs(cls, db, fs, file_name, file, **kwargs):
+        """Обновляет поля `fileinfo`, `content_type`, `filename` у kwargs, помещает `file` в GridFS
         и обновляет статистику.
         
         Обычные файлы должны помещаться в GridFS исключительно посредством этого метода.
@@ -328,15 +333,15 @@ class RegularFile(File):
         :type db: pymongo.Connection
         :param fs: файловая система
         :type fs: gridfs.GridFS
-        :param data: файл
-        :type data: file-like object с атрибутом `name`, содержащим имя файла
+        :param file_storage: файл
+        :type file_storage: file-like object или :class:`werkzeug.datastructures.FileStorage`
         :param **kwargs: дополнительные параметры, которые станут атрибутами файла в GridFS
         """
-        kwargs.update(file_utils.get_file_data(file_content, file_name))
+        kwargs.update(file_utils.get_file_data(file, file_name))
         kwargs.update({'pending': False})
 
         cls(**kwargs).validate()
-        file_id = fs.put(file_content, **kwargs)
+        file_id = fs.put(file, **kwargs)
 
         db[Statistics.collection].update({
             'user_id': kwargs.get('user_id'),

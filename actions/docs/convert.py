@@ -11,7 +11,7 @@ applicable_for = 'doc'
 result_type_family = 'doc'
 
 
-def validate_and_get_args(args):
+def validate_and_get_args(args, source_file=None):
     if 'to' not in args:
         raise ValidationError('`to` must be specified.')
     format = args['to']

@@ -1,15 +1,36 @@
 import os
 import tempfile
 
-import settings
 import actions
+from actions.utils import ValidationError
+from actions.videos.utils import run_flvtool
 from actions.images.resize import perform as image_resize
+from actions.videos.avconv import avprobe, avconv, get_codec_supported_actions
 
 
 name = 'watermark'
 applicable_for = 'video'
 result_type_family = 'video'
-validate_and_get_args = actions.common.watermark_validation.validate_and_get_args
+
+
+def validate_and_get_args(args, source_file=None):
+    result = actions.common.watermark_validation.validate_and_get_args(args)
+
+    data = source_file.fileinfo
+    if not data['video'] or not data['audio']:
+        raise ValidationError('Source video file must contain at least one audio and video stream')
+    
+    acodec_name = data['audio']['codec']
+    acodec = get_codec_supported_actions('audio', acodec_name)
+    if not acodec or not acodec['decoding'] or not acodec['encoding']:
+        raise ValidationError('Sorry, we can\'t handle audio stream encoded using %s' % acodec_name)
+    
+    vcodec_name = data['video']['codec']
+    vcodec = get_codec_supported_actions('video', vcodec_name)
+    if not vcodec or not vcodec['decoding'] or not vcodec['encoding']:
+        raise ValidationError('Sorry, we can\'t handle video stream encoded using %s' % vcodec_name)
+
+    return result
 
 
 CORNER_MAP = {
@@ -39,37 +60,6 @@ def get_watermark_bbox(source_width, source_height, w, h):
     return (wm_width, wm_height)
 
 
-def get_video_data(video_path):
-    from converter import Converter
-
-    c = Converter(avconv_path=settings.AVCONV_BIN, avprobe_path=settings.AVPROBE_BIN)
-    data = c.probe(video_path)
-
-    extension = os.path.splitext(video_path)[1]
-    formats = data.format.format.split(',')
-
-    result = {
-        'format': extension in formats and extension or formats[0],
-        'audio': {},
-        'video': {}
-    }
-
-    for stream in data.streams:
-        if stream.type == 'audio':
-            result['audio'].update({
-                'codec': stream.codec,
-                'samplerate': stream.audio_samplerate
-            })
-        if stream.type == 'video':
-            result['video'].update({
-                'width': stream.video_width,
-                'height': stream.video_height,
-                'codec': stream.codec
-            })
-
-    return result
-
-
 def resize_watermark(wm, wm_bbox):
     resized_wm, resized_wm_ext = image_resize(wm, 'keep', *wm_bbox)
 
@@ -80,87 +70,37 @@ def resize_watermark(wm, wm_bbox):
 
 
 def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
-    from converter import Avconv, Converter
+    source_file_ext = ''
+    if hasattr(source_file, 'filename'):
+        source_file_name, source_file_ext = os.path.splitext(source_file.filename)
 
-    source_tmp = None
-    target_tmp = None
-    wm_tmp = None
-    try:
-        source_tmp = tempfile.NamedTemporaryFile(delete=False)
-        source_tmp.write(source_file.read())
-        source_tmp.close()
+    file_content = source_file.read()
+    with tempfile.NamedTemporaryFile(suffix=source_file_ext) as source_tmp:
+        source_tmp.write(file_content)
+        source_tmp.flush()
 
-        target_tmp = tempfile.NamedTemporaryFile(delete=False)
-        target_tmp.close()
+        with tempfile.NamedTemporaryFile(mode='rb') as target_tmp:
+            data = avprobe(source_tmp.name)
+            video_width = data['video']['width']
+            video_height = data['video']['height']
+            wm_position = get_watermark_position(video_width, video_height, h_pad, v_pad, corner)
+            wm_bbox = get_watermark_bbox(video_width, video_height, w, h)
+            wm_tmp = None
+            try:
+                wm_tmp = resize_watermark(wm_file, wm_bbox)
+                vf_params = 'movie=%s [wm];[in][wm] overlay=%s [out]' % (wm_tmp.name, wm_position)
+                data['video']['filters'] = vf_params
 
-        video_data = get_video_data(source_tmp.name)
+                data['audio']['bitrate'] = data['audio'].get('bitrate') or '128k'
 
-        video_width = video_data['video']['width']
-        video_height = video_data['video']['height']
-        wm_position = get_watermark_position(video_width, video_height, h_pad, v_pad, corner)
-        wm_bbox = get_watermark_bbox(video_width, video_height, w, h)
-        wm_tmp = resize_watermark(wm_file, wm_bbox)
+                fps = data['video'].get('fps')
+                if fps:
+                    data['video']['fps'] = '%.3f' % fps
 
-        vf_params = 'movie=%s [wm];[in][wm] overlay=%s [out]' % (wm_tmp.name, wm_position)
-        avconv = Avconv(avconv_path=settings.AVCONV_BIN,
-                        avprobe_path=settings.AVPROBE_BIN)
-        video_codec = video_data['video']['codec']
-        video_format = video_data['format']
-        convertation = avconv.convert(source_tmp.name, target_tmp.name,
-                                      ['-acodec', 'copy', '-vcodec', video_codec, '-f', video_format, '-vf', vf_params])
-
-        try:
-            for step in convertation:
-                pass
-        except:
-            c = Converter(avconv_path=settings.AVCONV_BIN,
-                          avprobe_path=settings.AVPROBE_BIN)
-            options = c.parse_options({
-                'format': 'avi',
-                'audio': {
-                    'codec': 'rawaudio',
-                    'samplerate': 44100
-                },
-                'video': {'codec': 'rawvideo'}
-            })
-            convert_to_raw = ' '.join(
-                [settings.AVCONV_BIN, '-i', source_tmp.name] + options + ['pipe:'])
-
-            vcodec = video_data['video']['codec']
-            acodec = video_data['audio']['codec']
-
-            if vcodec not in c.vcodec_names:
-                vcodec = c.vcodecs_avconv_name_to_name_map[vcodec]
-            if acodec not in c.acodec_names:
-                acodec = c.acodecs_avconv_name_to_name_map[acodec]
-
-            options = c.parse_options({
-                'format': video_data['format'],
-                'audio': {
-                    'codec': acodec,
-                    'samplerate': video_data['audio']['samplerate']
-                },
-                'video': {'codec': vcodec}
-            })
-
-            watermark_and_convert_back = ' '.join(
-                [settings.AVCONV_BIN, '-i', 'pipe:'] +
-                options +
-                ['-vf', '"%s"' % vf_params, '-y', target_tmp.name])
-
-            command = '%s | %s' % (convert_to_raw, watermark_and_convert_back)
-            convertation = avconv.run(command, shell=True)
-
-            for step in convertation:
-                pass
-
-        result = open(target_tmp.name)
-    finally:
-        if target_tmp:
-            os.unlink(target_tmp.name)
-        if source_tmp:
-            os.unlink(source_tmp.name)
-        if wm_tmp:
-            os.unlink(wm_tmp.name)
-
-    return result, video_data['format']
+                avconv(source_tmp.name, target_tmp.name, data)
+                if data['format'] == 'flv':
+                    run_flvtool(target_tmp.name)
+                return open(target_tmp.name), data['format']
+            finally:
+                if wm_tmp:
+                    os.unlink(wm_tmp.name)

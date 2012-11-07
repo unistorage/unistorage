@@ -7,7 +7,7 @@ applicable_for = 'image'
 result_type_family = 'image'
 
 
-def validate_and_get_args(args):
+def validate_and_get_args(args, source_file=None):
     validate_presence(args, 'mode')
     mode = args['mode']
     

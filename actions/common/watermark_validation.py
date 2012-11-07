@@ -24,7 +24,7 @@ def validate_and_get_as_dimension(args, arg_name):
         raise ValidationError('Percent value `%s` must be between 0 and 100.' % arg_name)
 
 
-def validate_and_get_args(args):
+def validate_and_get_args(args, source_file=None):
     for arg_name in ('w', 'h', 'w_pad', 'h_pad', 'corner', 'watermark'):
         validate_presence(args, arg_name)
     

@@ -1,7 +1,14 @@
+# -*- coding: utf-8 -*-
+import logging
+import os.path
+from StringIO import StringIO
+from tempfile import NamedTemporaryFile
+
 from gridfs import GridFS
 from bson import ObjectId
 from bson.errors import InvalidId
 from flask import Flask, g, abort, current_app
+from flask.wrappers import Request
 from flask.ext.assets import Environment, Bundle
 from werkzeug.routing import BaseConverter, ValidationError
 
@@ -64,6 +71,7 @@ def create_app():
     app.secret_key = settings.SECRET_KEY
     app.before_request(before_request)
     app.teardown_request(teardown_request)
+    app.request_class = JSONRequest
 
     import admin
     import storage
@@ -81,8 +89,6 @@ def create_app():
 
     if settings.DEBUG or True:
         app.config['PROPAGATE_EXCEPTIONS'] = True
-        
-        import logging
         for handler in logging.getLogger('app_error_logger').handlers:
             app.logger.addHandler(handler)
 
@@ -101,5 +107,22 @@ def create_app():
     assets.register('css', css)
     assets.register('common_js', common_js)
     assets.register('statistics_js', statistics_js)
-
     return app
+
+
+def stream_factory(total_content_length, content_type, filename='', content_length=None):
+    """Замена :func:`werkzeug.formparser.default_stream_factory`. Возвращает NamedTemporaryFile,
+    а не TemporaryFile, что позволяет передать файл на вход avconv-у без копирования.
+    """
+    name, extension = os.path.splitext(filename)
+    if total_content_length > 1024 * 500:
+        return NamedTemporaryFile('wb+', suffix=extension)
+    return StringIO()
+
+
+class JSONRequest(Request):
+    """Наследник :class:`flask.wrappers.Request`, использующий :func:`stream_factory`."""
+    def _get_file_stream(self, total_content_length, content_type,
+                         filename=None, content_length=None):
+        return stream_factory(total_content_length, content_type,
+                              filename=filename, content_length=content_length)

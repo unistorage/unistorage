@@ -19,7 +19,7 @@ class ValidationTest(ContextMixin, unittest.TestCase):
                 'Source file can be only converted to the one of following formats'):
             validate({'to': 'lalala'})
         
-        with self.expect_validation_error('vcodec must be specified'):
+        with self.expect_validation_error('`vcodec` must be specified'):
             validate({'to': 'flv'})
 
         with self.expect_validation_error(

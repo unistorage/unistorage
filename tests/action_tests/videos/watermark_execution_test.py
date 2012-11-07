@@ -5,7 +5,7 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
     def test(self):
         watermark_uri = self.put_file('watermarks/watermark.png')
         source_uri = self.put_file('videos/gizmo.mp4')
-        self.check(source_uri, width=560, height=320, mime='video/mp4')
+        self.check(source_uri,  mime='video/mp4')
         
         watermark_action_url = '%s?action=watermark&watermark=%s' \
                                '&w=5&h=40px&w_pad=10&h_pad=10px&corner=ne' % \
@@ -16,4 +16,4 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
         self.run_worker()
 
         watermarked_video_url = r.json['resource_uri']
-        self.check(watermarked_video_url, width=560, height=320)
+        self.check(watermarked_video_url)

@@ -1,11 +1,11 @@
 import os
 import tempfile
-import subprocess
 
-import settings
 from actions import ActionException
 from actions.utils import ValidationError
 from actions.common import validate_presence
+from actions.videos.utils import run_flvtool
+from actions.videos.avconv import avprobe, avconv
 
 
 name = 'convert'
@@ -13,7 +13,7 @@ applicable_for = 'video'
 result_type_family = 'video'
 
 
-def validate_and_get_args(args):
+def validate_and_get_args(args, source_file=None):
     validate_presence(args, 'to')
     format = args['to']
 
@@ -51,12 +51,12 @@ def validate_and_get_args(args):
     format_supported_acodecs = acodec_restrictions.get(format, all_supported_acodecs)
     
     if vcodec is None:
-        raise ValidationError('vcodec must be specified.')
+        raise ValidationError('`vcodec` must be specified.')
     elif vcodec not in format_supported_vcodecs:
         raise ValidationError('Format %s allows only following video codecs: %s' %
                               (format, ', '.join(format_supported_vcodecs)))
     if acodec is None:
-        raise ValidationError('acodec must be specified.')
+        raise ValidationError('`acodec` must be specified.')
     elif acodec not in format_supported_acodecs:
         raise ValidationError('Format %s allows only following audio codecs: %s' %
                               (format, ', '.join(format_supported_acodecs)))
@@ -64,44 +64,41 @@ def validate_and_get_args(args):
     return [format, vcodec, acodec]
 
 
-def run_flvtool(file_path):
-    try:
-        proc = subprocess.Popen([settings.FLVTOOL_BIN, '-U', file_path],
-                                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-    except OSError:
-        raise ActionException('Failed to start `flvtool`: %s' % settings.FLVTOOL_BIN)
-    stdout_data, stderr_data = proc.communicate()
-    return_code = proc.wait()
-    if return_code != 0:
-        raise ActionException('`flvtool` failed. Stderr: %s' % stderr_data)
-
-
 def perform(source_file, format, vcodec, acodec, only_try=False):
-    from converter import Converter
+    source_file_ext = ''
+    if hasattr(source_file, 'filename'):
+        source_file_name, source_file_ext = os.path.splitext(source_file.filename)
 
-    tmp_source_file = tempfile.NamedTemporaryFile(delete=False)
+    tmp_source_file = tempfile.NamedTemporaryFile(suffix=source_file_ext, delete=False)
     tmp_source_file.write(source_file.read())
     tmp_source_file.close()
 
     tmp_target_file = tempfile.NamedTemporaryFile(delete=False)
     tmp_target_file.close()
     
-    options = {
-        'format': format,
-        'audio': {'codec': acodec, 'samplerate': 44100},
-        'video': {'codec': vcodec}
-    }
-    
-    if vcodec in ('mpeg1', 'mpeg2', 'divx'):
-        options['video']['fps'] = '25'
-
     try:
-        c = Converter(avconv_path=settings.AVCONV_BIN, avprobe_path=settings.AVPROBE_BIN)
-        convertion = c.convert(tmp_source_file.name, tmp_target_file.name, options)
-        for timecode in convertion:
-            if only_try:
-                break
+        options = {
+            'format': format,
+            'audio': {
+                'codec': acodec,
+                'sample_rate': 44100
+            },
+            'video': {
+                'codec': vcodec
+            }
+        }
+        
+        if vcodec in ('mpeg1', 'mpeg2', 'divx'):
+            options['video']['fps'] = 25
+
+        data = avprobe(tmp_source_file.name)
+        channels = data.get('audio', {}).get('channels')
+        if acodec == 'mp3' and channels > 2:
+            channels = 2
+
+        options['audio']['channels'] = channels
+
+        avconv(tmp_source_file.name, tmp_target_file.name, options)
 
         if format == 'flv':
             run_flvtool(tmp_target_file.name)
