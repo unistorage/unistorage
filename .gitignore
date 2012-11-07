@@ -7,4 +7,5 @@ settings_local.py
 *.pyc
 .coverage
 magic.mgc
+avconv.db
 *.sublime-*
