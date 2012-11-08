@@ -16,7 +16,6 @@ before_install:
   - sudo apt-get install -t squeeze -y --force-yes $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
   - sudo apt-get install -t squeeze -y --force-yes openoffice.org-ure $(apt-cache --no-generate pkgnames openoffice.org3 | tr '\n' ' ')
   - sudo ln -s /usr/lib/i386-linux-gnu/libz.so /usr/lib/
-  - file -C -m ./magic
   - sudo npm install -g less
   - wget https://raw.github.com/mediasite/openoffice-wrapper/master/oowrapper.py
   - chmod +x ./oowrapper.py
@@ -25,5 +24,8 @@ install:
   - pip install -r requirements/basic.txt
   - pip install -r requirements/dev.txt
   - pip install -r requirements/workers.txt
-  - python ./compile_avconv_db.py
-script: nosetests
+  - python ./manage.py compile_libmagic_db
+  - python ./manage.py compile_avconv_db
+  - python ./manage.py check_avconv_codecs
+script:
+  - python ./manage.py test_cov

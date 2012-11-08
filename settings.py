@@ -56,9 +56,10 @@ TTL = int(timedelta(days=7).total_seconds())  # TTL ответов со стат
 AVERAGE_TASK_TIME = timedelta(seconds=60)  # TTL ответов со статусом "wait"
 ZIP_COLLECTION_TTL = timedelta(days=1)  # TTL ZIP-коллекций
 
+MAGIC_DB_PATH = os.path.join(PROJECT_PATH, 'magic.mgc')
 
 MAGIC_FILE_PATH = ':'.join((
-    os.path.join(PROJECT_PATH, 'magic.mgc'),
+    MAGIC_DB_PATH,
     # System-wide базы данных libmagic (можно узнать, сказав `file --version`):
     '/etc/magic',
     '/usr/share/misc/magic',
