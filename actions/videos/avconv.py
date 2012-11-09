@@ -9,9 +9,11 @@ import sh
 
 import settings
 
-
-with open(settings.AVCONV_DB_PATH) as f:
-    avconv_db = pickle.load(f)
+try:
+    with open(settings.AVCONV_DB_PATH) as f:
+        avconv_db = pickle.load(f)
+except:
+    avconv_db = {}
 
 
 def parse_float(val):

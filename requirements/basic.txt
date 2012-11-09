@@ -1,5 +1,6 @@
 Flask==0.9
 Flask-Assets==0.7
+Flask-Script==0.5.1
 wtforms
 
 Flask-Principal==0.3.3
@@ -7,6 +8,7 @@ repoze.who==2.0
 
 pymongo==2.3
 monk==0.5.1
+# temporary:
 git+git://github.com/mediasite/kombu.git@2.4#egg=kombu
 celery==3.0.11
 
@@ -17,8 +19,7 @@ kaa-metadata
 pytz
 pyyaml
 pytils
-
 sh==1.05
 
-# Temporarily:
+# temporary:
 git+git://github.com/mitsuhiko/jinja2.git

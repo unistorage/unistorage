@@ -4,7 +4,6 @@ from functools import partial
 from collections import defaultdict
 
 import sh
-from sh import which
 
 import settings
 
@@ -82,18 +81,18 @@ def parse_formats(avconv):
             parse = parse_format
 
 
-if __name__ == '__main__':
-    assert which('/usr/bin/avconv')
-    avconv = sh.Command('/usr/bin/avconv')
+def compile_avconv_db():
+    "Compile avconv database"
+    assert sh.which(settings.AVCONV_BIN)
+    avconv = sh.Command(settings.AVCONV_BIN)
 
     parse_codecs(avconv)
     parse_formats(avconv)
-    formats = dict(formats)
     data = {
         'acodecs': acodecs,
         'vcodecs': vcodecs,
         'formats': dict(formats)
     }
-    with open(settings.AVCONV_DB_PATH, 'w') as f:
-        pickle.dump(data, f)
+    with open(settings.AVCONV_DB_PATH, 'w') as avconv_db:
+        pickle.dump(data, avconv_db)
 
