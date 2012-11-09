@@ -89,8 +89,15 @@ def apply_template(source_file, args):
     if source_type_family != template['applicable_for']:
         raise ValidationError('Specified template is not applicable for the source file.')
 
+    # Проверяем, что первая операция в шаблоне применима к исходному файлу
+    first_action_args = template['action_list'][0]
+    action_name = first_action_args['action']
+    type_family = actions.utils.get_type_family(source_file.content_type)
+    action = actions.get_action(type_family, action_name)
+    cleaned_args = action.validate_and_get_args(first_action_args, source_file=source_file)
+
     label = str(template_id)
-    action_list = template['action_list']
+    action_list = template['cleaned_action_list']
     return apply_actions(source_file, action_list, label)
 
 

@@ -90,7 +90,8 @@ class Template(ValidationMixin, modeling.Document):
         '_id': ObjectId,
         'user_id': ObjectId,
         'applicable_for': basestring,
-        'action_list': list
+        'action_list': list,
+        'cleaned_action_list': list
     }
     required = ('user_id', 'applicable_for', 'action_list')
 

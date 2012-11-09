@@ -1,7 +1,7 @@
-from tests.utils import StorageFunctionalTest
+from tests.utils import WorkerMixin, StorageFunctionalTest
 
 
-class FunctionalTest(StorageFunctionalTest):
+class FunctionalTest(StorageFunctionalTest, WorkerMixin):
     def apply_template(self, image_uri, template_uri):
         apply_template_url = '%s?template=%s' % (image_uri, template_uri)
         return self.app.get(apply_template_url, status='*')
@@ -35,7 +35,11 @@ class FunctionalTest(StorageFunctionalTest):
         apply_template_url = '%s?template=%s' % (image_uri, template_uri)
         r = self.apply_template(image_uri, template_uri)
 
+        self.run_worker()
+        
         self.assertEquals(r.json['status'], 'ok')
+        response = self.app.get(r.json['resource_uri'])
+        self.assertEquals(response.json['status'], 'ok')
 
         video_uri = self.put_file('videos/sample.3gp')
         apply_template_url = '%s?template=%s' % (video_uri, template_uri)
@@ -43,3 +47,18 @@ class FunctionalTest(StorageFunctionalTest):
         
         self.assertEquals(r.status_code, 400)
         self.assertTrue('not applicable' in r.json['msg'])
+
+    def test_first_action_validation(self):
+        watermark_uri = self.put_file('watermarks/watermark.png')
+        watermark_action_url = 'action=watermark&watermark=%s&w=5&h=40px&w_pad=10&' \
+                               'h_pad=10px&corner=ne' % watermark_uri
+        r = self.app.post('/template/', {
+            'applicable_for': 'video',
+            'action[]': [watermark_action_url]
+        })
+        template_uri = r.json['resource_uri']
+        source_uri = self.put_file('unsupported_videos/29.wmv')
+
+        r = self.apply_template(source_uri, template_uri)
+        self.assertEquals(r.json['status'], 'error')
+        self.assertEquals(r.json['msg'], 'Sorry, we can\'t handle video stream encoded using wmv3')

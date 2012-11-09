@@ -6,6 +6,7 @@ from actions.utils import ValidationError
 from actions.common import validate_presence
 from actions.videos.utils import run_flvtool
 from actions.videos.avconv import avprobe, avconv
+from actions.videos.common_validation import validate_source
 
 
 name = 'convert'
@@ -60,6 +61,9 @@ def validate_and_get_args(args, source_file=None):
     elif acodec not in format_supported_acodecs:
         raise ValidationError('Format %s allows only following audio codecs: %s' %
                               (format, ', '.join(format_supported_acodecs)))
+    
+    if source_file:
+        validate_source(source_file)
 
     return [format, vcodec, acodec]
 

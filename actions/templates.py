@@ -64,9 +64,11 @@ def validate_and_get_template(args):
         raise ValidationError('`actions` must contain at least one action.')
     
     action_args_list = [url_decode(url) for url in action_strings]
-    action_list = validate_and_get_template_actions(applicable_for, action_args_list)
+    action_list = [action.to_dict() for action in action_args_list]
+    cleaned_action_list = validate_and_get_template_actions(applicable_for, action_args_list)
 
     return {
         'applicable_for': applicable_for,
+        'cleaned_action_list': cleaned_action_list,
         'action_list': action_list
     }
