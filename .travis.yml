@@ -20,6 +20,7 @@ before_install:
   - wget https://raw.github.com/mediasite/openoffice-wrapper/master/oowrapper.py
   - chmod +x ./oowrapper.py
   - sudo mv ./oowrapper.py /bin/
+  - cp ./settings_test.py ./settings_local.py
 install:
   - pip install -r requirements/basic.txt
   - pip install -r requirements/dev.txt
