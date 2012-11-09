@@ -62,6 +62,7 @@ def perform_actions(source_id, target_id, target_kwargs):
     :type target_kwargs: dict
     """
     source_file = RegularFile.get_from_fs(db, fs, _id=source_id)
+    print 'here'
     # Исключительно для проверки существования временного файла с _id=target_id:
     target_file = PendingFile.get_from_fs(db, fs, _id=target_id)
 
