@@ -33,7 +33,7 @@ def perform(source_file, codec):
         'flac': 'flac',
         'alac': 'm4a',
         'mp3': 'mp3',
-        'aac': 'aac',
+        'aac': 'mp4',
         'ac3': 'ac3'
     }
     format = codec_to_format_map[codec]

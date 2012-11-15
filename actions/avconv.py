@@ -6,7 +6,7 @@ import cPickle as pickle
 # Из документации:
 # this module [cStringIO.StringIO] is not able to accept Unicode strings that cannot be encoded as
 # plain ASCII strings.
-# Поэтому -- используем исключительно StringIO.StringIO.
+# Поэтому -- здесь используем StringIO.StringIO.
 from StringIO import StringIO
 
 import sh
@@ -145,7 +145,8 @@ encoder_args = {
 format_aliases = {
     'mpeg': 'mpegts',
     'mpg': 'mpegts',
-    'mkv': 'matroska'
+    'mkv': 'matroska',
+    'm4a': 'mov'
 }
 
 
@@ -168,6 +169,8 @@ def avconv(source_fname, target_fname, options):
         if channels:
             args.extend(['-ac', str(channels)])
         args.extend(encoder_args['acodecs'].get(encoder_name, []))
+    else:
+        args.append('-an')
 
     video_options = options.get('video')
     if video_options:
@@ -185,6 +188,8 @@ def avconv(source_fname, target_fname, options):
         if filters:
             args.extend(['-vf', filters])
         args.extend(encoder_args['vcodecs'].get(encoder_name, []))
+    else:
+        args.append('-vn')
 
     format = options['format']
     avconv_format_name = format_aliases.get(format, format)
