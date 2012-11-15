@@ -1,17 +1,6 @@
-import os
-import tempfile
-
-from actions import ActionException
-from actions.utils import ValidationError
-from actions.common import validate_presence
-from actions.videos.utils import run_flvtool
-from actions.videos.avconv import avprobe, avconv
-from actions.videos.common_validation import validate_source
-
-
 name = 'convert'
-applicable_for = 'video'
-result_unistorage_type = 'video'
+applicable_for = 'audio'
+result_type_family = 'audio'
 
 
 def validate_and_get_args(args, source_file=None):
@@ -67,49 +56,3 @@ def validate_and_get_args(args, source_file=None):
 
     return [format, vcodec, acodec]
 
-
-def perform(source_file, format, vcodec, acodec, only_try=False):
-    source_file_ext = ''
-    if hasattr(source_file, 'filename'):
-        source_file_name, source_file_ext = os.path.splitext(source_file.filename)
-
-    tmp_source_file = tempfile.NamedTemporaryFile(suffix=source_file_ext, delete=False)
-    tmp_source_file.write(source_file.read())
-    tmp_source_file.close()
-
-    tmp_target_file = tempfile.NamedTemporaryFile(delete=False)
-    tmp_target_file.close()
-    
-    try:
-        options = {
-            'format': format,
-            'audio': {
-                'codec': acodec,
-                'sample_rate': 44100
-            },
-            'video': {
-                'codec': vcodec
-            }
-        }
-        
-        if vcodec in ('mpeg1', 'mpeg2', 'divx'):
-            options['video']['fps'] = 25
-
-        data = avprobe(tmp_source_file.name)
-        channels = data.get('audio', {}).get('channels')
-        if acodec == 'mp3' and channels > 2:
-            channels = 2
-
-        options['audio']['channels'] = channels
-
-        avconv(tmp_source_file.name, tmp_target_file.name, options)
-
-        if format == 'flv':
-            run_flvtool(tmp_target_file.name)
-
-        result = open(tmp_target_file.name)
-    finally:
-        os.unlink(tmp_target_file.name)
-        os.unlink(tmp_source_file.name)
-
-    return result, format

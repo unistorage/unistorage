@@ -3,7 +3,7 @@ from actions.videos.avconv import get_codec_supported_actions
 
 
 def validate_source(source_file, require_encoding_support=False):
-    data = source_file.fileinfo
+    data = source_file.extra
     if not data['video'] or not data['audio']:
         raise ValidationError('Source video file must contain at least one '
                               'audio and video stream')

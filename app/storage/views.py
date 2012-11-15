@@ -275,7 +275,7 @@ def get_regular_file(user, file):
             'size': file.length,
             'mimetype': file.content_type,
             'url': get_gridfs_serve_url(user, file),
-            'extra': file.get('fileinfo', {})
+            'extra': file.get('extra', {})
         },
         'ttl': settings.TTL
     })

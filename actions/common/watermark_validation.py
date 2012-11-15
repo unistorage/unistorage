@@ -2,7 +2,7 @@ import gridfs
 from flask import g
 
 from app import parse_file_uri
-from actions.utils import ValidationError, get_type_family
+from actions.utils import ValidationError
 from actions.common import validate_presence
 
 
@@ -47,7 +47,7 @@ def validate_and_get_args(args, source_file=None):
     except gridfs.errors.NoFile:
         raise ValidationError('File with id %s does not exist.' % watermark_id)
     
-    if get_type_family(watermark.content_type) != 'image':
+    if watermark.unistorage_type != 'image':
         raise ValidationError('File with id %s is not an image.' % watermark_id)
 
     return [watermark_id, w, h, w_pad, h_pad, corner]

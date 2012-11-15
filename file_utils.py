@@ -9,6 +9,7 @@ import kaa.metadata
 from kaa.metadata.factory import Factory, R_CLASS
 from werkzeug.datastructures import FileStorage
 
+from actions.utils import get_unistorage_type
 from actions.videos.avconv import avprobe
 import settings
 
@@ -116,9 +117,13 @@ def get_file_data(file, file_name=None):
                 video_data = avprobe(file.stream.name)
             else:
                 video_data = get_video_data(file_content, file_name=file_name)
-            data['fileinfo'] = video_data
+            data['extra'] = video_data
         elif metadata.media in handlers:
             get_fileinfo = handlers[metadata.media]
-            fileinfo = get_fileinfo(metadata.convert())
-            data['fileinfo'] = fileinfo
+            extra = get_fileinfo(metadata.convert())
+            data['extra'] = extra
+
+    data.update({
+        'unistorage_type': get_unistorage_type(data['content_type'], extra=data.get('extra'))
+    })
     return data

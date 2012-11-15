@@ -4,7 +4,7 @@ from actions.common import validate_presence
 
 name = 'rotate'
 applicable_for = 'image'
-result_type_family = 'image'
+result_unistorage_type = 'image'
 
 
 def validate_and_get_args(args, source_file=None):

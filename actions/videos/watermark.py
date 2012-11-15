@@ -13,7 +13,7 @@ from actions.videos.common_validation import validate_source
 
 name = 'watermark'
 applicable_for = 'video'
-result_type_family = 'video'
+result_unistorage_type = 'video'
 
 
 def validate_and_get_args(args, source_file=None):

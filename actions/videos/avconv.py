@@ -3,11 +3,16 @@ import re
 import json
 import os.path
 import cPickle as pickle
-from cStringIO import StringIO
+# Из документации:
+# this module [cStringIO.StringIO] is not able to accept Unicode strings that cannot be encoded as
+# plain ASCII strings.
+# Поэтому -- используем исключительно StringIO.StringIO.
+from StringIO import StringIO
 
 import sh
 
 import settings
+
 
 try:
     with open(settings.AVCONV_DB_PATH) as f:

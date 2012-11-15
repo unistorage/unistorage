@@ -8,7 +8,7 @@ from actions.utils import ValidationError
 
 name = 'convert'
 applicable_for = 'doc'
-result_type_family = 'doc'
+result_unistorage_type = 'doc'
 
 
 def validate_and_get_args(args, source_file=None):

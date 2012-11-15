@@ -11,7 +11,7 @@ from actions.tasks import perform_actions
 from app import parse_template_uri
 from app.models import Template, File, PendingFile
 from app.perms import AccessPermission
-from utils import ValidationError, get_type_family
+from utils import ValidationError
 
 
 def apply_actions(source_file, action_list, label):
@@ -85,15 +85,15 @@ def apply_template(source_file, args):
         raise ValidationError('Template with id %s does not exist.' % template_id)
     AccessPermission(source_file).test(http_exception=403)
 
-    source_type_family = get_type_family(source_file.content_type)
-    if source_type_family != template['applicable_for']:
+    source_unistorage_type = source_file.unistorage_type
+    if source_unistorage_type != template['applicable_for']:
         raise ValidationError('Specified template is not applicable for the source file.')
 
-    # Проверяем, что первая операция в шаблоне применима к исходному файлу
+    # Проверяем, что первая операция в шаблоне действительно применима к исходному файлу,
+    # основываясь не только на его формате (а также, например, на кодеках видеофайла).
     first_action_args = template['action_list'][0]
     action_name = first_action_args['action']
-    type_family = actions.utils.get_type_family(source_file.content_type)
-    action = actions.get_action(type_family, action_name)
+    action = actions.get_action(source_unistorage_type, action_name)
     cleaned_args = action.validate_and_get_args(first_action_args, source_file=source_file)
 
     label = str(template_id)
@@ -114,12 +114,12 @@ def apply_action(source_file, args):
     :rtype: :class:`ObjectId`
     """
     action_name = args['action']
-    type_family = actions.utils.get_type_family(source_file.content_type)
-    action = actions.get_action(type_family, action_name)
+    source_unistorage_type = source_file.unistorage_type
+    action = actions.get_action(source_unistorage_type, action_name)
 
     if not action:
         raise ValidationError('Action %s is not supported for %s (%s).' %
-                              (action_name, type_family, source_file.content_type))
+                              (action_name, source_unistorage_type, source_file.content_type))
 
     cleaned_args = action.validate_and_get_args(args, source_file=source_file)
     label = '_'.join(map(str, [action.name] + cleaned_args))

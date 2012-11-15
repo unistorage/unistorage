@@ -220,7 +220,7 @@ class File(ValidationMixin, modeling.Document):
 
         :term:`Идентификатор контента` файла.
 
-    .. attribute:: fileinfo
+    .. attribute:: extra
 
         Словарь с дополнительной информацией о файле (например, ширина и высота для картинки,
         кодек для видео и так далее).
@@ -253,14 +253,15 @@ class File(ValidationMixin, modeling.Document):
         'user_id': ObjectId,
         'type_id': basestring,
 
-        'fileinfo': dict,
+        'extra': dict,
         'original': ObjectId,
         'label': basestring,
         'filename': basestring,
         'content_type': basestring,
+        'unistorage_type': basestring,
         'pending': bool
     }
-    required = ('user_id', 'filename', 'content_type')
+    required = ('user_id', 'filename', 'content_type', 'unistorage_type')
 
     @classmethod
     def wrap_incoming(cls, data, db):
@@ -270,9 +271,9 @@ class File(ValidationMixin, modeling.Document):
         data['upload_date'] = data.pop('uploadDate', None)
         data['chunk_size'] = data.pop('chunkSize', None)
 
-        fileinfo = data.pop('fileinfo', None)  # Избегаем валидации средствами monk
+        extra = data.pop('extra', None)  # Workaround: избегаем валидации средствами monk
         result = super(File, cls).wrap_incoming(data, db)
-        result.fileinfo = fileinfo
+        result.extra = extra
 
         return result
 
@@ -325,7 +326,7 @@ class RegularFile(File):
 
     @classmethod
     def put_to_fs(cls, db, fs, file_name, file, **kwargs):
-        """Обновляет поля `fileinfo`, `content_type`, `filename` у kwargs, помещает `file` в GridFS
+        """Обновляет поля `extra`, `content_type`, `filename` у kwargs, помещает `file` в GridFS
         и обновляет статистику.
         
         Обычные файлы должны помещаться в GridFS исключительно посредством этого метода.

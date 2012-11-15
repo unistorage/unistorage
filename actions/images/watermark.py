@@ -10,7 +10,7 @@ from actions import ActionException
 
 name = 'watermark'
 applicable_for = 'image'
-result_type_family = 'image'
+result_unistorage_type = 'image'
 validate_and_get_args = actions.common.watermark_validation.validate_and_get_args
 
 
