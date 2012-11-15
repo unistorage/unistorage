@@ -150,6 +150,17 @@ format_aliases = {
 }
 
 
+# Таблица дефолтных форматов для аудио, закодированных соответствующим кодеком
+acodec_to_format_map = {
+    'vorbis': 'ogg',
+    'flac': 'flac',
+    'alac': 'm4a',
+    'mp3': 'mp3',
+    'aac': 'mp4',
+    'ac3': 'ac3'
+}
+
+
 def avconv(source_fname, target_fname, options):
     args = []
 

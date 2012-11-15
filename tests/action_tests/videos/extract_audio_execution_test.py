@@ -2,11 +2,11 @@ from tests.utils import StorageFunctionalTest, WorkerMixin
 
 
 class FunctionalTest(StorageFunctionalTest, WorkerMixin):
-    def test_convert_mp3_to_ogg(self):
-        original_uri = self.put_file('audios/god-save-the-queen.mp3')
+    def test_extract_audio_from_3gp_to_mp3(self):
+        original_uri = self.put_file('videos/sample.3gp')
 
-        self.check(original_uri, mime='audio/mpeg')
-        convert_action_url = '%s?action=convert&to=vorbis' % original_uri
+        self.check(original_uri, mime='video/3gpp')
+        convert_action_url = '%s?action=extract_audio&to=mp3' % original_uri
         r = self.app.get(convert_action_url)
         self.assertEquals(r.json['status'], 'ok')
 
@@ -14,4 +14,4 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
 
         converted_doc_url = r.json['resource_uri']
         r = self.app.get(converted_doc_url)
-        self.check(converted_doc_url, mime='application/ogg')
+        self.check(converted_doc_url, mime='audio/mpeg')

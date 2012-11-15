@@ -33,6 +33,7 @@ actions_to_register = (
     'images.rotate',
     'videos.convert',
     'videos.watermark',
+    'videos.extract_audio',
     'audios.convert',
     'docs.convert',
 )
@@ -40,5 +41,4 @@ actions_to_register = (
 for action in actions_to_register:
     action_module = importlib.import_module('.%s' % action, package='actions')
     register_action(action_module)
-
 

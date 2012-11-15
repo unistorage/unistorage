@@ -1,14 +1,19 @@
+# -*- coding: utf-8 -*-
 import os
 import tempfile
+
 from actions.utils import ValidationError
 from actions.common import validate_presence
 from actions.avconv import avconv, acodec_to_format_map
 from actions.common.codecs_validation import require_acodec_presence
 
 
-name = 'convert'
-applicable_for = 'audio'
+name = 'extract_audio'
+applicable_for = 'video'
 result_unistorage_type = 'audio'
+
+
+# XXX Код ниже почти один-в-один совпадает с кодом из actions/audios/convert.py.
 
 
 def validate_and_get_args(args, source_file=None):
@@ -22,7 +27,7 @@ def validate_and_get_args(args, source_file=None):
 
     if source_file:
         data = source_file.extra
-        require_acodec_presence(data['codec'])
+        require_acodec_presence(data['audio']['codec'])
 
     return [codec]
 
