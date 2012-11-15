@@ -197,8 +197,8 @@ def zip_view(_id):
     return ok({
         'ttl': ttl,
         'data': {
-            'url': get_gridfs_serve_url(request.user, zip_collection,
-                                        through_nginx_serve=True)
+            'url': get_gridfs_serve_url(request.user, zip_collection, through_nginx_serve=True),
+            'filename': zip_collection.filename
         }
     })
 

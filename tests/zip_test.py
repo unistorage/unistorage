@@ -40,4 +40,6 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
         zip_resource_uri = r.json['resource_uri']
 
         r = self.app.get(zip_resource_uri)
-        self.assertTrue('uns' in r.json['data']['url'])
+        data = r.json['data']
+        self.assertTrue('uns' in data['url'])
+        self.assertEquals(data['filename'], 'images.zip')
