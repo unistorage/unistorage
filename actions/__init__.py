@@ -33,6 +33,7 @@ actions_to_register = (
     'images.rotate',
     'videos.convert',
     'videos.watermark',
+    'audios.convert',
     'docs.convert',
 )
 

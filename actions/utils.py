@@ -12,6 +12,7 @@ DOCUMENT_TYPES = (
 def get_unistorage_type(content_type, extra=None):
     """По `content_type` файла и, возможно, дополнительной информации (поле `extra` в БД)
     выясняет "семейство типов", к которому принадлежит файл: 'image', 'video', 'audio' или 'doc'.
+    Если параметр extra не указан, результат считается предположительным.
     """
     if content_type.startswith('image'):
         return 'image'
