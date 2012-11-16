@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
 import gridfs
 
-from app import fs, parse_file_uri
+from app import db, fs, parse_file_uri
 from actions.utils import ValidationError
 from actions.common import validate_presence
 
@@ -24,6 +25,7 @@ def validate_and_get_as_dimension(args, arg_name):
 
 
 def validate_and_get_args(args, source_file=None):
+    from app.models import RegularFile  # TODO Разрешить circular import как-нибудь иначе
     for arg_name in ('w', 'h', 'w_pad', 'h_pad', 'corner', 'watermark'):
         validate_presence(args, arg_name)
     
@@ -42,7 +44,7 @@ def validate_and_get_args(args, source_file=None):
         raise ValidationError(e.message)
 
     try:
-        watermark = fs.get(watermark_id)
+        watermark = RegularFile.get_from_fs(db, fs, _id=watermark_id)
     except gridfs.errors.NoFile:
         raise ValidationError('File with id %s does not exist.' % watermark_id)
     
