@@ -22,7 +22,7 @@ def test_cov():
 
 def test():
     """Test"""
-    nose.run(argv=['tests', '--with-coverage'])
+    nose.run(argv=['tests'])
 
 
 def make_docs():
