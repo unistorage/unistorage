@@ -15,7 +15,6 @@ result_unistorage_type = 'audio'
 
 # XXX Код ниже почти один-в-один совпадает с кодом из actions/audios/convert.py.
 
-
 def validate_and_get_args(args, source_file=None):
     validate_presence(args, 'to')
     codec = args['to']
