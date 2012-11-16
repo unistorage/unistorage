@@ -1,0 +1,33 @@
+language: python
+python:
+  - "2.7"
+before_install:
+  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3E5C1192
+  - sudo bash -c 'echo "deb http://79.172.49.99/debian/ squeeze main" >> /etc/apt/sources.list'
+  - sudo wget http://www.medibuntu.org/sources.list.d/`lsb_release -cs`.list --output-document=/etc/apt/sources.list.d/medibuntu.list
+  - sudo add-apt-repository 'deb http://ppa.launchpad.net/jon-severinsson/ffmpeg/ubuntu precise main'
+  - sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 2EBC26B60C5A2783
+  - sudo echo -e "Package: ffmpeg\nPin: release o=LP-PPA-jon-severinsson-ffmpeg\nPin-Priority: 1000" > /etc/apt/preferences.d/ffmpeg-pin-1000
+  - sudo apt-get update
+  - sudo apt-get install -f
+  - sudo apt-get install libopencore-amrnb0 libopencore-amrwb0 zlib1g zlib1g-dev x264 libmp3lame0 flvtool2 
+  - sudo apt-get install libavutil-extra-51 libavformat-extra-53 libavcodec-extra-53 libavfilter-extra-2 libavdevice-extra-53 ubuntu-restricted-extras
+  - sudo apt-get install non-free-codecs w32codecs aacgain aacplusenc
+  - sudo apt-get install ffmpeg
+  - sudo apt-get install -t squeeze -y --force-yes $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
+  - sudo apt-get install -t squeeze -y --force-yes openoffice.org-ure $(apt-cache --no-generate pkgnames openoffice.org3 | tr '\n' ' ')
+  - sudo ln -s /usr/lib/i386-linux-gnu/libz.so /usr/lib/
+  - sudo npm install -g less
+  - wget https://raw.github.com/mediasite/openoffice-wrapper/master/oowrapper.py
+  - chmod +x ./oowrapper.py
+  - sudo mv ./oowrapper.py /bin/
+  - cp ./settings_test.py ./settings_local.py
+install:
+  - pip install -r requirements/basic.txt
+  - pip install -r requirements/dev.txt
+  - pip install -r requirements/workers.txt
+  - python ./manage.py compile_libmagic_db
+  - python ./manage.py compile_avconv_db
+  - python ./manage.py check_avconv_codecs
+script:
+  - python ./manage.py test_cov
