@@ -60,14 +60,6 @@ def get_db():
         ctx.mongo_connection = connection
     return connection[settings.MONGO_DB_NAME]
 
-def get_db():
-    ctx = _app_ctx_stack.top
-    connection = getattr(ctx, 'mongo_connection', None)
-    if connection is None:
-        connection = connections.get_mongodb_connection()
-        ctx.mongo_connection = connection
-    return connection[settings.MONGO_DB_NAME]
-
 
 def close_database_connection(error=None):
     connection = getattr(_app_ctx_stack.top, 'mongo_connection', None)
