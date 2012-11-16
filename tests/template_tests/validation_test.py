@@ -1,8 +1,7 @@
 import unittest
 
-from flask import g
-
 import actions.templates
+from app import fs
 from actions.handlers import apply_template
 from actions.utils import ValidationError
 from tests.utils import ContextMixin, GridFSMixin
@@ -56,10 +55,10 @@ class ValidationTest(GridFSMixin, ContextMixin, unittest.TestCase):
     def test_apply_template_uri_validation(self):
         corrupted_template_uri = '/template/asds123'
         with self.expect_validation_error('%s is not a template URI.' % corrupted_template_uri):
-            apply_template(g.fs.get(self.file_id), {'template': corrupted_template_uri})
+            apply_template(fs.get(self.file_id), {'template': corrupted_template_uri})
 
         inexistent_template_id = '5087a78f8149954b38d1cbc2'
         inexistent_template_uri = '/template/%s/' % inexistent_template_id
         with self.expect_validation_error(
                 'Template with id %s does not exist.' % inexistent_template_id):
-            apply_template(g.fs.get(self.file_id), {'template': inexistent_template_uri})
+            apply_template(fs.get(self.file_id), {'template': inexistent_template_uri})

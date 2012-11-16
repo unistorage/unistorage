@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from flask import url_for, g
+from flask import url_for
 
-from tests.utils import AdminFunctionalTest
+from app import db
 from app.models import User
+from tests.utils import AdminFunctionalTest
 
 
 class Test(AdminFunctionalTest):
@@ -52,7 +53,7 @@ class Test(AdminFunctionalTest):
         form.set('name', 'Test2')
         response = form.submit().follow()
 
-        user1, user2 = User.find(g.db, {})
+        user1, user2 = User.find(db, {})
         self.assertEquals(user1.needs, [])
 
         # Открываем форму редактирования первого пользователя
@@ -75,7 +76,7 @@ class Test(AdminFunctionalTest):
         self.assertTrue(opt_selected)
         
         # И отражены в поле needs первого пользователя
-        user1_needs = User.get_one(g.db, {'_id': user1.get_id()}).needs
+        user1_needs = User.get_one(db, {'_id': user1.get_id()}).needs
         self.assertEquals(user1_needs, [('role', user2.get_id())])
 
     def test_domains(self):
@@ -86,7 +87,7 @@ class Test(AdminFunctionalTest):
         form.set('name', 'Test1')
         response = form.submit().follow()
 
-        user = User.find(g.db, {})[0]
+        user = User.find(db, {})[0]
         user_id = user.get_id()
 
         # Открываем форму редактирования пользователя
@@ -100,7 +101,7 @@ class Test(AdminFunctionalTest):
         response = form.response.goto(form.action, method=form.method, params=fields).follow()
 
         # Удостоверимся, что он сохранился
-        user_domains = User.get_one(g.db, {'_id': user_id}).domains
+        user_domains = User.get_one(db, {'_id': user_id}).domains
         self.assertIn(domain, user_domains)
         
         # Открываем форму снова
@@ -115,7 +116,7 @@ class Test(AdminFunctionalTest):
         response = form.response.goto(form.action, method=form.method, params=fields).follow()
 
         # Удостоверимся, что он удалился
-        user_domains = User.get_one(g.db, {'_id': user_id}).domains
+        user_domains = User.get_one(db, {'_id': user_id}).domains
         self.assertNotIn(domain, user_domains)
 
     def test_remove(self):

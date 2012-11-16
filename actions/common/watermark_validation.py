@@ -1,7 +1,6 @@
 import gridfs
-from flask import g
 
-from app import parse_file_uri
+from app import fs, parse_file_uri
 from actions.utils import ValidationError
 from actions.common import validate_presence
 
@@ -43,7 +42,7 @@ def validate_and_get_args(args, source_file=None):
         raise ValidationError(e.message)
 
     try:
-        watermark = g.fs.get(watermark_id)
+        watermark = fs.get(watermark_id)
     except gridfs.errors.NoFile:
         raise ValidationError('File with id %s does not exist.' % watermark_id)
     

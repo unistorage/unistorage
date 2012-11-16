@@ -7,9 +7,10 @@ from tempfile import NamedTemporaryFile
 from gridfs import GridFS
 from bson import ObjectId
 from bson.errors import InvalidId
-from flask import Flask, g, abort, current_app
+from flask import Flask, g, abort, current_app, _app_ctx_stack
 from flask.wrappers import Request
 from flask.ext.assets import Environment, Bundle
+from werkzeug.local import LocalProxy
 from werkzeug.routing import BaseConverter, ValidationError
 
 import settings
@@ -51,27 +52,30 @@ class ObjectIdConverter(BaseConverter):
         return str(value)
 
 
-def before_request():
-    try:
-        g.db_connection = connections.get_mongodb_connection()
-        g.db = g.db_connection[settings.MONGO_DB_NAME]
-        g.fs = GridFS(g.db)
-    except:
-        abort(500)
+def get_db():
+    ctx = _app_ctx_stack.top
+    connection = getattr(ctx, 'mongo_connection', None)
+    if connection is None:
+        connection = connections.get_mongodb_connection()
+        ctx.mongo_connection = connection
+    return connection[settings.MONGO_DB_NAME]
 
 
-def teardown_request(exception):
-    if hasattr(g, 'db_connection'):
-        g.db_connection.close()
+def close_database_connection(error=None):
+    connection = getattr(_app_ctx_stack.top, 'mongo_connection', None)
+    if connection is not None:
+        connection.close()
+
+db = LocalProxy(get_db)
+fs = LocalProxy(lambda: GridFS(get_db()))
 
 
 def create_app():
     app = Flask(__name__)
     app.url_map.converters['ObjectId'] = ObjectIdConverter
     app.secret_key = settings.SECRET_KEY
-    app.before_request(before_request)
-    app.teardown_request(teardown_request)
-    app.request_class = JSONRequest
+    app.teardown_appcontext(close_database_connection)
+    app.request_class = CustomRequest
 
     import admin
     import storage
@@ -120,7 +124,7 @@ def stream_factory(total_content_length, content_type, filename='', content_leng
     return StringIO()
 
 
-class JSONRequest(Request):
+class CustomRequest(Request):
     """Наследник :class:`flask.wrappers.Request`, использующий :func:`stream_factory`."""
     def _get_file_stream(self, total_content_length, content_type,
                          filename=None, content_length=None):

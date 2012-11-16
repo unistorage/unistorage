@@ -2,11 +2,12 @@ import os.path
 import subprocess
 import time
 
-from flask import g, url_for
+from flask import g, url_for, _app_ctx_stack
 from bson.objectid import ObjectId
 
 import app
 import settings
+from app import db, fs
 from app.models import User, RegularFile
 from app.admin.forms import get_random_token
 from tests.flask_webtest import FlaskTestCase, FlaskTestApp
@@ -47,7 +48,7 @@ class ContextMixin(object):
         super(ContextMixin, self).setUp()
         self.ctx = app.create_app().test_request_context()
         self.ctx.push()
-        app.before_request()
+        db.connection.drop_database(settings.MONGO_DB_NAME)
 
     def tearDown(self):
         super(ContextMixin, self).tearDown()
@@ -64,11 +65,10 @@ class GridFSMixin(ContextMixin):
     """
     def setUp(self):
         super(GridFSMixin, self).setUp()
-        g.db_connection.drop_database(settings.MONGO_DB_NAME)
 
     def put_file(self, path, user_id=ObjectId('50516e3e8149950f0fa50462'), type_id=None):
         path = fixture_path(path)
-        return RegularFile.put_to_fs(g.db, g.fs, os.path.basename(path), open(path, 'rb'), **{
+        return RegularFile.put_to_fs(db, fs, os.path.basename(path), open(path, 'rb'), **{
             'type_id': type_id,
             'user_id': user_id,
         })
@@ -78,7 +78,6 @@ class AdminFunctionalTest(ContextMixin, FlaskTestCase):
     def setUp(self):
         super(AdminFunctionalTest, self).setUp()
         self.app = FlaskTestApp(app.create_app())
-        g.db_connection.drop_database(settings.MONGO_DB_NAME)
 
     def login(self):
         form = self.app.get(url_for('admin.login')).form
@@ -100,10 +99,9 @@ class StorageFlaskTestApp(FlaskTestApp):
 class StorageFunctionalTest(ContextMixin, FlaskTestCase):
     def setUp(self):
         super(StorageFunctionalTest, self).setUp()
-        g.db_connection.drop_database(settings.MONGO_DB_NAME)
         
         token = get_random_token()
-        User({'name': 'Test', 'token': token}).save(g.db)
+        User({'name': 'Test', 'token': token}).save(db)
         self.app = StorageFlaskTestApp(app.create_app(), token)
 
     def put_file(self, path, type_id=None):

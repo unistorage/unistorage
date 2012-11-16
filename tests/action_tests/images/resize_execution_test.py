@@ -1,6 +1,5 @@
-from flask import g
-
 import settings
+from app import db
 from tests.utils import StorageFunctionalTest, WorkerMixin
 
 
@@ -30,8 +29,8 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
         self.run_worker()
         # Make sure that original has resized image in modifications
         # and resized image points to it's original.
-        resized_image = g.db.fs.files.find_one(resized_image_id)
-        original_image = g.db.fs.files.find_one(original_id)
+        resized_image = db.fs.files.find_one(resized_image_id)
+        original_image = db.fs.files.find_one(original_id)
         self.assertEquals(resized_image['original'], original_id)
         self.assertTrue(resized_image_id in original_image['modifications'].values())
 

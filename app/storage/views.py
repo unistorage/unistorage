@@ -9,7 +9,7 @@ import random
 from urlparse import urljoin
 from datetime import datetime
 
-from flask import request, g, abort, url_for
+from flask import request, abort, url_for
 
 import settings
 from actions import templates
@@ -17,7 +17,7 @@ from actions.utils import ValidationError
 from actions.handlers import apply_template, apply_action
 from utils import ok, error, jsonify, methods_required
 from . import bp
-from app import parse_file_uri
+from app import db, fs, parse_file_uri
 from app.models import File, RegularFile, PendingFile, Template, ZipCollection
 from app.perms import AccessPermission
 
@@ -49,7 +49,7 @@ def file_create():
             return error({'msg': '`type_id` is too long. Maximum length is 32.'}), 400
         kwargs.update({'type_id': type_id})
 
-    file_id = RegularFile.put_to_fs(g.db, g.fs, file.filename, file, **kwargs)
+    file_id = RegularFile.put_to_fs(db, fs, file.filename, file, **kwargs)
     return ok({
         'resource_uri': url_for('.file_view', _id=file_id)
     })
@@ -65,7 +65,7 @@ def file_view(_id=None):
     - Применение шаблона к файлу `id`, если GET-запрос содержит аргумент `template`
     - Выдача информации о файле `id` во всех остальных случаях
     """
-    source_file = File.get_one(g.db, {'_id': _id})
+    source_file = File.get_one(db, {'_id': _id})
     
     if not source_file:
         return error({'msg': 'File wasn\'t found'}), 404
@@ -114,7 +114,7 @@ def template_create():
     template_data.update({
         'user_id': request.user['_id']
     })
-    template_id = Template(template_data).save(g.db)
+    template_id = Template(template_data).save(db)
     return ok({
         'resource_uri': url_for('.template_view', _id=template_id)
     })
@@ -125,7 +125,7 @@ def template_create():
 @login_required
 def template_view(_id=None):
     """Вьюшка, показывавающая :term:`шаблон`."""
-    template = Template.get_one(g.db, {'_id': _id})
+    template = Template.get_one(db, {'_id': _id})
     
     if not template:
         return error({'msg': 'Template wasn\'t found'}), 404
@@ -169,7 +169,7 @@ def zip_create(_id=None):
         'file_ids': file_ids,
         'filename': filename
     })
-    zip_id = zip_collection.save(g.db)
+    zip_id = zip_collection.save(db)
     return ok({
         'resource_uri': url_for('.zip_view', _id=zip_id)
     })
@@ -180,7 +180,7 @@ def zip_create(_id=None):
 @login_required
 def zip_view(_id):
     """Вьюшка, отдающая информацию о zip collection"""
-    zip_collection = ZipCollection.get_one(g.db, {'_id': _id})
+    zip_collection = ZipCollection.get_one(db, {'_id': _id})
     if not zip_collection:
         return error({'msg': 'Zip collection wasn\'t found'}), 404
 

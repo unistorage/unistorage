@@ -2,6 +2,7 @@
 from flask import g
 
 import settings
+from app import db
 from app.models import User
 from tests.utils import StorageFunctionalTest
 
@@ -16,9 +17,9 @@ class FunctionalTest(StorageFunctionalTest):
         self.assertTrue(file_content_url.startswith(settings.GRIDFS_SERVE_URL))
 
         # Указываем пользователю список доменов
-        user = User.get_one(g.db, {})
+        user = User.get_one(db, {})
         user.domains = ['http://s.66.ru', 'http://www.ya.ru/']
-        user.save(g.db)
+        user.save(db)
 
         # Перезапрашиваем адрес
         file_content_url = self.app.get(file_uri).json['data']['url']

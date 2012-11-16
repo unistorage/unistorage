@@ -2,8 +2,9 @@
 from functools import partial
 from datetime import datetime, timedelta
 
-from flask import url_for, g
+from flask import url_for
 
+from app import db
 from app.models import User, Statistics
 from app.admin.forms import get_random_token
 from tests.utils import AdminFunctionalTest
@@ -17,7 +18,7 @@ class FunctionalTest(AdminFunctionalTest):
         self.login()
 
     def put_statistics(self, user_id, timestamp, type_id=None):
-        g.db[Statistics.collection].insert({
+        db[Statistics.collection].insert({
             'user_id': user_id,
             'type_id': type_id,
             'timestamp': timestamp,
@@ -30,7 +31,7 @@ class FunctionalTest(AdminFunctionalTest):
             'name': 'test',
             'token': get_random_token()
         })
-        return user.save(g.db)
+        return user.save(db)
 
     def fill_db(self):
         today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)

@@ -3,12 +3,12 @@
 Применение операций и шаблонов
 ==============================
 """
-from flask import request, g
+from flask import request
 
 import settings
 import actions
 from actions.tasks import perform_actions
-from app import parse_template_uri
+from app import db, fs, parse_template_uri
 from app.models import Template, File, PendingFile
 from app.perms import AccessPermission
 from utils import ValidationError
@@ -28,7 +28,7 @@ def apply_actions(source_file, action_list, label):
     :rtype: :class:`ObjectId`
     """
     source_id = source_file.get_id()
-    target_file = File.get_one(g.db, {'original': source_id, 'label': label})
+    target_file = File.get_one(db, {'original': source_id, 'label': label})
 
     if target_file:
         return target_file.get_id()
@@ -53,9 +53,9 @@ def apply_actions(source_file, action_list, label):
     }
     pending_target_kwargs.update(target_kwargs)
 
-    target_id = PendingFile.put_to_fs(g.db, g.fs, **pending_target_kwargs)
+    target_id = PendingFile.put_to_fs(db, fs, **pending_target_kwargs)
     perform_actions.delay(source_id, target_id, target_kwargs)
-    g.db[File.collection].update(
+    db[File.collection].update(
         {'_id': source_id},
         {'$set': {'modifications.%s' % label: target_id}})
     return target_id
@@ -79,7 +79,7 @@ def apply_template(source_file, args):
     except ValueError as e:
         raise ValidationError(e.message)
 
-    template = Template.get_one(g.db, {'_id': template_id})
+    template = Template.get_one(db, {'_id': template_id})
     
     if not template:
         raise ValidationError('Template with id %s does not exist.' % template_id)
