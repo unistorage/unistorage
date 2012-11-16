@@ -82,7 +82,7 @@ def parse_formats(avconv):
 
 
 def compile_avconv_db():
-    "Compile avconv database"
+    """Compile avconv database"""
     assert sh.which(settings.AVCONV_BIN)
     avconv = sh.Command(settings.AVCONV_BIN)
 

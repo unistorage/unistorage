@@ -5,6 +5,7 @@ import sh
 from compile_avconv_db import compile_avconv_db
 from compile_libmagic_db import compile_libmagic_db
 from check_avconv_codecs import check_avconv_codecs
+from expire_zip_collections import expire_zip_collections
 
 
 def test_quick():

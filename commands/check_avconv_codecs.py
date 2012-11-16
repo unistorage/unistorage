@@ -4,7 +4,7 @@ import settings
 
 
 def check_avconv_codecs():
-    "Check that avconv supports all necessary codecs and formats"
+    """Check that avconv supports all necessary codecs and formats"""
     with open(settings.AVCONV_DB_PATH) as f:
         avconv_db = pickle.load(f)
 

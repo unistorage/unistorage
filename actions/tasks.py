@@ -17,9 +17,6 @@ from app.models import PendingFile, RegularFile
 from file_utils import get_file_data
 
 
-connection = connections.get_mongodb_connection()
-db = connection[settings.MONGO_DB_NAME]
-fs = gridfs.GridFS(db)
 celery = Celery('tasks', broker=settings.CELERY_BROKER)
 
 
@@ -34,7 +31,7 @@ LOG_TEMPLATE = """
 """
 
 
-def resolve_object_ids(args):
+def resolve_object_ids(fs, args):
     """Проходит по списку `args`, заменяя встреченные `ObjectId` на соответствующие им
     GridOut-объекты."""
     def try_resolve(arg):
@@ -47,6 +44,9 @@ def resolve_object_ids(args):
 
 @celery.task
 def perform_actions(source_id, target_id, target_kwargs):
+    connection = connections.get_mongodb_connection()
+    db = connection[settings.MONGO_DB_NAME]
+    fs = gridfs.GridFS(db)
     """Проверяет существование исходного обычного файла с идентификатором `source_id` и временного с
     идентификатором `target_id`. Последовательно применяет к исходному файлу операции, записанные
     в поле `actions` временного файла; удаляёт файл с `target_id` и записывает на его место
@@ -69,7 +69,7 @@ def perform_actions(source_id, target_id, target_kwargs):
 
     for action_name, action_args in target_file.actions:
         action = actions.get_action(curr_unistorage_type, action_name)
-        action_args = resolve_object_ids(action_args)
+        action_args = resolve_object_ids(fs, action_args)
         
         try:
             next_file, next_file_ext = action.perform(curr_file, *action_args)

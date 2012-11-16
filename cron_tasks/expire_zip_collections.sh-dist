@@ -1,2 +1,2 @@
 cd /home/aromanovich/unistore/unistore/
-PYTHONPATH=$PYTHONPATH:$PWD ~/.virtualenvs/unistore/bin/python $PWD/cron_tasks/expire_zip_collections.py
+PYTHONPATH=$PYTHONPATH:$PWD ~/.virtualenvs/unistore/bin/python $PWD/manage.py expire_zip_collections

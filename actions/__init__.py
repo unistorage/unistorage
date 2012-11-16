@@ -31,10 +31,13 @@ actions_to_register = (
     'images.grayscale',
     'images.watermark',
     'images.rotate',
+
     'videos.convert',
     'videos.watermark',
     'videos.extract_audio',
+
     'audios.convert',
+
     'docs.convert',
 )
 
