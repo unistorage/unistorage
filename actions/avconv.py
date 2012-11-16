@@ -36,12 +36,31 @@ def parse_int(val):
 
 
 def extract_video_data(stream, stderr_data):
+    """Парсит сырые данные, полученные от ffmpeg. Возвращает только нужные поля,
+    приведённые к своим типам -- словарь, удовлетворяющий следующей схеме:
+    ```
+    {
+        'width': int,
+        'height': int,
+        'codec': string,  # имя кодека в терминологии ffmpeg
+        'bitrate': string,  # битрейт в формате "%dk", например, "256k"
+        'duration': float,  # длительность видео в секундах
+        'fps': float,  # frame per second
+
+    }
+    ```
+
+    :param stream: словарь, содержащий данные о потоке из stdout-а ffmpeg
+    :param stderr_data: словарь, содержащие данные из stderr-а ffmpeg
+    """
     def parse_avg_frame_rate(val):
+        """Парсит fps в ffmpeg-овском формате. Возвращает fps в виде float."""
         if '/' in val:
             n, d = map(parse_float, val.split('/'))
             return n and d and n / d
         elif '.' in val:
             return parse_float(val)
+
     return {
         'width': parse_int(stream.get('width')),
         'height': parse_int(stream.get('height')),
@@ -53,6 +72,21 @@ def extract_video_data(stream, stderr_data):
 
 
 def extract_audio_data(stream, stderr_data):
+    """Парсит сырые данные, полученные от ffmpeg. Возвращает только нужные поля,
+    приведённые к своим типам -- словарь, удовлетворяющий следующей схеме:
+    ```
+    {
+        'channels': int,  # количество каналов
+        'sample_rate': float,
+        'codec': string,  # имя кодека в терминологии ffmpeg
+        'bitrate': string,  # битрейт в формате "%dk", например, "256k"
+        'duration': float,  # длительность видео в секундах
+    }
+    ```
+
+    :param stream: словарь, содержащий данные о потоке из stdout-а ffmpeg
+    :param stderr_data: словарь, содержащие данные из stderr-а ffmpeg
+    """
     return {
         'channels': parse_int(stream.get('channels')),
         'sample_rate': parse_float(stream.get('sample_rate')),
@@ -67,7 +101,19 @@ def parse_stdout(stdout):
 
 
 def parse_stderr(stderr):
-    data = {}
+    """Парсит stderr ffmpeg-а и извлекает из него битрейты первых встреченных
+    аудио- и видеопотоков (ffmpeg выдаёт эти данные _только_ в stderr).
+    Возвращает словарь, удовлетворяющий следующей схеме:
+    ```
+    {
+        'audio_bitrate': string or None,  # битрейт в формате "%dk", например, "256k"
+        'video_bitrate': string or None
+    }
+    """
+    data = {
+        'audio_bitrate': None,
+        'video_bitrate': None
+    }
     regexp = r'Stream.*(?P<stream_type>Audio|Video):.*?(?P<bitrate>\d+) kb/s'
     for match in re.finditer(regexp, stderr):
         stream_type = match.group('stream_type').lower()
@@ -109,6 +155,9 @@ def avprobe(fname):
     }
 
 
+"""
+Некоторые кодеки имеют енкодеры, названия которых отличаются от имени кодека:
+"""
 encoders = {
     'acodecs': {
         'vorbis': 'libvorbis',
@@ -127,6 +176,9 @@ encoders = {
 }
 
 
+"""
+Некоторые енкодеры требуют специальных аргументов:
+"""
 encoder_args = {
     'acodecs': {
         'aac': ['-strict', 'experimental']
@@ -142,6 +194,9 @@ encoder_args = {
 }
 
 
+"""
+Некоторые форматы называются в ffmpeg иначе:
+"""
 format_aliases = {
     'mpeg': 'mpegts',
     'mpg': 'mpegts',
@@ -150,7 +205,9 @@ format_aliases = {
 }
 
 
-# Таблица дефолтных форматов для аудио, закодированных соответствующим кодеком
+"""
+Таблица дефолтных форматов для аудио, закодированных соответствующим кодеком:
+"""
 acodec_to_format_map = {
     'vorbis': 'ogg',
     'flac': 'flac',
@@ -214,6 +271,11 @@ def avconv(source_fname, target_fname, options):
 
 
 def get_codec_supported_actions(codec_type, codec_name):
+    """Возвращает информацию о том, какие действия поддерживает кодек (decoding, encoding).
+    :param codec_type: 'audio' или 'video'
+    :param codec_name: название кодека в терминах ffmpeg
+    :rtype: `dict(decoding=bool, encoding=bool)`
+    """
     key = (codec_type == 'audio' and 'acodecs') or \
           (codec_type == 'video' and 'vcodecs')
 

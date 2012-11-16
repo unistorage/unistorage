@@ -144,14 +144,14 @@ class Statistics(ValidationMixin, modeling.Document):
             group_by,
             conditions,
             {'files_size': 0, 'files_count': 0},
-            'function(entry, summary) {' \
-                'summary.files_size += entry.files_size;' \
-                'summary.files_count += entry.files_count;' \
+            'function(entry, summary) {'
+                'summary.files_size += entry.files_size;'
+                'summary.files_count += entry.files_count;'
             '}',
-            finalize='function(entry) {' \
-                'entry.files_size /= (1024 * 1024);' \
-                'entry.files_size = parseFloat(entry.files_size.toFixed(2));' \
-                'entry.files_count = parseInt(entry.files_count.toFixed(0));' \
+            finalize='function(entry) {'
+                'entry.files_size /= (1024 * 1024);'
+                'entry.files_size = parseFloat(entry.files_size.toFixed(2));'
+                'entry.files_count = parseInt(entry.files_count.toFixed(0));'
             '}'
         )
 

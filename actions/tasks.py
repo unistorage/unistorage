@@ -44,9 +44,6 @@ def resolve_object_ids(fs, args):
 
 @celery.task
 def perform_actions(source_id, target_id, target_kwargs):
-    connection = connections.get_mongodb_connection()
-    db = connection[settings.MONGO_DB_NAME]
-    fs = gridfs.GridFS(db)
     """Проверяет существование исходного обычного файла с идентификатором `source_id` и временного с
     идентификатором `target_id`. Последовательно применяет к исходному файлу операции, записанные
     в поле `actions` временного файла; удаляёт файл с `target_id` и записывает на его место
@@ -57,6 +54,10 @@ def perform_actions(source_id, target_id, target_kwargs):
     :param target_kwargs: словарь с атрибутами, которые появятся у результирующего файла после
     применения операций
     """
+    connection = connections.get_mongodb_connection()
+    db = connection[settings.MONGO_DB_NAME]
+    fs = gridfs.GridFS(db)
+
     source_file = RegularFile.get_from_fs(db, fs, _id=source_id)
     # Исключительно для проверки существования временного файла с target_id:
     target_file = PendingFile.get_from_fs(db, fs, _id=target_id)

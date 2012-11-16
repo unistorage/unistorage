@@ -1,5 +1,6 @@
 import os
 import tempfile
+
 from actions.utils import ValidationError
 from actions.common import validate_presence
 from actions.avconv import avconv, acodec_to_format_map

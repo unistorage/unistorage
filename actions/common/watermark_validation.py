@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import gridfs
 
-from app import db, fs, parse_file_uri
+from app import db, fs
+from app.uris import parse_file_uri
 from actions.utils import ValidationError
 from actions.common import validate_presence
 

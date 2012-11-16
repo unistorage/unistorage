@@ -17,7 +17,8 @@ from actions.utils import ValidationError
 from actions.handlers import apply_template, apply_action
 from utils import ok, error, jsonify, methods_required
 from . import bp
-from app import db, fs, parse_file_uri
+from app import db, fs
+from app.uris import parse_file_uri
 from app.models import File, RegularFile, PendingFile, Template, ZipCollection
 from app.perms import AccessPermission
 

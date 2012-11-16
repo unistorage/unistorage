@@ -8,7 +8,8 @@ from flask import request
 import settings
 import actions
 from actions.tasks import perform_actions
-from app import db, fs, parse_template_uri
+from app import db, fs
+from app.uris import parse_template_uri
 from app.models import Template, File, PendingFile
 from app.perms import AccessPermission
 from utils import ValidationError

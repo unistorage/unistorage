@@ -2,7 +2,8 @@ import os.path
 import subprocess
 import time
 
-from flask import g, url_for, _app_ctx_stack
+from flask import url_for
+from celery import current_app
 from bson.objectid import ObjectId
 
 import app
@@ -22,12 +23,11 @@ def fixture_path(path):
 
 class WorkerMixin(object):
     def run_worker(self):
-        from celery import current_app
         tests_dir = os.path.dirname(os.path.abspath(__file__))
         script_name = os.path.join(tests_dir, 'celery_worker.py')
         subprocess.Popen(
-            ['PYTHONPATH=%s:$PYTHONPATH UNISTORAGE_TESTING=1 %s' % \
-                    (os.getcwd(), script_name)], shell=True)
+            ['PYTHONPATH=%s:$PYTHONPATH UNISTORAGE_TESTING=1 %s' %
+                (os.getcwd(), script_name)], shell=True)
 
         while True:
             time.sleep(0.1)
