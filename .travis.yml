@@ -8,6 +8,7 @@ before_install:
   - sudo wget http://www.medibuntu.org/sources.list.d/`lsb_release -cs`.list --output-document=/etc/apt/sources.list.d/medibuntu.list
   - sudo add-apt-repository 'deb http://ppa.launchpad.net/jon-severinsson/ffmpeg/ubuntu precise main'
   - sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 2EBC26B60C5A2783
+  - sudo sh -c 'echo "Package: ffmpeg\nPin: release o=LP-PPA-jon-severinsson-ffmpeg\nPin-Priority: 1000" > /etc/apt/preferences.d/lala'
   - sudo apt-get update
   - sudo apt-get install -f
   - sudo apt-get install libopencore-amrnb0 libopencore-amrwb0 zlib1g zlib1g-dev x264 libmp3lame0 flvtool2 
