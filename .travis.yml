@@ -3,9 +3,6 @@ language:
 python:
   - "2.7"
 before_install:
-  - sudo sh -c 'echo "Package: ffmpeg"  >> /etc/apt/preferences.d/ffmpeg-pin-1000' 
-  - sudo sh -c 'echo "Pin: release o=LP-PPA-jon-severinsson-ffmpeg" >> /etc/apt/preferences.d/ffmpeg-pin-1000'
-  - sudo sh -c 'echo "Pin-Priority: 1000" >> /etc/apt/preferences.d/ffmpeg-pin-1000'
   - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3E5C1192
   - sudo bash -c 'echo "deb http://79.172.49.99/debian/ squeeze main" >> /etc/apt/sources.list'
   - sudo wget http://www.medibuntu.org/sources.list.d/`lsb_release -cs`.list --output-document=/etc/apt/sources.list.d/medibuntu.list
