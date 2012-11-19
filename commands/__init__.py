@@ -11,18 +11,21 @@ from expire_zip_collections import expire_zip_collections
 
 def test_quick():
     """Test quickly"""
-    exit(nose.run(argv=['tests', '--exclude-dir=./tests/smoke_tests/', '--verbosity=2']))
+    success = nose.run(argv=['tests', '--exclude-dir=./tests/smoke_tests/', '--verbosity=2'])
+    exit(0 if success else 1)
 
 
 def test_cov():
     """Test and report coverage"""
-    exit(nose.run(argv=['tests', '--with-coverage', '--cover-package=app,storage,actions',
-        '--exclude-dir=./tests/smoke_tests/', '--cover-html', '--verbosity=2']))
+    success = nose.run(argv=['tests', '--with-coverage', '--cover-package=app,storage,actions',
+        '--exclude-dir=./tests/smoke_tests/', '--cover-html', '--verbosity=2'])
+    exit(0 if success else 1)
 
 
 def test():
     """Test"""
-    exit(nose.run(argv=['tests']))
+    success = nose.run(argv=['tests'])
+    exit(0 if success else 1)
 
 
 def make_docs():
