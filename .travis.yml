@@ -16,6 +16,7 @@ before_install:
   - sudo apt-get install ffmpeg
   - sudo apt-get install -t squeeze -y --force-yes $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
   - sudo apt-get install -t squeeze -y --force-yes openoffice.org-ure $(apt-cache --no-generate pkgnames openoffice.org3 | tr '\n' ' ')
+  - sudo ln -s /usr/lib/i386-linux-gnu/libjpeg.so /usr/lib/
   - sudo ln -s /usr/lib/i386-linux-gnu/libz.so /usr/lib/
   - sudo npm install -g less
   - wget https://raw.github.com/mediasite/openoffice-wrapper/master/oowrapper.py
@@ -23,9 +24,9 @@ before_install:
   - sudo mv ./oowrapper.py /bin/
   - cp ./settings_test.py ./settings_local.py
 install:
-  - sudo pip install -r requirements/basic.txt
-  - sudo pip install -r requirements/dev.txt
-  - sudo pip install -r requirements/workers.txt
+  - sudo pip install --use-mirrors -r requirements/basic.txt
+  - sudo pip install --use-mirrors -r requirements/dev.txt
+  - sudo pip install --use-mirrors -r requirements/workers.txt
   - sudo python ./manage.py compile_libmagic_db
   - sudo python ./manage.py compile_avconv_db
   - sudo python ./manage.py check_avconv_codecs
