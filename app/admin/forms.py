@@ -2,9 +2,9 @@
 import random
 
 import wtforms as wtf
-from flask import g
 from bson.objectid import ObjectId
 
+from app import db
 from app.models import User
 
 
@@ -22,7 +22,7 @@ def get_user_choices(excepted_user=None):
     spec = {}
     if excepted_user:
         spec = {'_id': {'$ne': excepted_user.get_id()}}
-    return [(user.get_id(), user.name) for user in User.find(g.db, spec)]
+    return [(user.get_id(), user.name) for user in User.find(db, spec)]
 
 
 class DomainListWidget(object):

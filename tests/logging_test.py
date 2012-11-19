@@ -2,8 +2,8 @@ import unittest
 import logging.config
 
 import yaml
-from flask import g
 
+from app import fs
 from actions.images.resize import perform as resize
 from actions.tasks import perform_actions
 from tests.utils import GridFSMixin, ContextMixin, fixture_path
@@ -54,7 +54,7 @@ class Test(GridFSMixin, ContextMixin, unittest.TestCase):
             resize(source_file, 'keep', -123123, 0)
 
         source_id = self.put_file(path)
-        target_id = g.fs.put('', pending=True, actions=[('resize', ['keep', -123123, 0])])
+        target_id = fs.put('', pending=True, actions=[('resize', ['keep', -123123, 0])])
 
         # Make sure that it's logged
         self.assertEquals(len(self.handler.messages['error']), 0)

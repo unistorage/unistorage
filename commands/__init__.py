@@ -1,31 +1,31 @@
 import sys
 
+import nose
 import sh
 
 from compile_avconv_db import compile_avconv_db
 from compile_libmagic_db import compile_libmagic_db
 from check_avconv_codecs import check_avconv_codecs
+from expire_zip_collections import expire_zip_collections
 
 
 def test_quick():
     """Test quickly"""
-    p = sh.nosetests('--exclude-dir=./tests/smoke_tests/', '--verbosity=2',
-                     _out=sys.stdout, _err=sys.stderr)
-    p.wait()
+    success = nose.run(argv=['tests', '--exclude-dir=./tests/smoke_tests/', '--verbosity=2'])
+    exit(0 if success else 1)
 
 
 def test_cov():
     """Test and report coverage"""
-    p = sh.nosetests('--with-coverage', '--cover-package=app,storage,actions',
-                     '--cover-html', '--verbosity=2',
-                     _out=sys.stdout, _err=sys.stderr)
-    p.wait()
+    success = nose.run(argv=['tests', '--with-coverage', '--cover-package=app,storage,actions',
+        '--cover-html', '--verbosity=2'])
+    exit(0 if success else 1)
 
 
 def test():
     """Test"""
-    p = sh.nosetests('--verbosity=2', _out=sys.stdout, _err=sys.stderr)
-    p.wait()
+    success = nose.run(argv=['tests'])
+    exit(0 if success else 1)
 
 
 def make_docs():

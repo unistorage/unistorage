@@ -81,7 +81,9 @@ except ImportError:
     pass
 
 
-if 'test' in sys.argv[0]:
+test_commands = ('nosetests', 'test_quick', 'test_cov', 'test')
+if any([command in sys.argv for command in test_commands]) or \
+        os.environ.get('UNISTORAGE_TESTING'):
     try:
         from settings_test import *
     except ImportError:

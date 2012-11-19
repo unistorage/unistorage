@@ -4,14 +4,14 @@ import tempfile
 from actions import ActionException
 from actions.utils import ValidationError
 from actions.common import validate_presence
+from actions.avconv import avprobe, avconv
 from actions.videos.utils import run_flvtool
-from actions.videos.avconv import avprobe, avconv
-from actions.videos.common_validation import validate_source
+from actions.common.codecs_validation import require_acodec_presence, require_vcodec_presence
 
 
 name = 'convert'
 applicable_for = 'video'
-result_type_family = 'video'
+result_unistorage_type = 'video'
 
 
 def validate_and_get_args(args, source_file=None):
@@ -63,7 +63,12 @@ def validate_and_get_args(args, source_file=None):
                               (format, ', '.join(format_supported_acodecs)))
     
     if source_file:
-        validate_source(source_file)
+        data = source_file.extra
+        if not data['video'] or not data['audio']:
+            raise ValidationError('Source video file must contain at least one '
+                                  'audio and video stream') # TODO Get rid of this limitation
+        require_acodec_presence(data['audio']['codec'])
+        require_vcodec_presence(data['video']['codec'])
 
     return [format, vcodec, acodec]
 

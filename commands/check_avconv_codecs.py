@@ -4,7 +4,7 @@ import settings
 
 
 def check_avconv_codecs():
-    "Check that avconv supports all necessary codecs and formats"
+    """Check that avconv supports all necessary codecs and formats"""
     with open(settings.AVCONV_DB_PATH) as f:
         avconv_db = pickle.load(f)
 
@@ -19,8 +19,8 @@ def check_avconv_codecs():
     acodecs = (
         'vorbis', 'libvorbis',
         'amrnb', 'libopencore_amrnb',
-        'mp3', 'libmp3lame',
-        'aac'
+        'mp3', 'libmp3lame', 'aac',
+        'alac', 'ac3', 'flac'
     )
 
     formats = ('ogg', 'webm', 'flv', 'avi', 'matroska', 'mov', 'mp4', 'mpeg')

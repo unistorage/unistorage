@@ -1,7 +1,8 @@
-from flask import Request, g
+from flask import Request
 from repoze.who.api import APIFactory
 from repoze.who.classifiers import default_request_classifier, default_challenge_decider
 
+from app import db
 from app.models import User
 
 
@@ -24,14 +25,14 @@ class TokenPlugin(object):
     
     def authenticate(self, environ, identity):
         token = identity['token']
-        if User.get_one(g.db, {'token': token}):
+        if User.get_one(db, {'token': token}):
             return token
         else:
             return None
 
     def add_metadata(self, environ, identity):
         token = identity.get('token')
-        identity['user'] = User.get_one(g.db, {'token': token})
+        identity['user'] = User.get_one(db, {'token': token})
 
 
 def make_repoze_who_api_factory():

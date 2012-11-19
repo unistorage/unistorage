@@ -3,15 +3,15 @@ import functools
 from datetime import timedelta
 
 from dateutil import tz
+from pytils import numeral
 from bson.objectid import ObjectId
 from flask.ext.principal import RoleNeed
-from flask import (g, request, redirect, url_for,
-                   render_template, flash, session, abort)
-from pytils import numeral
+from flask import request, redirect, url_for, render_template, flash, session, abort
 
 import forms
 import who
 from . import bp
+from app import db
 from app.models import User, Statistics
 from app.date_utils import get_today_utc_midnight
 
@@ -55,15 +55,15 @@ def logout():
 @login_required
 def index():
     start = get_today_utc_midnight() - timedelta(days=6)
-
+    
     annotated_users = []
-    for user in User.find(g.db):
+    for user in User.find(db):
         user_id = user.get_id()
-        statistics_all_time = Statistics.get_summary(g.db, user_id=user_id)
-        statistics_last_week = Statistics.get_summary(g.db, user_id=user_id, start=start)
+        statistics_all_time = Statistics.get_summary(db, user_id=user_id)
+        statistics_last_week = Statistics.get_summary(db, user_id=user_id, start=start)
         annotated_users.append((user, statistics_all_time, statistics_last_week))
 
-    statistics = Statistics.get_timely(g.db, start=start)
+    statistics = Statistics.get_timely(db, start=start)
     if statistics:
         statistics = fill_missing_entries_with_zeroes(statistics, start=start)
         statistics = update_timezone_to_local(statistics)
@@ -71,7 +71,7 @@ def index():
     return render_template('index.html', **{
         'annotated_users': annotated_users,
         'statistics': statistics,
-        'summary': Statistics.get_summary(g.db, start=start),
+        'summary': Statistics.get_summary(db, start=start),
         'numeral': numeral
     })
 
@@ -83,14 +83,14 @@ def users():
         form = forms.UserForm(request.form)
         _id = form.data.get('id')
         if form.validate():
-            user = _id and User.get_one(g.db, {'_id': ObjectId(_id)}) or User()
+            user = _id and User.get_one(db, {'_id': ObjectId(_id)}) or User()
             user.update({
                 'name': form.data['name'],
                 'token': form.data['token'],
                 'needs': map(RoleNeed, form.data['has_access_to']),
                 'domains': form.data['domains']
             })
-            user.save(g.db)
+            user.save(db)
             return redirect(url_for('.users'))
         else:
             template = _id and 'user_edit.html' or 'user_create.html'
@@ -99,7 +99,7 @@ def users():
             })
 
     return render_template('users.html', **{
-        'users': User.find(g.db)
+        'users': User.find(db)
     })
 
 
@@ -114,14 +114,14 @@ def user_create():
 @bp.route('/users/<ObjectId:_id>/remove', methods=['GET'])
 @login_required
 def user_remove(_id):
-    User.get_one(g.db, _id).remove(g.db)
+    User.get_one(db, _id).remove(db)
     return redirect(url_for('.users'))
 
 
 @bp.route('/users/<ObjectId:_id>/edit', methods=['GET'])
 @login_required
 def user_edit(_id):
-    user = User.get_one(g.db, _id)
+    user = User.get_one(db, _id)
     form = forms.UserForm(request.form, obj=user)
     return render_template('user_edit.html', **{
         'form': form
@@ -131,7 +131,7 @@ def user_edit(_id):
 @bp.route('/users/<ObjectId:user_id>', methods=['GET'])
 @login_required
 def user_statistics(user_id):
-    type_ids = Statistics.find(g.db, {
+    type_ids = Statistics.find(db, {
         'user_id': user_id,
         'type_id': {'$ne': None}
     }).distinct('type_id')
@@ -143,15 +143,15 @@ def user_statistics(user_id):
     if request.args.get('type_id'):
         kwargs['type_id'] = request.args['type_id']
 
-    summary = Statistics.get_summary(g.db, **kwargs)
+    summary = Statistics.get_summary(db, **kwargs)
 
-    statistics = Statistics.get_timely(g.db, **kwargs)
+    statistics = Statistics.get_timely(db, **kwargs)
     if statistics:
         statistics = fill_missing_entries_with_zeroes(statistics, start=kwargs['start'])
         statistics = update_timezone_to_local(statistics)
 
     return render_template('user_statistics.html', **{
-        'user': User.get_one(g.db, {'_id': user_id}),
+        'user': User.get_one(db, {'_id': user_id}),
         'type_ids': type_ids,
         'statistics': statistics,
         'summary': summary

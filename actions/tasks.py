@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Код, исполняемый воркерами python-rq
-====================================
+Код, исполняемый воркерами
+==========================
 """
 import logging
 import os.path
@@ -14,13 +14,9 @@ import settings
 import actions
 import connections
 from app.models import PendingFile, RegularFile
-from file_utils import get_content_type
-from actions.utils import get_type_family
+from file_utils import get_file_data
 
 
-connection = connections.get_mongodb_connection()
-db = connection[settings.MONGO_DB_NAME]
-fs = gridfs.GridFS(db)
 celery = Celery('tasks', broker=settings.CELERY_BROKER)
 
 
@@ -35,7 +31,7 @@ LOG_TEMPLATE = """
 """
 
 
-def resolve_object_ids(args):
+def resolve_object_ids(fs, args):
     """Проходит по списку `args`, заменяя встреченные `ObjectId` на соответствующие им
     GridOut-объекты."""
     def try_resolve(arg):
@@ -48,33 +44,33 @@ def resolve_object_ids(args):
 
 @celery.task
 def perform_actions(source_id, target_id, target_kwargs):
-    """Проверяет существование обычного файла с идентификатором `source_id` и временного с
-    идентификатором `target_id`. Последовательно применяет к обычному файлу операции, записанные
+    """Проверяет существование исходного обычного файла с идентификатором `source_id` и временного с
+    идентификатором `target_id`. Последовательно применяет к исходному файлу операции, записанные
     в поле `actions` временного файла; удаляёт файл с `target_id` и записывает на его место
     результат последней операции.
 
-    :param source_id: идентификатор исходного файла (файл должен быть обычным)
-    :type source_id: :class:`ObjectId`
-    :param target_id: идентификатор результирующего файла (файл должен быть временным)
-    :type target_id: :class:`ObjectId`
-    :param target_kwargs: атрибуты, которые появятся у результирующего файла после
+    :param source_id: :class:`ObjectId` исходного файла (файл должен быть обычным)
+    :param target_id: :class:`ObjectId` результирующего файла (файл должен быть временным)
+    :param target_kwargs: словарь с атрибутами, которые появятся у результирующего файла после
     применения операций
-    :type target_kwargs: dict
     """
+    connection = connections.get_mongodb_connection()
+    db = connection[settings.MONGO_DB_NAME]
+    fs = gridfs.GridFS(db)
+
     source_file = RegularFile.get_from_fs(db, fs, _id=source_id)
-    # Исключительно для проверки существования временного файла с _id=target_id:
+    # Исключительно для проверки существования временного файла с target_id:
     target_file = PendingFile.get_from_fs(db, fs, _id=target_id)
 
     source_file_name, source_file_ext = os.path.splitext(source_file.name)
 
     curr_file = source_file
     curr_file_ext = source_file_ext
-    curr_content_type = curr_file.content_type
+    curr_unistorage_type = source_file.unistorage_type
 
     for action_name, action_args in target_file.actions:
-        type_family = get_type_family(curr_content_type)
-        action = actions.get_action(type_family, action_name)
-        action_args = resolve_object_ids(action_args)
+        action = actions.get_action(curr_unistorage_type, action_name)
+        action_args = resolve_object_ids(fs, action_args)
         
         try:
             next_file, next_file_ext = action.perform(curr_file, *action_args)
@@ -93,7 +89,9 @@ def perform_actions(source_id, target_id, target_kwargs):
 
         curr_file = next_file
         curr_file_ext = next_file_ext
-        curr_content_type = get_content_type(curr_file)
+
+        data = get_file_data(curr_file, file_name=source_file_name + curr_file_ext)
+        curr_unistorage_type = data['unistorage_type']
 
     target_file = curr_file
     target_file_name = '%s_%s.%s' % (source_file_name, target_kwargs['label'], curr_file_ext)

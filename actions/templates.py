@@ -9,38 +9,38 @@ import actions
 from utils import ValidationError
 
 
-def validate_and_get_template_actions(source_type_family, action_args_list):
-    """Рассматривая `source_type_family` как семейство типов исходных файлов, проверяет применимость
-    каждой последующей операции к результату предыдущей. Возвращает "очищенный" список операций и их
-    параметров.
+def validate_and_get_template_actions(source_unistorage_type, action_args_list):
+    """Рассматривая `source_unistorage_type` как семейство типов исходных файлов, проверяет
+    применимость каждой последующей операции к результату предыдущей. Возвращает "очищенный"
+    список операций и их параметров.
 
-    :param source_type_family: :term:`семейство типов`
+    :param source_unistorage_type: :term:`семейство типов`
     :param action_args_list: список аргументов операций
     :type action_args_list: list(dict(action=action_name, **kwargs))
     :raises: ValidationError
     :rtype: `list(tuple(action_name, action_cleaned_args))`
     """
     result = []
-    current_type_family = source_type_family
+    current_unistorage_type = source_unistorage_type
 
     for index, action_args in enumerate(action_args_list, 1):
         action_name = action_args.get('action')
         if not action_name:
             raise ValidationError('Error on step %d: action is not specified.' % index)
         
-        action = actions.get_action(source_type_family, action_name)
+        action = actions.get_action(current_unistorage_type, action_name)
         if not action:
             raise ValidationError(
                 'Error on step %(index)s: action %(action_name)s '
-                'is not supported for %(type_family)s.' % {
+                'is not supported for %(unistorage_type)s.' % {
                     'action_name': action_name,
                     'index': index,
-                    'type_family': current_type_family
+                    'unistorage_type': current_unistorage_type
                 })
 
         action_cleaned_args = action.validate_and_get_args(action_args)
         result.append((action_name, action_cleaned_args))
-        current_type_family = action.result_type_family
+        current_unistorage_type = action.result_unistorage_type
 
     return result
     
@@ -52,7 +52,7 @@ def validate_and_get_template(args):
     :param args: аргументы
     :type args: `dict(applicable_for=..., actions=list(...))`
     :raises: ValidationError
-    :rtype: `dict(applicable_for=type_family,
+    :rtype: `dict(applicable_for=unistorage_type,
                   action_list=list(tuple(action_name, action_cleaned_args)))`
     """
     applicable_for = args.get('applicable_for')

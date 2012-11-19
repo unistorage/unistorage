@@ -3,23 +3,28 @@ import tempfile
 
 import actions
 from actions.utils import ValidationError
+from actions.avconv import avprobe, avconv, get_codec_supported_actions
 from actions.videos.utils import run_flvtool
 from actions.images.resize import perform as image_resize
-from actions.videos.avconv import avprobe, avconv, get_codec_supported_actions
+from actions.common.codecs_validation import require_acodec_presence, require_vcodec_presence
 from actions.common.watermark_validation import \
     validate_and_get_args as common_watermark_validation
-from actions.videos.common_validation import validate_source
 
 
 name = 'watermark'
 applicable_for = 'video'
-result_type_family = 'video'
+result_unistorage_type = 'video'
 
 
 def validate_and_get_args(args, source_file=None):
     result = common_watermark_validation(args, source_file=source_file)
     if source_file:
-        validate_source(source_file, require_encoding_support=True)
+        data = source_file.extra
+        if not data['video'] or not data['audio']:
+            raise ValidationError('Source video file must contain at least one '
+                                  'audio and video stream') # TODO Get rid of this limitation
+        require_acodec_presence(data['audio']['codec'], require_encoding_support=True)
+        require_vcodec_presence(data['video']['codec'], require_encoding_support=True)
     return result
 
 
