@@ -10,7 +10,7 @@ before_install:
   - sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 2EBC26B60C5A2783
   - sudo apt-get update
   - sudo apt-get install -f
-  - sudo apt-get install libopencore-amrnb0 libopencore-amrwb0 zlib1g zlib1g-dev x264 libmp3lame0 flvtool2 
+  - sudo apt-get install libjpeg62 libjpeg62-dev libopencore-amrnb0 libopencore-amrwb0 zlib1g zlib1g-dev x264 libmp3lame0 flvtool2 
   - sudo apt-get install libavutil-extra-51 libavformat-extra-53 libavcodec-extra-53 libavfilter-extra-2 libavdevice-extra-53 ubuntu-restricted-extras
   - sudo apt-get install non-free-codecs w32codecs aacgain aacplusenc
   - sudo apt-get install ffmpeg
@@ -26,8 +26,8 @@ install:
   - sudo pip install -r requirements/basic.txt
   - sudo pip install -r requirements/dev.txt
   - sudo pip install -r requirements/workers.txt
-  - python ./manage.py compile_libmagic_db
-  - python ./manage.py compile_avconv_db
-  - python ./manage.py check_avconv_codecs
+  - sudo python ./manage.py compile_libmagic_db
+  - sudo python ./manage.py compile_avconv_db
+  - sudo python ./manage.py check_avconv_codecs
 script:
-  - python ./manage.py test_cov
+  - sudo python ./manage.py test_cov
