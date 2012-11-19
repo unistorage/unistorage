@@ -16,7 +16,7 @@ class Test(SmokeTest):
     def setUpClass(cls):
         super(Test, cls).setUpClass(TEST_SOURCE_DIR, TEST_TARGET_DIR)
 
-   def test_convert(self):
+    def test_convert(self):
         results_dir = os.path.join(TEST_TARGET_DIR, 'convert')
         os.makedirs(results_dir)
 
