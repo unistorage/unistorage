@@ -55,7 +55,7 @@ class Test(SmokeTest):
                 target_file.write(result.read())
 
     def test_extract_audio(self):
-        results_dir = os.path.join(TEST_TARGET_DIR, 'watermark')
+        results_dir = os.path.join(TEST_TARGET_DIR, 'extracted_audios')
         os.makedirs(results_dir)
 
         for codec in ('alac', 'aac', 'vorbis', 'ac3', 'mp3', 'flac'):
