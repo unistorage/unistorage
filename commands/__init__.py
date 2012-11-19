@@ -18,7 +18,7 @@ def test_quick():
 def test_cov():
     """Test and report coverage"""
     success = nose.run(argv=['tests', '--with-coverage', '--cover-package=app,storage,actions',
-        '--exclude-dir=./tests/smoke_tests/', '--cover-html', '--verbosity=2'])
+        '--cover-html', '--verbosity=2'])
     exit(0 if success else 1)
 
 
