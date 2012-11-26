@@ -5,13 +5,10 @@ import settings
 
 
 def get_mongodb_connection():
-    # TODO Решить, необходимо ли использование safe=True
-    # http://api.mongodb.org/python/current/api/pymongo/collection.html?highlight=lasterror#pymongo.collection.Collection.safe
-    # http://www.mongodb.org/display/DOCS/getLastError+Command
     if settings.MONGO_REPLICATION_ON:
         return ReplicaSetConnection(
             settings.MONGO_REPLICA_SET_URI,
-            replicaset=settings.MONGO_REPLICA_SET_NAME, safe=True)
+            replicaset=settings.MONGO_REPLICA_SET_NAME, safe=True, w=2)
     else:
         return Connection(settings.MONGO_HOST, settings.MONGO_PORT, safe=True)
 
