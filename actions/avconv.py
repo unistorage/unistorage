@@ -2,14 +2,10 @@
 import re
 import json
 import os.path
+import subprocess
 import cPickle as pickle
-# Из документации:
-# this module [cStringIO.StringIO] is not able to accept Unicode strings that cannot be encoded as
-# plain ASCII strings.
-# Поэтому -- здесь используем StringIO.StringIO.
 from StringIO import StringIO
 
-import sh
 
 import settings
 
@@ -123,16 +119,14 @@ def parse_stderr(stderr):
 
 
 def avprobe(fname):
-    stderr = StringIO()
-    stdout = StringIO()
+    args = [settings.AVPROBE_BIN, '-print_format', 'json',
+            '-show_format', '-show_streams', fname]
+    proc = subprocess.Popen(args, stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
 
-    avprobe = sh.Command(settings.AVPROBE_BIN)
-    process = avprobe('-print_format', 'json', '-show_format', '-show_streams',
-                      fname, _out=stdout, _err=stderr)
-    process.wait()
-    
-    stdout_data = parse_stdout(stdout.getvalue())
-    stderr_data = parse_stderr(stderr.getvalue())
+    stdout_data = parse_stdout(stdout)
+    stderr_data = parse_stderr(stderr)
 
     formats = stdout_data['format']['format_name'].split(',')
     extension = None
@@ -263,11 +257,12 @@ def avconv(source_fname, target_fname, options):
     avconv_format_name = format_aliases.get(format, format)
     args.extend(['-f', avconv_format_name])
 
-    args = ['-i', source_fname] + args + ['-y', target_fname]
-    avconv = sh.Command(settings.AVCONV_BIN)
-    process = avconv(*args)
-    process.wait()
-    return process.exit_code
+    args = [settings.AVCONV_BIN, '-i', source_fname] + args + ['-y', target_fname]
+    proc = subprocess.Popen(args, stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc.communicate()
+
+    return proc.returncode
 
 
 def get_codec_supported_actions(codec_type, codec_name):
