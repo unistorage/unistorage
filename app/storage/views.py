@@ -275,6 +275,7 @@ def get_regular_file(user, file):
             'name': file.filename,
             'size': file.length,
             'mimetype': file.content_type,
+            'unistorage_type': file.unistorage_type,
             'url': get_gridfs_serve_url(user, file),
             'extra': file.get('extra', {})
         },
