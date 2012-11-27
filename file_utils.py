@@ -4,6 +4,7 @@ import subprocess
 import binascii
 import tempfile
 import os.path
+from unicodedata import normalize
 
 import magic
 from werkzeug.datastructures import FileStorage
@@ -16,17 +17,14 @@ import settings
 m = magic.Magic(mime=True, magic_file=settings.MAGIC_FILE_PATH)
 
 
-_filename_ascii_strip_re = re.compile(ur'[^A-Za-zА-Яа-я0-9_.-]')
-
 def secure_filename(filename):
     """Modified version of :func:`werkzeug.secure_filename`"""
     if isinstance(filename, unicode):
-        from unicodedata import normalize
         filename = normalize('NFKD', filename)
     for sep in os.path.sep, os.path.altsep:
         if sep:
-            filename = filename.replace(sep, ' ')
-    return _filename_ascii_strip_re.sub('', '_'.join(filename.split())).strip('._')
+            filename = filename.replace(sep, '_')
+    return re.sub(r'^\.+', '_', filename.strip(' '))
 
 
 def identify(file, format):
