@@ -20,7 +20,7 @@ m = magic.Magic(mime=True, magic_file=settings.MAGIC_FILE_PATH)
 def secure_filename(filename):
     """Modified version of :func:`werkzeug.secure_filename`"""
     if isinstance(filename, unicode):
-        filename = normalize('NFKD', filename)
+        filename = normalize('NFKC', filename)
     for sep in os.path.sep, os.path.altsep:
         if sep:
             filename = filename.replace(sep, '_')
