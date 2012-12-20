@@ -3,6 +3,7 @@ import os
 from actions.videos.convert import perform as convert
 from actions.videos.watermark import perform as watermark
 from actions.videos.extract_audio import perform as extract_audio
+from actions.videos.capture_frame import perform as capture_frame
 from tests.utils import fixture_path
 from tests.smoke_tests import SmokeTest
 
@@ -32,7 +33,6 @@ class Test(SmokeTest):
             acodec = convert_targets[format]['acodec']
             for vcodec in convert_targets[format]['vcodec']:
                 for source_name, source_file in self.source_files():
-                    print '.', source_name
                     result, ext = convert(source_file, format, vcodec, acodec, only_try=True)
 
                     target_name = '%s_using_vcodec_%s_acodec_%s.%s' % \
@@ -60,11 +60,24 @@ class Test(SmokeTest):
 
         for codec in ('alac', 'aac', 'vorbis', 'ac3', 'mp3', 'flac'):
             for source_name, source_file in self.source_files():
-                print '.', source_name
                 result, ext = extract_audio(source_file, codec)
 
                 target_name = 'audio_from_%s.%s' % (source_name, ext)
                 target_path = os.path.join(results_dir, target_name)
                 with open(target_path, 'w') as target_file:
                     target_file.write(result.read())
+
+    def test_capture_frame(self):
+        results_dir = os.path.join(TEST_TARGET_DIR, 'captured_frames')
+        os.makedirs(results_dir)
+
+        for format in ('gif', 'bmp', 'gif', 'jpeg', 'png', 'tiff'):
+            for source_name, source_file in self.source_files():
+                result, ext = capture_frame(source_file, format, 1)
+
+                target_name = 'frame_from_%s.%s' % (source_name, ext)
+                target_path = os.path.join(results_dir, target_name)
+                with open(target_path, 'w') as target_file:
+                    r = result.read()
+                    target_file.write(r)
 

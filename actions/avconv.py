@@ -165,7 +165,8 @@ encoders = {
         'vp8': 'libvpx',
         'h263': 'h263p',
         'mpeg1': 'mpeg1video',
-        'mpeg2': 'mpeg2video'
+        'mpeg2': 'mpeg2video',
+        'jpeg': 'mjpeg'
     }
 }
 
@@ -213,7 +214,11 @@ acodec_to_format_map = {
 
 
 def avconv(source_fname, target_fname, options):
-    args = []
+    args = [settings.AVCONV_BIN, '-i', source_fname]
+
+    position = options.get('position')
+    if position:
+        args.extend(['-ss', position ])
 
     audio_options = options.get('audio')
     if audio_options:
@@ -236,10 +241,11 @@ def avconv(source_fname, target_fname, options):
 
     video_options = options.get('video')
     if video_options:
-        codec = video_options['codec']
-        encoder_name = encoders['vcodecs'].get(codec, codec)
-        args.extend(['-vcodec', encoder_name])
-
+        codec = video_options.get('codec')
+        if codec:
+            encoder_name = encoders['vcodecs'].get(codec, codec)
+            args.extend(['-vcodec', encoder_name])
+            args.extend(encoder_args['vcodecs'].get(encoder_name, []))
         fps = video_options.get('fps')
         if fps:
             args.extend(['-r', str(fps)])
@@ -249,19 +255,19 @@ def avconv(source_fname, target_fname, options):
         filters = video_options.get('filters')
         if filters:
             args.extend(['-vf', filters])
-        args.extend(encoder_args['vcodecs'].get(encoder_name, []))
+        frames = video_options.get('frames')
+        if frames:
+            args.extend(['-vframes', frames])
     else:
         args.append('-vn')
 
     format = options['format']
     avconv_format_name = format_aliases.get(format, format)
-    args.extend(['-f', avconv_format_name])
-
-    args = [settings.AVCONV_BIN, '-i', source_fname] + args + ['-y', target_fname]
+    args.extend(['-f', avconv_format_name, '-y', target_fname])
+    
     proc = subprocess.Popen(args, stdin=subprocess.PIPE,
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc.communicate()
-
     return proc.returncode
 
 
@@ -279,6 +285,6 @@ def get_codec_supported_actions(codec_type, codec_name):
     if codec_name in encoders[key]:
         encoder_name = encoders[key][codec_name]
         encoder = avconv_db[key].get(encoder_name)
-        codec['encoding'] = codec['encoding'] or encoder['encoding']
+        codec['encoding'] = codec['encoding'] or (encoder and encoder['encoding'])
 
     return codec

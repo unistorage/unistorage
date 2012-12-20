@@ -61,6 +61,7 @@ class PILWrapper(object):
             self._image = self._image.convert('RGB')
         result = StringIO()
         self._image.save(result, format)
+        result.seek(0)
         return result, format.lower()
 
 

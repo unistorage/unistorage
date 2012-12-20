@@ -2,16 +2,16 @@ from tests.utils import StorageFunctionalTest, WorkerMixin
 
 
 class FunctionalTest(StorageFunctionalTest, WorkerMixin):
-    def test_extract_audio_from_3gp_to_mp3(self):
+    def test_capture_frame_to_jpeg(self):
         original_uri = self.put_file('videos/sample.3gp')
 
         self.check(original_uri, mime='video/3gpp')
-        convert_action_url = '%s?action=extract_audio&to=mp3' % original_uri
+        convert_action_url = '%s?action=capture_frame&to=jpeg&position=1' % original_uri
         r = self.app.get(convert_action_url)
         self.assertEquals(r.json['status'], 'ok')
 
         self.run_worker()
 
-        converted_doc_uri = r.json['resource_uri']
-        r = self.app.get(converted_doc_uri)
-        self.check(converted_doc_uri, mime='audio/mpeg')
+        extracted_frame_uri = r.json['resource_uri']
+        r = self.app.get(extracted_frame_uri)
+        self.check(extracted_frame_uri, mime='image/jpeg')

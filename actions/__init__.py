@@ -35,6 +35,7 @@ actions_to_register = (
     'videos.convert',
     'videos.watermark',
     'videos.extract_audio',
+    'videos.capture_frame',
 
     'audios.convert',
 
