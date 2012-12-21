@@ -43,38 +43,41 @@ def perform_actions(source_id, target_id, target_kwargs):
     :param target_kwargs: словарь с атрибутами, которые появятся у результирующего файла после
     применения операций
     """
-    connection = connections.get_mongodb_connection()
-    db = connection[settings.MONGO_DB_NAME]
-    fs = gridfs.GridFS(db)
+    try:
+        connection = connections.get_mongodb_connection()
+        db = connection[settings.MONGO_DB_NAME]
+        fs = gridfs.GridFS(db)
 
-    source_file = RegularFile.get_from_fs(db, fs, _id=source_id)
-    # Исключительно для проверки существования временного файла с target_id:
-    target_file = PendingFile.get_from_fs(db, fs, _id=target_id)
+        source_file = RegularFile.get_from_fs(db, fs, _id=source_id)
+        # Исключительно для проверки существования временного файла с target_id:
+        target_file = PendingFile.get_from_fs(db, fs, _id=target_id)
 
-    source_file_name, source_file_ext = os.path.splitext(source_file.name)
+        source_file_name, source_file_ext = os.path.splitext(source_file.name)
 
-    curr_file = source_file
-    curr_file_ext = source_file_ext
-    curr_unistorage_type = source_file.unistorage_type
+        curr_file = source_file
+        curr_file_ext = source_file_ext
+        curr_unistorage_type = source_file.unistorage_type
 
-    for action_name, action_args in target_file.actions:
-        action = actions.get_action(curr_unistorage_type, action_name)
-        action_args = resolve_object_ids(fs, action_args)
+        for action_name, action_args in target_file.actions:
+            action = actions.get_action(curr_unistorage_type, action_name)
+            action_args = resolve_object_ids(fs, action_args)
+            
+            try:
+                next_file, next_file_ext = action.perform(curr_file, *action_args)
+            finally:
+                curr_file.close()
+
+            curr_file = next_file
+            curr_file_ext = next_file_ext
+
+            data = get_file_data(curr_file, file_name=source_file_name + curr_file_ext)
+            curr_unistorage_type = data['unistorage_type']
+
+        target_file = curr_file
+        target_file_name = '%s_%s.%s' % (source_file_name, target_kwargs['label'], curr_file_ext)
         
-        try:
-            next_file, next_file_ext = action.perform(curr_file, *action_args)
-        finally:
-            curr_file.close()
-
-        curr_file = next_file
-        curr_file_ext = next_file_ext
-
-        data = get_file_data(curr_file, file_name=source_file_name + curr_file_ext)
-        curr_unistorage_type = data['unistorage_type']
-
-    target_file = curr_file
-    target_file_name = '%s_%s.%s' % (source_file_name, target_kwargs['label'], curr_file_ext)
-    
-    PendingFile.remove_from_fs(db, fs, _id=target_id)
-    RegularFile.put_to_fs(db, fs, target_file_name, target_file, _id=target_id, **target_kwargs)
-    target_file.close()
+        PendingFile.remove_from_fs(db, fs, _id=target_id)
+        RegularFile.put_to_fs(db, fs, target_file_name, target_file, _id=target_id, **target_kwargs)
+        target_file.close()
+    except Exception as e:
+        raise Exception(str(e))
