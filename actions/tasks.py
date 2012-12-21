@@ -87,7 +87,7 @@ def perform_actions(source_id, target_id, target_kwargs):
                 'extra_data': str({
                     'source_file.name': source_file.name,
                     'curr_unistorage_type': curr_unistorage_type,
-                    'target_file.actions': target_file.action,
+                    'target_file.actions': target_file.actions,
                     'action_name': action_name,
                     'action_args': action_args
                 })
