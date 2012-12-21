@@ -29,6 +29,7 @@ LOG_TEMPLATE = """
     Action arguments: %(action_args)s
     Exception type: %(exception_type)s
     Exception message: %(exception_msg)s
+    Extra data: %(extra_data)s
 """
 
 
@@ -82,7 +83,14 @@ def perform_actions(source_id, target_id, target_kwargs):
                 'action': action,
                 'action_args': action_args,
                 'exception_type': type(e),
-                'exception_msg': traceback.format_exc()
+                'exception_msg': traceback.format_exc(),
+                'extra_data': str({
+                    'source_file.name': source_file.name,
+                    'curr_unistorage_type': curr_unistorage_type,
+                    'target_file.actions': target_file.action,
+                    'action_name': action_name,
+                    'action_args': action_args
+                })
             })
             return
         finally:
