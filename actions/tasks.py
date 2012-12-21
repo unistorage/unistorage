@@ -5,6 +5,7 @@
 """
 import logging
 import os.path
+import traceback
 
 import gridfs
 from celery import Celery
@@ -81,7 +82,7 @@ def perform_actions(source_id, target_id, target_kwargs):
                 'action': action,
                 'action_args': action_args,
                 'exception_type': type(e),
-                'exception_msg': e
+                'exception_msg': traceback.format_exc()
             })
             return
         finally:
