@@ -3,7 +3,6 @@
 Код, исполняемый воркерами
 ==========================
 """
-import logging
 import os.path
 import traceback
 
@@ -19,18 +18,6 @@ from file_utils import get_file_data
 
 
 celery = Celery('tasks', broker=settings.CELERY_BROKER)
-
-
-LOG_TEMPLATE = """
-    Action failed!
-    Source file id: %(source_id)s
-    Target file id: %(target_id)s
-    Action: %(action)s
-    Action arguments: %(action_args)s
-    Exception type: %(exception_type)s
-    Exception message: %(exception_msg)s
-    Extra data: %(extra_data)s
-"""
 
 
 def resolve_object_ids(fs, args):
@@ -76,23 +63,6 @@ def perform_actions(source_id, target_id, target_kwargs):
         
         try:
             next_file, next_file_ext = action.perform(curr_file, *action_args)
-        except Exception as e:
-            logging.getLogger('action_error_logger').error(LOG_TEMPLATE % {
-                'source_id': source_id,
-                'target_id': target_id,
-                'action': action,
-                'action_args': action_args,
-                'exception_type': type(e),
-                'exception_msg': traceback.format_exc(),
-                'extra_data': str({
-                    'source_file.name': source_file.name,
-                    'curr_unistorage_type': curr_unistorage_type,
-                    'target_file.actions': target_file.actions,
-                    'action_name': action_name,
-                    'action_args': action_args
-                })
-            })
-            return
         finally:
             curr_file.close()
 
