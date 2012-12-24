@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import tempfile
 
@@ -48,7 +49,7 @@ def validate_and_get_args(args, source_file=None):
 
     all_supported_vcodecs = ('theora', 'h264', 'vp8', 'divx', 'h263', 'flv', 'mpeg1', 'mpeg2')
     format_supported_vcodecs = vcodec_restrictions.get(format, all_supported_vcodecs)
-    all_supported_acodecs = ('vorbis', 'mp3')
+    all_supported_acodecs = ('vorbis', 'mp3', 'aac')
     format_supported_acodecs = acodec_restrictions.get(format, all_supported_acodecs)
     
     if vcodec is None:
@@ -97,6 +98,7 @@ def perform(source_file, format, vcodec, acodec, only_try=False):
                 'codec': vcodec
             }
         }
+        # TODO Можем ли мы сохранять битрейт?
         video_bitrate = data.get('video', {}).get('bitrate')
         if video_bitrate:
             options['video']['bitrate'] = video_bitrate
