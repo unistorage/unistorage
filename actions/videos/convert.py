@@ -86,6 +86,7 @@ def perform(source_file, format, vcodec, acodec, only_try=False):
     tmp_target_file.close()
     
     try:
+        data = avprobe(tmp_source_file.name)
         options = {
             'format': format,
             'audio': {
@@ -96,11 +97,13 @@ def perform(source_file, format, vcodec, acodec, only_try=False):
                 'codec': vcodec
             }
         }
+        video_bitrate = data.get('video', {}).get('bitrate')
+        if video_bitrate:
+            options['video']['bitrate'] = video_bitrate
         
         if vcodec in ('mpeg1', 'mpeg2', 'divx'):
             options['video']['fps'] = 25
 
-        data = avprobe(tmp_source_file.name)
         channels = data.get('audio', {}).get('channels')
         if acodec == 'mp3' and channels > 2:
             channels = 2
