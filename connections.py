@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-from pymongo import Connection, ReplicaSetConnection
+from pymongo import MongoClient, MongoReplicaSetClient
 
 import settings
 
 
 def get_mongodb_connection():
     if settings.MONGO_REPLICATION_ON:
-        return ReplicaSetConnection(
+        return MongoReplicaSetClient(
             settings.MONGO_REPLICA_SET_URI,
-            replicaset=settings.MONGO_REPLICA_SET_NAME, safe=True, w=2)
+            replicaset=settings.MONGO_REPLICA_SET_NAME, w=2)
     else:
-        return Connection(settings.MONGO_HOST, settings.MONGO_PORT, safe=True)
+        return MongoClient(settings.MONGO_HOST, settings.MONGO_PORT)
 
 
 class MongoDBConnection(object):
