@@ -73,6 +73,17 @@ def get_file_data(file, file_name=None):
             inaccurate_extra = avprobe(file.stream.name)
         else:
             inaccurate_extra = get_avprobe_result(file_content, file_name=file_name)
+    elif inaccurate_unistorage_type in ('image'):
+        try:
+            image_format, image_size = identify(file, '%m %wx%h').split()
+            image_width, image_height = map(int, image_size.split('x'))
+            inaccurate_extra = {
+                'format': image_format.lower(),
+                'width': image_width,
+                'height': image_height
+            }
+        except:
+            pass
 
     unistorage_type = get_unistorage_type(content_type, extra=data.get('extra'))
     extra = {}
@@ -82,13 +93,8 @@ def get_file_data(file, file_name=None):
     elif unistorage_type == 'video':
         extra = inaccurate_extra
     elif unistorage_type == 'image':
-        image_format, image_size = identify(file, '%m %wx%h').split()
-        image_width, image_height = map(int, image_size.split('x'))
-        extra = {
-            'format': image_format.lower(),
-            'width': image_width,
-            'height': image_height
-        }
+        extra = inaccurate_extra
+        
 
     data.update({
         'extra': extra,

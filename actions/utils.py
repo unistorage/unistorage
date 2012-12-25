@@ -14,7 +14,7 @@ def get_unistorage_type(content_type, extra=None):
     выясняет "семейство типов", к которому принадлежит файл: 'image', 'video', 'audio' или 'doc'.
     Если параметр extra не указан, результат считается предположительным.
     """
-    if content_type.startswith('image'):
+    if extra and content_type.startswith('image'):
         return 'image'
 
     if content_type == 'application/ogg':
