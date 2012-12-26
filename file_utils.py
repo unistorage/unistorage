@@ -73,7 +73,7 @@ def get_file_data(file, file_name=None):
             inaccurate_extra = avprobe(file.stream.name)
         else:
             inaccurate_extra = get_avprobe_result(file_content, file_name=file_name)
-    elif inaccurate_unistorage_type in ('image'):
+    elif inaccurate_unistorage_type == 'image':
         try:
             image_format, image_size = identify(file, '%m %wx%h').split()
             image_width, image_height = map(int, image_size.split('x'))
