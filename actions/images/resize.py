@@ -1,33 +1,10 @@
-from actions.utils import ValidationError
 from actions.common import validate_presence
+from actions.common.resize_validation import validate_and_get_args
 
 
 name = 'resize'
 applicable_for = 'image'
 result_unistorage_type = 'image'
-
-
-def validate_and_get_args(args, source_file=None):
-    validate_presence(args, 'mode')
-    mode = args['mode']
-    
-    if mode not in ('keep', 'crop', 'resize'):
-        raise ValidationError('Unknown `mode`. Available options: "keep", "crop" and "resize".')
-    
-    w = args.get('w', None)
-    h = args.get('h', None)
-    try:
-        w = w and int(w) or None
-        h = h and int(h) or None
-    except ValueError:
-        raise ValidationError('`w` and `h` must be integer values.')
-
-    if mode in ('crop', 'resize') and not (w and h):
-        raise ValidationError('Both `w` and `h` must be specified.')
-    elif not (w or h):
-        raise ValidationError('Either `w` or `h` must be specified.')
-    
-    return [mode, w, h]
 
 
 def perform(source_file, mode, target_width, target_height):

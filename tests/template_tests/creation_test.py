@@ -24,7 +24,7 @@ class FunctionalTest(StorageFunctionalTest):
         self.assertEquals(r.json['status'], 'error')
 
         r = self.app.post('/template/', {
-            'action[]': ['action=convert&to=webm', 'action=resize&mode=keep&w=100&h=100'],
+            'action[]': ['action=convert&to=webm', 'action=rotate&angle=90'],
             'applicable_for': 'video'
         }, status='*')
         self.assertEquals(r.json['status'], 'error')
