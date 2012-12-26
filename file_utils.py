@@ -52,19 +52,7 @@ def get_avprobe_result(file_content, file_name=None):
         return avprobe(tmp_file.name)
 
 
-def get_file_data(file, file_name=None):
-    file.seek(0)
-    file_content = file.read()
-    file.seek(0)
-    
-    content_type = m.from_buffer(file_content)
-    file.seek(0)
-    data = {
-        'filename': secure_filename(file_name),
-        'content_type': content_type,
-        'crc32': binascii.crc32(file_content)
-    }
-
+def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
     inaccurate_unistorage_type = get_unistorage_type(content_type)
     inaccurate_extra = {}
     if inaccurate_unistorage_type in ('audio', 'video'):
@@ -85,7 +73,7 @@ def get_file_data(file, file_name=None):
         except:
             pass
 
-    unistorage_type = get_unistorage_type(content_type, extra=data.get('extra'))
+    unistorage_type = get_unistorage_type(content_type, extra=inaccurate_extra)
     extra = {}
     if unistorage_type == 'audio':
         extra.update(inaccurate_extra['audio'])
@@ -94,10 +82,25 @@ def get_file_data(file, file_name=None):
         extra = inaccurate_extra
     elif unistorage_type == 'image':
         extra = inaccurate_extra
-        
 
-    data.update({
+    return {
+        'unistorage_type': unistorage_type,
         'extra': extra,
-        'unistorage_type': unistorage_type
-    })
+    }
+
+
+def get_file_data(file, file_name=None):
+    file.seek(0)
+    file_content = file.read()
+    file.seek(0)
+    
+    content_type = m.from_buffer(file_content)
+    file.seek(0)
+
+    data = {
+        'filename': secure_filename(file_name),
+        'content_type': content_type,
+        'crc32': binascii.crc32(file_content)
+    }
+    data.update(get_unistorage_type_and_extra(file, file_name, file_content, content_type))  # XXX!
     return data

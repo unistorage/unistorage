@@ -11,19 +11,28 @@ DOCUMENT_TYPES = (
 
 def get_unistorage_type(content_type, extra=None):
     """По `content_type` файла и, возможно, дополнительной информации (поле `extra` в БД)
-    выясняет "семейство типов", к которому принадлежит файл: 'image', 'video', 'audio' или 'doc'.
-    Если параметр extra не указан, результат считается предположительным.
+    выясняет :term:`unistorage_type`, к которому принадлежит файл. Если параметр `extra` не
+    указан, результат считается предположительным.
     """
-    if extra and content_type.startswith('image'):
-        return 'image'
+    if content_type.startswith('image'):
+        if extra is None:
+            return 'image'
+        else:
+            if 'width' in extra and 'height' in extra:
+                return 'image'
+            else:
+                return 'unknown'
 
     if content_type == 'application/ogg':
         # application/ogg может быть как видео, так и аудио. Если указана дополнительная
-        # информация -- выясняем, какие потоки есть в наличии:
-        if extra and extra.get('audio') and not extra.get('video'):
-            return 'audio'
-        else:
+        # информация -- выясняем, какие потоки есть в наличии.
+        if extra is None:
             return 'video'
+        else:
+            if not extra.get('video'):
+                return 'audio'
+            else:
+                return 'video'
 
     if content_type.startswith('video'):
         return 'video'
