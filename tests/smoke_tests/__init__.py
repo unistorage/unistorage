@@ -14,6 +14,8 @@ class SmokeTest(unittest.TestCase):
     def source_files(self):
         for source_name in os.listdir(self.source_dir):
             source_path = os.path.join(self.source_dir, source_name)
+            if not os.path.isfile(source_path):
+                continue
             
             with open(source_path) as source_file:
                 yield source_name, source_file
