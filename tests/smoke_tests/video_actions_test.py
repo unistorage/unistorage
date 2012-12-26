@@ -18,78 +18,90 @@ class Test(SmokeTest):
     def setUpClass(cls):
         super(Test, cls).setUpClass(TEST_SOURCE_DIR, TEST_TARGET_DIR)
 
-    #def test_convert(self):
-        #results_dir = os.path.join(TEST_TARGET_DIR, 'convert')
-        #os.makedirs(results_dir)
+    def test_convert(self):
+        results_dir = os.path.join(TEST_TARGET_DIR, 'convert')
+        os.makedirs(results_dir)
 
-        #convert_targets = {
-            #'ogg': {'vcodec': ['theora'], 'acodec': ['vorbis']},
-            #'webm': {'vcodec': ['vp8'], 'acodec': ['vorbis']},
-            #'flv': {'vcodec': ['h264', 'flv'], 'acodec': ['mp3', 'aac']},
-            #'mp4': {'vcodec': ['h264', 'divx'], 'acodec': ['mp3', 'aac']},
-            #'mkv': {'vcodec': ['h263', 'mpeg1', 'mpeg2'], 'acodec': ['mp3', 'aac']},
-        #}
+        convert_targets = {
+            'ogg': {'vcodec': ['theora'], 'acodec': ['vorbis']},
+            'webm': {'vcodec': ['vp8'], 'acodec': ['vorbis']},
+            'flv': {'vcodec': ['h264', 'flv'], 'acodec': ['mp3', 'aac']},
+            'mp4': {'vcodec': ['h264', 'divx'], 'acodec': ['mp3', 'aac']},
+            'mkv': {'vcodec': ['h263', 'mpeg1', 'mpeg2'], 'acodec': ['mp3', 'aac']},
+        }
 
-        #for format in convert_targets:
-            #for acodec in convert_targets[format]['acodec']:
-                #for vcodec in convert_targets[format]['vcodec']:
-                    #for source_name, source_file in self.source_files():
-                        #result, ext = convert(source_file, format, vcodec, acodec, only_try=True)
+        for format in convert_targets:
+            for acodec in convert_targets[format]['acodec']:
+                for vcodec in convert_targets[format]['vcodec']:
+                    for source_name, source_file in self.source_files():
+                        result, ext = convert(source_file, format, vcodec, acodec, only_try=True)
 
-                        #target_name = '%s_using_vcodec_%s_acodec_%s.%s' % \
-                            #(source_name, vcodec, acodec, ext)
-                        #target_path = os.path.join(results_dir, target_name)
-                        #with open(target_path, 'w') as target_file:
-                            #target_file.write(result.read())
+                        target_name = '%s_using_vcodec_%s_acodec_%s.%s' % \
+                            (source_name, vcodec, acodec, ext)
+                        target_path = os.path.join(results_dir, target_name)
+                        with open(target_path, 'w') as target_file:
+                            target_file.write(result.read())
 
-    def test_resize(self):
-        results_dir = os.path.join(TEST_TARGET_DIR, 'resize')
+    def test_resize_crop(self):
+        results_dir = os.path.join(TEST_TARGET_DIR, 'resize_crop')
         os.makedirs(results_dir)
 
         for source_name, source_file in self.source_files():
-            result, ext = resize(source_file, 'crop', 100, 100)
+            result, ext = resize(source_file, 'crop', 30, 100)
 
-            target_name = '%s_crop_100_100.%s' % (source_name, ext)
+            target_name = '%s_crop_30_100.%s' % (source_name, ext)
             target_path = os.path.join(results_dir, target_name)
             with open(target_path, 'w') as target_file:
                 target_file.write(result.read())
 
-    #def test_watermark(self):
-        #results_dir = os.path.join(TEST_TARGET_DIR, 'watermark')
-        #os.makedirs(results_dir)
+    def test_resize_keep(self):
+        results_dir = os.path.join(TEST_TARGET_DIR, 'resize_keep')
+        os.makedirs(results_dir)
 
-        #for source_name, source_file in self.source_files():
-            #watermark_file = open(os.path.join(fixture_path('watermarks'), 'watermark.png'))
-            #result, ext = watermark(source_file, watermark_file, 100, 100, 10, 10, 'ne')
+        for source_name, source_file in self.source_files():
+            result, ext = resize(source_file, 'keep', 50, 50)
 
-            #target_name = '%s_w_watermark.%s' % (source_name, ext)
-            #target_path = os.path.join(results_dir, target_name)
-            #with open(target_path, 'w') as target_file:
-                #target_file.write(result.read())
+            target_name = '%s_keep_50_50.%s' % (source_name, ext)
+            target_path = os.path.join(results_dir, target_name)
+            with open(target_path, 'w') as target_file:
+                target_file.write(result.read())
 
-    #def test_extract_audio(self):
-        #results_dir = os.path.join(TEST_TARGET_DIR, 'extracted_audios')
-        #os.makedirs(results_dir)
+    def test_watermark(self):
+        results_dir = os.path.join(TEST_TARGET_DIR, 'watermark')
+        os.makedirs(results_dir)
 
-        #for codec in ('alac', 'aac', 'vorbis', 'ac3', 'mp3', 'flac'):
-            #for source_name, source_file in self.source_files():
-                #result, ext = extract_audio(source_file, codec)
+        for source_name, source_file in self.source_files():
+            watermark_file = open(os.path.join(fixture_path('watermarks'), 'watermark.png'))
+            result, ext = watermark(source_file, watermark_file, 100, 100, 10, 10, 'ne')
 
-                #target_name = 'audio_from_%s.%s' % (source_name, ext)
-                #target_path = os.path.join(results_dir, target_name)
-                #with open(target_path, 'w') as target_file:
-                    #target_file.write(result.read())
+            target_name = '%s_w_watermark.%s' % (source_name, ext)
+            target_path = os.path.join(results_dir, target_name)
+            with open(target_path, 'w') as target_file:
+                target_file.write(result.read())
 
-    #def test_capture_frame(self):
-        #results_dir = os.path.join(TEST_TARGET_DIR, 'captured_frames')
-        #os.makedirs(results_dir)
+    def test_extract_audio(self):
+        results_dir = os.path.join(TEST_TARGET_DIR, 'extracted_audios')
+        os.makedirs(results_dir)
 
-        #for format in ('gif', 'bmp', 'gif', 'jpeg', 'png', 'tiff'):
-            #for source_name, source_file in self.source_files():
-                #result, ext = capture_frame(source_file, format, 1)
+        for codec in ('alac', 'aac', 'vorbis', 'ac3', 'mp3', 'flac'):
+            for source_name, source_file in self.source_files():
+                result, ext = extract_audio(source_file, codec)
 
-                #target_name = 'frame_from_%s.%s' % (source_name, ext)
-                #target_path = os.path.join(results_dir, target_name)
-                #with open(target_path, 'w') as target_file:
-                    #r = result.read()
-                    #target_file.write(r)
+                target_name = 'audio_from_%s.%s' % (source_name, ext)
+                target_path = os.path.join(results_dir, target_name)
+                with open(target_path, 'w') as target_file:
+                    target_file.write(result.read())
+
+    def test_capture_frame(self):
+        results_dir = os.path.join(TEST_TARGET_DIR, 'captured_frames')
+        os.makedirs(results_dir)
+
+        for format in ('gif', 'bmp', 'gif', 'jpeg', 'png', 'tiff'):
+            for source_name, source_file in self.source_files():
+                result, ext = capture_frame(source_file, format, 1)
+
+                target_name = 'frame_from_%s.%s' % (source_name, ext)
+                target_path = os.path.join(results_dir, target_name)
+                with open(target_path, 'w') as target_file:
+                    r = result.read()
+                    target_file.write(r)
