@@ -133,7 +133,7 @@ def apply_hacks(result, stdout_data, stderr_data):
     video = result['video']
     audio = result['audio']
 
-    if video['codec'] == 'vp6f':
+    if video and video['codec'] == 'vp6f':
         # 1. Битрейт и длительность находятся в секции format
         format_data = stdout_data['format']
         bitrate = format_data.get('bit_rate')
