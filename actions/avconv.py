@@ -265,7 +265,6 @@ def avconv(source_fname, target_fname, options):
     format = options['format']
     avconv_format_name = format_aliases.get(format, format)
     args.extend(['-f', avconv_format_name, '-y', target_fname])
-    print ' '.join(args)
     
     proc = subprocess.Popen(args, stdin=subprocess.PIPE,
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
