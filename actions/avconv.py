@@ -6,7 +6,6 @@ import subprocess
 import cPickle as pickle
 from StringIO import StringIO
 
-
 import settings
 
 
@@ -50,7 +49,7 @@ def extract_video_data(stream, stderr_data):
     :param stderr_data: словарь, содержащие данные из stderr-а ffmpeg
     """
     def parse_avg_frame_rate(val):
-        """Парсит fps в ffmpeg-овском формате. Возвращает fps в виде float."""
+        """Парсит FPS в ffmpeg-овском формате. Возвращает в виде float."""
         if '/' in val:
             n, d = map(parse_float, val.split('/'))
             return n and d and n / d
@@ -115,7 +114,51 @@ def parse_stderr(stderr):
         stream_type = match.group('stream_type').lower()
         key = '%s_bitrate' % stream_type
         data[key] = '%dk' % int(match.group('bitrate'))
+
+    regexp = r'Stream.*Video:.*?\s(?P<size>\d+x\d+)(?:,|\n)'
+    match = re.search(regexp, stderr)
+    if match:
+        data['video_size'] = match.group('size')
     return data
+
+
+def get_extension(fname):
+    extension = None
+    if '.' in fname:
+        _, extension = os.path.splitext(fname)
+    return extension and extension.lstrip('.')
+
+
+def apply_hacks(result, stdout_data, stderr_data):
+    video = result['video']
+    audio = result['audio']
+
+    if video['codec'] == 'vp6f':
+        # 1. Битрейт и длительность находятся в секции format
+        format_data = stdout_data['format']
+        bitrate = format_data.get('bit_rate')
+        if bitrate and not video['bitrate']:
+            result['video']['bitrate'] = '%ik' % (parse_float(bitrate) / 1000)
+
+        duration = format_data.get('duration')
+        if duration and not video['duration']:
+            result['video']['duration'] = parse_float(duration)
+
+        # 2. Верные размеры видео выводятся в stderr
+        width, height = map(int, stderr_data['video_size'].split('x'))
+        result['video'].update({
+            'width': width,
+            'height': height
+        })
+
+        # 3. Аудио не имеет длительности
+        if not audio['duration']:
+            audio['duration'] = result['video']['duration']
+
+        # 4. FPS и вовсе нигде не указан
+        # XXX
+
+    return result
 
 
 def avprobe(fname):
@@ -129,24 +172,24 @@ def avprobe(fname):
     stderr_data = parse_stderr(stderr)
 
     formats = stdout_data['format']['format_name'].split(',')
-    extension = None
-    if '.' in fname:
-        extension = os.path.splitext(fname)[1][1:]
+    extension = get_extension(fname)
     format = extension in formats and extension or formats[0]
 
     video = None
     audio = None
     for stream in stdout_data['streams']:
-        if stream['codec_type'] == 'video' and not video:
+        if not video and stream['codec_type'] == 'video':
             video = extract_video_data(stream, stderr_data)
-        elif stream['codec_type'] == 'audio' and not audio:
+        if not audio and stream['codec_type'] == 'audio':
             audio = extract_audio_data(stream, stderr_data)
 
-    return {
+    result = {
         'video': video,
         'audio': audio,
         'format': format
     }
+    result = apply_hacks(result, stdout_data, stderr_data)
+    return result
 
 
 """
