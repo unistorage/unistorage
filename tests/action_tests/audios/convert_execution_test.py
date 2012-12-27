@@ -14,4 +14,4 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
 
         converted_doc_url = r.json['resource_uri']
         r = self.app.get(converted_doc_url)
-        self.check(converted_doc_url, mime='application/ogg')
+        self.check(converted_doc_url, mime='audio/ogg')
