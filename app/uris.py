@@ -1,4 +1,4 @@
-from flask import current_app
+from flask import current_app, url_for
 
 
 def parse_resource_uri(uri):
@@ -23,3 +23,7 @@ def parse_template_uri(uri):
     if endpoint != 'storage.template_view' or '_id' not in args:
         raise ValueError('%s is not a template URI.' % uri)
     return args['_id']
+
+
+def get_resource_uri_for(resource_name, resource_id):
+    return url_for('.%s_view' % resource_name, _id=resource_id)

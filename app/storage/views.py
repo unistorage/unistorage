@@ -5,11 +5,9 @@ Storage views
 """
 import functools
 import time
-import random
-from urlparse import urljoin
 from datetime import datetime
 
-from flask import request, abort, url_for
+from flask import request, abort
 
 import settings
 from actions import templates
@@ -18,7 +16,7 @@ from actions.handlers import apply_template, apply_action
 from utils import ok, error, jsonify, methods_required
 from . import bp
 from app import db, fs
-from app.uris import parse_file_uri
+from app.uris import parse_file_uri, get_resource_uri_for
 from app.models import File, RegularFile, PendingFile, Template, ZipCollection
 from app.perms import AccessPermission
 
@@ -52,7 +50,44 @@ def file_create():
 
     file_id = RegularFile.put_to_fs(db, fs, file.filename, file, **kwargs)
     return ok({
-        'resource_uri': url_for('.file_view', _id=file_id)
+        'resource_uri': get_resource_uri_for('file', file_id)
+    })
+
+
+def get_pending_file(user, file):
+    """Возвращает JSON-ответ с информацией о `file`.
+    
+    :param file: :term:`временный файл`
+    :type file: :class:`app.models.File`
+    """
+    if file.can_be_served_by_unistore_nginx_serve():
+        return jsonify({
+            'status': 'just_uri',
+            'ttl': file.ttl,
+            'data': {
+                'url': file.get_gridfs_serve_url(db, through_nginx_serve=True)
+            }
+        })
+    else:
+        return jsonify({'status': 'wait', 'ttl': file.ttl})
+
+
+def get_regular_file(user, file):
+    """Возвращает JSON-ответ с информацией о `file`.
+    
+    :param file: :term:`обычный файл`
+    :type file: :class:`app.models.File`
+    """
+    return ok({
+        'data': {
+            'name': file.filename,
+            'size': file.length,
+            'mimetype': file.content_type,
+            'unistorage_type': file.unistorage_type,
+            'url': file.get_gridfs_serve_url(db),
+            'extra': file.get('extra', {})
+        },
+        'ttl': settings.TTL
     })
 
 
@@ -88,7 +123,7 @@ def file_view(_id=None):
         if apply_:
             target_id = apply_(source_file, request.args.to_dict())
             return ok({
-                'resource_uri': url_for('.file_view', _id=target_id)
+                'resource_uri': get_resource_uri_for('file', target_id)
             })
     except ValidationError as e:
         return error({'msg': str(e)}), 400
@@ -117,7 +152,7 @@ def template_create():
     })
     template_id = Template(template_data).save(db)
     return ok({
-        'resource_uri': url_for('.template_view', _id=template_id)
+        'resource_uri': get_resource_uri_for('template', template_id)
     })
 
 
@@ -172,7 +207,7 @@ def zip_create(_id=None):
     })
     zip_id = zip_collection.save(db)
     return ok({
-        'resource_uri': url_for('.zip_view', _id=zip_id)
+        'resource_uri': get_resource_uri_for('zip', zip_id)
     })
 
 
@@ -180,7 +215,7 @@ def zip_create(_id=None):
 @methods_required(['GET'])
 @login_required
 def zip_view(_id):
-    """Вьюшка, отдающая информацию о zip collection"""
+    """Вьюшка, отдающая информацию о ZIP-коллекции."""
     zip_collection = ZipCollection.get_one(db, {'_id': _id})
     if not zip_collection:
         return error({'msg': 'Zip collection wasn\'t found'}), 404
@@ -198,86 +233,7 @@ def zip_view(_id):
     return ok({
         'ttl': ttl,
         'data': {
-            'url': get_gridfs_serve_url(request.user, zip_collection, through_nginx_serve=True),
+            'url': zip_collection.get_gridfs_serve_url(db, through_nginx_serve=True),
             'filename': zip_collection.filename
         }
-    })
-
-
-def get_gridfs_serve_url(user, file, through_nginx_serve=False):
-    """Возвращает путь к gridfs-serve, либо к unistore-nginx-serve (в случае, если
-    through_nginx_serve = True).
-    """
-    base_url = user.domains and random.choice(user.domains) or settings.GRIDFS_SERVE_URL
-
-    if not base_url.endswith('/'):
-        base_url += '/'
-
-    if through_nginx_serve:
-        base_url = urljoin(base_url, '/uns/')
-
-    file_id = str(file.get_id())
-    return urljoin(base_url, file_id)
-
-
-def can_unistore_nginx_serve(file):
-    """Возвращает True, если `file` может быть отдан с помощью unistore-nginx-serve (например, в
-    случае, если `file` -- картинка, для которой заказан ресайз).
-
-    :param file: :term:`временный файл`
-    :type file: :class:`app.models.File`
-    """
-    original_content_type = file.original_content_type
-    actions = file.actions
-
-    supported_types = ('image/gif', 'image/png', 'image/jpeg')
-    if not original_content_type in supported_types or len(actions) > 1:
-        return False
-    
-    action_name, action_args = actions[0]
-    if action_name == 'resize':
-        mode, w, h = action_args
-        if mode in ('keep', 'crop'):
-            return True
-    elif action_name == 'rotate':
-        return True
-
-    return False
-
-
-def get_pending_file(user, file):
-    """Возвращает JSON-строку с информацией о `file`.
-    
-    :param file: :term:`временный файл`
-    :type file: :class:`app.models.File`
-    """
-    ttl = file.ttl
-    if can_unistore_nginx_serve(file):
-        return jsonify({
-            'status': 'just_uri',
-            'ttl': ttl,
-            'data': {
-                'url': get_gridfs_serve_url(user, file, through_nginx_serve=True)
-            }
-        })
-    else:
-        return jsonify({'status': 'wait', 'ttl': ttl})
-
-
-def get_regular_file(user, file):
-    """Возвращает JSON-строку с информацией о `file`.
-    
-    :param file: :term:`обычный файл`
-    :type file: :class:`app.models.File`
-    """
-    return ok({
-        'data': {
-            'name': file.filename,
-            'size': file.length,
-            'mimetype': file.content_type,
-            'unistorage_type': file.unistorage_type,
-            'url': get_gridfs_serve_url(user, file),
-            'extra': file.get('extra', {})
-        },
-        'ttl': settings.TTL
     })
