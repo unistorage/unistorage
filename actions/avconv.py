@@ -133,7 +133,10 @@ def apply_hacks(result, stdout_data, stderr_data):
     video = result['video']
     audio = result['audio']
 
-    if video and video['codec'] == 'vp6f':
+    if not video:
+        return result
+    
+    if video['codec'] == 'vp6f':
         # 1. Битрейт и длительность находятся в секции format
         format_data = stdout_data['format']
         bitrate = format_data.get('bit_rate')
@@ -157,6 +160,11 @@ def apply_hacks(result, stdout_data, stderr_data):
 
         # 4. FPS и вовсе нигде не указан
         # XXX
+    elif video['codec'] == 'flv':
+        format_data = stdout_data['format']
+        duration = format_data.get('duration')
+        if duration and not video['duration']:
+            result['video']['duration'] = parse_float(duration) 
 
     return result
 
