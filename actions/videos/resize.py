@@ -27,7 +27,7 @@ def to_even(x):
 def perform(source_file, mode, target_width, target_height):
     source_file_ext = ''
     if hasattr(source_file, 'filename'):
-        source_file_name, source_file_ext = os.path.splitext(source_file.filename)  # XXX?
+        source_file_name, source_file_ext = os.path.splitext(source_file.filename)
 
     file_content = source_file.read()
     with tempfile.NamedTemporaryFile(suffix=source_file_ext) as source_tmp:
@@ -37,7 +37,6 @@ def perform(source_file, mode, target_width, target_height):
         with tempfile.NamedTemporaryFile(mode='rb') as target_tmp:
             data = avprobe(source_tmp.name)
             
-            # TODO Разобраться с upscale
             if mode == 'resize':
                 vfilters = 'scale=%i:%i' % (to_even(target_width), to_even(target_height))
             else:
@@ -52,11 +51,9 @@ def perform(source_file, mode, target_width, target_height):
                 width = to_int(source_width * factor)
                 height = to_int(source_height * factor)
 
-                if factor < 1:
-                    vfilters = 'scale=%i:%i' % (to_even(width), to_even(height))
-
-                    if mode == 'crop':
-                        vfilters += ',crop=%i:%i' % (to_even(target_width), to_even(target_height))
+                vfilters = 'scale=%i:%i' % (to_even(width), to_even(height))
+                if mode == 'crop':
+                    vfilters += ',crop=%i:%i' % (to_even(target_width), to_even(target_height))
 
             data['video']['filters'] = vfilters
             avconv(source_tmp.name, target_tmp.name, data)

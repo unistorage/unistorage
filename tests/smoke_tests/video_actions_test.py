@@ -54,12 +54,20 @@ class Test(SmokeTest):
             with open(target_path, 'w') as target_file:
                 target_file.write(result.read())
 
+        for source_name, source_file in self.source_files():
+            result, ext = resize(source_file, 'crop', 300, 1000)
+
+            target_name = '%s_crop_300_1000_upscale.%s' % (source_name, ext)
+            target_path = os.path.join(results_dir, target_name)
+            with open(target_path, 'w') as target_file:
+                target_file.write(result.read())
+
     def test_resize_keep(self):
         results_dir = os.path.join(TEST_TARGET_DIR, 'resize_keep')
         os.makedirs(results_dir)
 
         for source_name, source_file in self.source_files():
-            result, ext = resize(source_file, 'keep', 50, 50)
+            result, ext = resize(source_file, 'keep', 300, 1000)
 
             target_name = '%s_keep_50_50.%s' % (source_name, ext)
             target_path = os.path.join(results_dir, target_name)
