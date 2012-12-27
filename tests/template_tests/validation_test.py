@@ -45,11 +45,11 @@ class ValidationTest(GridFSMixin, ContextMixin, unittest.TestCase):
         validate = actions.templates.validate_and_get_template
         # First action (`convert` with `to` argument) applicable for both images and videos.
         # Since it preserves type family (converts video to video), second action must fail.
-        with self.expect_validation_error('Error on step 2: action resize is '
+        with self.expect_validation_error('Error on step 2: action rotate is '
                                           'not supported for video.'):
             validate({
                 'applicable_for': 'video',
-                'actions': ['action=convert&to=webm', 'action=resize&mode=keep&w=100&h=100'],
+                'actions': ['action=convert&to=webm', 'action=rotate&angle=90'],
             })
 
     def test_apply_template_uri_validation(self):

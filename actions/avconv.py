@@ -180,6 +180,7 @@ encoder_args = {
     },
     'vcodecs': {
         'h263p': ['-threads', '1'],
+        'libtheora': ['-qscale', '6'],
         'libx264': ['-flags', '+loop', '-cmp', '+chroma', '-partitions',
                     '+parti4x4+partp8x8+partb8x8', '-subq', '5', '-trellis', '1', '-refs', '1',
                     '-coder', '0', '-me_range', '16', '-g', '300', '-keyint_min', '25',

@@ -15,24 +15,25 @@ def register_action(action):
     actions_table[action.applicable_for][action.name] = action
 
 
-def get_action(type_family, name):
-    """Возвращает операцию с именем `name`, применимую к семейству типов `type_family`."""
-    applicable_actions = actions_table.get(type_family, {})
+def get_action(unistorage_type, name):
+    """Возвращает операцию с именем `name`, применимую к `unistorage_type`."""
+    applicable_actions = actions_table.get(unistorage_type, {})
     return applicable_actions.get(name)
 
 
-class ActionException(Exception):
+class ActionException(Exception):  # XXX
     pass
 
 
 actions_to_register = (
     'images.convert',
     'images.resize',
-    'images.grayscale',
     'images.watermark',
+    'images.grayscale',
     'images.rotate',
 
     'videos.convert',
+    'videos.resize',
     'videos.watermark',
     'videos.extract_audio',
     'videos.capture_frame',

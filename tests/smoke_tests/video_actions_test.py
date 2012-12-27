@@ -1,6 +1,7 @@
 import os
 
 from actions.videos.convert import perform as convert
+from actions.videos.resize import perform as resize
 from actions.videos.watermark import perform as watermark
 from actions.videos.extract_audio import perform as extract_audio
 from actions.videos.capture_frame import perform as capture_frame
@@ -40,6 +41,38 @@ class Test(SmokeTest):
                         target_path = os.path.join(results_dir, target_name)
                         with open(target_path, 'w') as target_file:
                             target_file.write(result.read())
+
+    def test_resize_crop(self):
+        results_dir = os.path.join(TEST_TARGET_DIR, 'resize_crop')
+        os.makedirs(results_dir)
+
+        for source_name, source_file in self.source_files():
+            result, ext = resize(source_file, 'crop', 30, 100)
+
+            target_name = '%s_crop_30_100.%s' % (source_name, ext)
+            target_path = os.path.join(results_dir, target_name)
+            with open(target_path, 'w') as target_file:
+                target_file.write(result.read())
+
+        for source_name, source_file in self.source_files():
+            result, ext = resize(source_file, 'crop', 300, 1000)
+
+            target_name = '%s_crop_300_1000_upscale.%s' % (source_name, ext)
+            target_path = os.path.join(results_dir, target_name)
+            with open(target_path, 'w') as target_file:
+                target_file.write(result.read())
+
+    def test_resize_keep(self):
+        results_dir = os.path.join(TEST_TARGET_DIR, 'resize_keep')
+        os.makedirs(results_dir)
+
+        for source_name, source_file in self.source_files():
+            result, ext = resize(source_file, 'keep', 300, 1000)
+
+            target_name = '%s_keep_50_50.%s' % (source_name, ext)
+            target_path = os.path.join(results_dir, target_name)
+            with open(target_path, 'w') as target_file:
+                target_file.write(result.read())
 
     def test_watermark(self):
         results_dir = os.path.join(TEST_TARGET_DIR, 'watermark')
