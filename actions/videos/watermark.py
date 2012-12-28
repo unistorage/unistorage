@@ -20,11 +20,9 @@ def validate_and_get_args(args, source_file=None):
     result = common_watermark_validation(args, source_file=source_file)
     if source_file:
         data = source_file.extra
-        if not data['video'] or not data['audio']:
-            raise ValidationError('Source video file must contain at least one '
-                                  'audio and video stream') # TODO Get rid of this limitation
-        require_acodec_presence(data['audio']['codec'], require_encoding_support=True)
         require_vcodec_presence(data['video']['codec'], require_encoding_support=True)
+        if data['audio']:
+            require_acodec_presence(data['audio']['codec'], require_encoding_support=True)
     return result
 
 
@@ -86,7 +84,8 @@ def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
                 vf_params = 'movie=%s [wm];[in][wm] overlay=%s [out]' % (wm_tmp.name, wm_position)
                 data['video']['filters'] = vf_params
 
-                data['audio']['bitrate'] = data['audio'].get('bitrate') or '128k'
+                if data['audio']:
+                    data['audio']['bitrate'] = data['audio']['bitrate'] or '128k'
 
                 fps = data['video'].get('fps')
                 if fps:

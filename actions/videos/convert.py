@@ -65,11 +65,9 @@ def validate_and_get_args(args, source_file=None):
     
     if source_file:
         data = source_file.extra
-        if not data['video'] or not data['audio']:
-            raise ValidationError('Source video file must contain at least one '
-                                  'audio and video stream') # TODO Get rid of this limitation
-        require_acodec_presence(data['audio']['codec'])
         require_vcodec_presence(data['video']['codec'])
+        if data['audio']:
+            require_acodec_presence(data['audio']['codec'])
 
     return [format, vcodec, acodec]
 
@@ -87,30 +85,32 @@ def perform(source_file, format, vcodec, acodec, only_try=False):
     tmp_target_file.close()
     
     try:
-        data = avprobe(tmp_source_file.name)
         options = {
             'format': format,
-            'audio': {
-                'codec': acodec,
-                'sample_rate': 44100
-            },
             'video': {
                 'codec': vcodec
             }
         }
-        # TODO Можем ли мы сохранять битрейт?
-        video_bitrate = data.get('video', {}).get('bitrate')
-        if video_bitrate:
-            options['video']['bitrate'] = video_bitrate
-        
         if vcodec in ('mpeg1', 'mpeg2', 'divx'):
             options['video']['fps'] = 25
 
-        channels = data.get('audio', {}).get('channels')
-        if acodec == 'mp3' and channels > 2:
-            channels = 2
+        source_data = avprobe(tmp_source_file.name)
 
-        options['audio']['channels'] = channels
+        if source_data['audio']:
+            options['audio'] = {
+                'codec': acodec,
+                'sample_rate': 44100
+            }
+
+            channels = source_data['audio']['channels']
+            if channels:
+                if acodec == 'mp3' and channels > 2:
+                    channels = 2
+                options['audio']['channels'] = channels
+
+        video_bitrate = source_data['video']['bitrate']
+        if video_bitrate:
+            options['video']['bitrate'] = video_bitrate
 
         avconv(tmp_source_file.name, tmp_target_file.name, options)
 

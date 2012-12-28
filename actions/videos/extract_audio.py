@@ -26,6 +26,8 @@ def validate_and_get_args(args, source_file=None):
 
     if source_file:
         data = source_file.extra
+        if not data['audio']:
+            raise ValidationError('Source file has no audio stream.')
         require_acodec_presence(data['audio']['codec'])
 
     return [codec]
