@@ -9,7 +9,6 @@ import settings
 import actions
 from actions.tasks import perform_actions
 from app import db, fs
-from app.uris import parse_template_uri
 from app.models import Template, File, PendingFile
 from app.perms import AccessPermission
 from utils import ValidationError
@@ -75,15 +74,10 @@ def apply_template(source_file, args):
     :rtype: :class:`ObjectId`
     """
     template_uri = args['template']
-    try:
-        template_id = parse_template_uri(template_uri)
-    except ValueError as e:
-        raise ValidationError(e.message)
-
-    template = Template.get_one(db, {'_id': template_id})
+    template = Template.get_by_resource_uri(db, template_uri)
     
     if not template:
-        raise ValidationError('Template with id %s does not exist.' % template_id)
+        raise ValidationError('Template %s does not exist.' % template_uri)
     AccessPermission(source_file).test(http_exception=403)
 
     source_unistorage_type = source_file.unistorage_type
@@ -97,7 +91,7 @@ def apply_template(source_file, args):
     action = actions.get_action(source_unistorage_type, action_name)
     cleaned_args = action.validate_and_get_args(first_action_args, source_file=source_file)
 
-    label = str(template_id)
+    label = str(template.get_id())
     action_list = template['cleaned_action_list']
     return apply_actions(source_file, action_list, label)
 
@@ -117,7 +111,6 @@ def apply_action(source_file, args):
     action_name = args['action']
     source_unistorage_type = source_file.unistorage_type
     action = actions.get_action(source_unistorage_type, action_name)
-
     if not action:
         raise ValidationError('Action %s is not supported for %s (%s).' %
                               (action_name, source_unistorage_type, source_file.content_type))

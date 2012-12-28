@@ -65,7 +65,7 @@ def get_pending_file(user, file):
             'status': 'just_uri',
             'ttl': file.ttl,
             'data': {
-                'url': file.get_gridfs_serve_url(db, through_nginx_serve=True)
+                'url': file.get_binary_data_url(db, through_nginx_serve=True)
             }
         })
     else:
@@ -84,7 +84,7 @@ def get_regular_file(user, file):
             'size': file.length,
             'mimetype': file.content_type,
             'unistorage_type': file.unistorage_type,
-            'url': file.get_gridfs_serve_url(db),
+            'url': file.get_binary_data_url(db),
             'extra': file.get('extra', {})
         },
         'ttl': settings.TTL
@@ -233,7 +233,7 @@ def zip_view(_id):
     return ok({
         'ttl': ttl,
         'data': {
-            'url': zip_collection.get_gridfs_serve_url(db, through_nginx_serve=True),
+            'url': zip_collection.get_binary_data_url(db, through_nginx_serve=True),
             'filename': zip_collection.filename
         }
     })

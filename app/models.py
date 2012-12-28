@@ -11,6 +11,7 @@ from flask.ext.principal import RoleNeed
 import settings
 import file_utils
 from app.date_utils import get_today_utc_midnight
+from app.uris import parse_template_uri
 
 
 class ValidationMixin(object):
@@ -97,6 +98,15 @@ class Template(ValidationMixin, modeling.Document):
         'cleaned_action_list': list
     }
     required = ('user_id', 'applicable_for', 'action_list')
+
+    @classmethod
+    def get_by_resource_uri(cls, db, template_uri):
+        try:
+            template_id = parse_template_uri(template_uri)
+        except ValueError as e:
+            return None
+
+        return cls.get_one(db, {'_id': template_id})
 
 
 class Statistics(ValidationMixin, modeling.Document):
