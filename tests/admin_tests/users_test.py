@@ -128,7 +128,7 @@ class Test(AdminFunctionalTest):
         response = form.submit().follow()
         
         # Жмём "удалить"
-        response = response.click(href='remove')
+        response = response.forms[0].submit()
         self.assertEquals(response.status_code, 302)
 
         # Проверяем, что пользователей не осталось

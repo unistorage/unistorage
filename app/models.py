@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
+import random
 from datetime import datetime
+from urlparse import urljoin
 
 from bson import ObjectId
 from monk import modeling
 from monk.validation import ValidationError
 from flask.ext.principal import RoleNeed
 
+import settings
 import file_utils
 from app.date_utils import get_today_utc_midnight
+from app.uris import parse_template_uri
 
 
 class ValidationMixin(object):
@@ -94,6 +98,15 @@ class Template(ValidationMixin, modeling.Document):
         'cleaned_action_list': list
     }
     required = ('user_id', 'applicable_for', 'action_list')
+
+    @classmethod
+    def get_by_resource_uri(cls, db, template_uri):
+        try:
+            template_id = parse_template_uri(template_uri)
+        except ValueError as e:
+            return None
+
+        return cls.get_one(db, {'_id': template_id})
 
 
 class Statistics(ValidationMixin, modeling.Document):
@@ -209,7 +222,49 @@ class Statistics(ValidationMixin, modeling.Document):
         return result[0] if result else None
 
 
-class File(ValidationMixin, modeling.Document):
+class ServableMixin(object):
+    """Миксин, общий для файлов и ZIP-архивов. Предоставляет методы для конструирования URL-ов
+    бинарного содержимого файла.
+    """
+    def get_binary_data_url(self, db, through_nginx_serve=False):
+        """Возвращает URL бинарного содержимого файла, указывающий либо на gridfs-serve,
+        либо, в случае, если `through_nginx_serve` равно `True`, на unistore-nginx-serve.
+        """
+        user = User.get_one(db, {'_id': self.user_id})
+        base_url = user.domains and random.choice(user.domains) or settings.GRIDFS_SERVE_URL
+
+        if not base_url.endswith('/'):
+            base_url += '/'
+
+        if through_nginx_serve:
+            base_url = urljoin(base_url, '/uns/')
+
+        file_id = str(self.get_id())
+        return urljoin(base_url, file_id)
+
+    def can_be_served_by_unistore_nginx_serve(self):
+        """Возвращает True, если файл может быть отдан с помощью unistore-nginx-serve (например, в
+        случае, если файл -- картинка, для которой заказан ресайз).
+        """
+        original_content_type = self.original_content_type
+        actions = self.actions
+
+        supported_types = ('image/gif', 'image/png', 'image/jpeg')
+        if not original_content_type in supported_types or len(actions) > 1:
+            return False
+        
+        action_name, action_args = actions[0]
+        if action_name == 'resize':
+            mode, w, h = action_args
+            if mode in ('keep', 'crop'):
+                return True
+        elif action_name == 'rotate':
+            return True
+
+        return False
+
+
+class File(ValidationMixin, ServableMixin, modeling.Document):
     """Реализация базовой сущности "файл" (см. :term:`временный файл` и :term:`обычный файл`).
 
     .. attribute:: user_id
@@ -290,7 +345,7 @@ class File(ValidationMixin, modeling.Document):
         return fs.get_version(**kwargs)
 
 
-class ZipCollection(ValidationMixin, modeling.Document):
+class ZipCollection(ValidationMixin, ServableMixin, modeling.Document):
     collection = 'zip_collections'
     structure = {
         '_id': ObjectId,

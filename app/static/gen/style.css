@@ -30,3 +30,7 @@ table.statistics th.name {
       padding: 0;
       margin: 6px 0;
     }
+
+.users form.remove-user {
+  display: inline;
+}

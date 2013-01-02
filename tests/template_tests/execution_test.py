@@ -11,14 +11,14 @@ class FunctionalTest(StorageFunctionalTest, WorkerMixin):
 
         corrupted_template_uri = '/template/asds123'
         r = self.apply_template(image_uri, corrupted_template_uri)
-        expected_error = '%s is not a template URI.' % corrupted_template_uri
+        expected_error = 'Template %s does not exist.' % corrupted_template_uri
         
         self.assertEquals(r.json['status'], 'error')
         self.assertEquals(r.json['msg'], expected_error)
 
         inexistent_template_id = '5087a78f8149954b38d1cbc2'
         inexistent_template_uri = '/template/%s/' % inexistent_template_id
-        expected_error = 'Template with id %s does not exist.' % inexistent_template_id
+        expected_error = 'Template %s does not exist.' % inexistent_template_uri
 
         r = self.apply_template(image_uri, inexistent_template_uri)
         self.assertEquals(r.json['status'], 'error')

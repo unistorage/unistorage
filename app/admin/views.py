@@ -111,7 +111,7 @@ def user_create():
     })
 
 
-@bp.route('/users/<ObjectId:_id>/remove', methods=['GET'])
+@bp.route('/users/<ObjectId:_id>/remove', methods=['POST'])
 @login_required
 def user_remove(_id):
     User.get_one(db, _id).remove(db)
