@@ -186,9 +186,11 @@ def avprobe(fname):
     video = None
     audio = None
     for stream in stdout_data['streams']:
-        if not video and stream['codec_type'] == 'video':
+        if not video and stream.get('codec_type') == 'video' \
+                and stream.get('codec_name', 'unknown') != 'unknown':
             video = extract_video_data(stream, stderr_data)
-        if not audio and stream['codec_type'] == 'audio':
+        if not audio and stream.get('codec_type') == 'audio' \
+                and stream.get('codec_name', 'unknown') != 'unknown':
             audio = extract_audio_data(stream, stderr_data)
 
     result = {
