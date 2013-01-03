@@ -155,7 +155,7 @@ def apply_hacks(result, stdout_data, stderr_data):
         })
 
         # 3. Аудио не имеет длительности
-        if not audio['duration']:
+        if audio and not audio['duration']:
             audio['duration'] = result['video']['duration']
 
         # 4. FPS и вовсе нигде не указан
