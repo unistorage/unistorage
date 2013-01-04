@@ -49,7 +49,7 @@ def extract_video_data(stream, stderr_data):
     :param stderr_data: словарь, содержащие данные из stderr-а ffmpeg
     """
     def parse_avg_frame_rate(val):
-        """Парсит FPS в ffmpeg-овском формате. Возвращает в виде float."""
+        """Парсит FPS в ffmpeg-овском формате, возвращает `float`."""
         if '/' in val:
             n, d = map(parse_float, val.split('/'))
             return n and d and n / d
@@ -92,7 +92,7 @@ def extract_audio_data(stream, stderr_data):
 
 
 def parse_stdout(stdout):
-    return json.loads(stdout)
+    return json.loads(unicode(stdout, errors='replace'))
 
 
 def parse_stderr(stderr):
