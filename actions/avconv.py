@@ -2,6 +2,7 @@
 import re
 import json
 import os.path
+import tempfile
 import subprocess
 import cPickle as pickle
 from StringIO import StringIO
@@ -238,7 +239,8 @@ encoder_args = {
                     '+parti4x4+partp8x8+partb8x8', '-subq', '5', '-trellis', '1', '-refs', '1',
                     '-coder', '0', '-me_range', '16', '-g', '300', '-keyint_min', '25',
                     '-sc_threshold', '40', '-i_qfactor', '0.71', '-rc_eq', "'blurCplx^(1-qComp)'",
-                    '-qcomp', '0.6', '-qmin', '10', '-qmax', '51', '-qdiff', '4', '-level', '30']
+                    '-qcomp', '0.6', '-qmin', '10', '-qmax', '51', '-qdiff', '4', '-level', '30',
+                    '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2']  # h264 поддерживает только четные длину и высоту
     }
 }
 
@@ -302,7 +304,7 @@ def avconv(source_fname, target_fname, options):
             args.extend(encoder_args['vcodecs'].get(encoder_name, []))
         fps = video_options.get('fps')
         if fps:
-            args.extend(['-r', str(fps)])
+            args.extend(['-r', '%.4f' % fps])
         bitrate = video_options.get('bitrate')
         if bitrate:
             args.extend(['-b', str(bitrate)])
@@ -318,11 +320,31 @@ def avconv(source_fname, target_fname, options):
     format = options['format']
     avconv_format_name = format_aliases.get(format, format)
     args.extend(['-f', avconv_format_name, '-y', target_fname])
+
+    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
     
-    proc = subprocess.Popen(args, stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    proc.communicate()
-    return proc.returncode
+    if proc.returncode:
+        raise Exception(stdout + stderr)
+    
+    if format == 'flv':
+        proc = subprocess.Popen([settings.FLVTOOL_BIN, '-U', target_fname],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        if proc.returncode:
+            raise Exception(stdout + stderr)
+
+    if format in ('mov', 'mp4'):
+        tmp_target_fname = '%s_tmp' % target_fname
+        os.rename(target_fname, tmp_target_fname)
+        proc = subprocess.Popen([settings.QT_FASTSTART_BIN, tmp_target_fname, target_fname],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        if proc.returncode:
+            raise Exception(stdout + stderr)
+        os.unlink(tmp_target_fname)
+
+    return target_fname
 
 
 def get_codec_supported_actions(codec_type, codec_name):

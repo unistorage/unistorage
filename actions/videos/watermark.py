@@ -89,12 +89,10 @@ def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
 
                 fps = data['video'].get('fps')
                 if fps:
-                    data['video']['fps'] = '%.3f' % fps
+                    data['video']['fps'] = fps
 
-                avconv(source_tmp.name, target_tmp.name, data)
-                if data['format'] == 'flv':
-                    run_flvtool(target_tmp.name)
-                return open(target_tmp.name), data['format']
+                result_file_name = avconv(source_tmp.name, target_tmp.name, data)
+                return open(result_file_name), data['format']
             finally:
                 if wm_tmp:
                     os.unlink(wm_tmp.name)

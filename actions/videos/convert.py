@@ -112,12 +112,8 @@ def perform(source_file, format, vcodec, acodec, only_try=False):
         if video_bitrate:
             options['video']['bitrate'] = video_bitrate
 
-        avconv(tmp_source_file.name, tmp_target_file.name, options)
-
-        if format == 'flv':
-            run_flvtool(tmp_target_file.name)
-
-        result = open(tmp_target_file.name)
+        result_file_name = avconv(tmp_source_file.name, tmp_target_file.name, options)
+        result = open(result_file_name)
     finally:
         os.unlink(tmp_target_file.name)
         os.unlink(tmp_source_file.name)

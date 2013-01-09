@@ -41,6 +41,7 @@ COMPOSITE_BIN = '/usr/bin/composite'
 # Бинарники avconv
 AVCONV_BIN = '/usr/bin/ffmpeg'
 AVPROBE_BIN = '/usr/bin/ffprobe'
+QT_FASTSTART_BIN = '/usr/bin/qt-faststart'
 
 
 # Остальные бинарники

@@ -56,7 +56,5 @@ def perform(source_file, mode, target_width, target_height):
                     vfilters += ',crop=%i:%i' % (to_even(target_width), to_even(target_height))
 
             data['video']['filters'] = vfilters
-            avconv(source_tmp.name, target_tmp.name, data)
-            if data['format'] == 'flv':
-                run_flvtool(target_tmp.name)
-            return open(target_tmp.name), data['format']
+            result_file_name = avconv(source_tmp.name, target_tmp.name, data)
+            return open(result_file_name), data['format']

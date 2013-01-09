@@ -93,6 +93,8 @@ class Test(SmokeTest):
 
         for codec in ('alac', 'aac', 'vorbis', 'ac3', 'mp3', 'flac'):
             for source_name, source_file in self.source_files():
+                if source_name == 'no-audio.flv':
+                    continue
                 result, ext = extract_audio(source_file, codec)
 
                 target_name = 'audio_from_%s.%s' % (source_name, ext)

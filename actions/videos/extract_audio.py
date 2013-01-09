@@ -55,8 +55,8 @@ def perform(source_file, codec):
                 'sample_rate': 44100
             }
         }
-        avconv(tmp_source_file.name, tmp_target_file.name, options)
-        result = open(tmp_target_file.name)
+        result_file_name = avconv(tmp_source_file.name, tmp_target_file.name, options)
+        result = open(result_file_name)
     finally:
         os.unlink(tmp_target_file.name)
         os.unlink(tmp_source_file.name)
