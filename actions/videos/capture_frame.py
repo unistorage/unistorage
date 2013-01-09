@@ -55,8 +55,8 @@ def perform(source_file, format, position):
             # Её исправление требует ручной компиляции ffmpeg, поэтому пока такой workaround.
             options['video']['codec'] = 'jpeg'
 
-        avconv(tmp_source_file.name, tmp_target_file.name, options)
-        result = open(tmp_target_file.name)
+        result_file_name = avconv(tmp_source_file.name, tmp_target_file.name, options)
+        result = open(result_file_name)
         
         if format == 'gif':
             # Продолжение workaround-а
