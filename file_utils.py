@@ -14,19 +14,6 @@ from actions.avconv import avprobe
 import settings
 
 
-m = magic.Magic(mime=True, magic_file=settings.MAGIC_FILE_PATH)
-
-
-def secure_filename(filename):
-    """Modified version of :func:`werkzeug.secure_filename`"""
-    if isinstance(filename, unicode):
-        filename = normalize('NFKC', filename)
-    for sep in os.path.sep, os.path.altsep:
-        if sep:
-            filename = filename.replace(sep, '_')
-    return re.sub(r'^\.+', '_', filename.strip(' '))
-
-
 def identify(file, format):
     args = [settings.IDENTIFY_BIN, '-format', '%s\n' % format, '-']
     proc = subprocess.Popen(args, stdin=subprocess.PIPE,
@@ -38,13 +25,6 @@ def identify(file, format):
     return stdout_data.split('\n')[0].strip()
 
 
-def get_content_type(file):
-    file.seek(0)
-    content_type = m.from_buffer(file.read())
-    file.seek(0)
-    return content_type
-
-
 def get_avprobe_result(file_content, file_name=None):
     with tempfile.NamedTemporaryFile(mode='wb') as tmp_file:
         tmp_file.write(file_content)
@@ -52,8 +32,8 @@ def get_avprobe_result(file_content, file_name=None):
         return avprobe(tmp_file.name)
 
 
-def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
-    inaccurate_unistorage_type = get_unistorage_type(content_type)
+def get_unistorage_type_and_extra(result, file, file_name, file_content):
+    inaccurate_unistorage_type = get_unistorage_type(result['content_type'])
     inaccurate_extra = {}
     if inaccurate_unistorage_type in ('audio', 'video'):
         if isinstance(file, FileStorage) and hasattr(file.stream, 'name') and \
@@ -73,7 +53,7 @@ def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
         except:
             pass
 
-    unistorage_type = get_unistorage_type(content_type, extra=inaccurate_extra)
+    unistorage_type = get_unistorage_type(result['content_type'], extra=inaccurate_extra)
     extra = {}
     if unistorage_type == 'audio':
         extra.update(inaccurate_extra['audio'])
@@ -83,31 +63,51 @@ def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
     elif unistorage_type == 'image':
         extra = inaccurate_extra
 
-    return {
+    result.update({
         'unistorage_type': unistorage_type,
         'extra': extra,
-    }
+    })
+    return result
+
+
+def fill_content_type(result, file, file_name, file_content):
+    m = magic.Magic(mime=True, magic_file=settings.MAGIC_FILE_PATH)
+    result['content_type'] = m.from_buffer(file_content)
+    return result
+
+
+def fill_filename(result, file, file_name, file_content):
+    if isinstance(file_name, unicode):
+        file_name = normalize('NFKC', file_name)
+    for sep in os.path.sep, os.path.altsep:
+        if sep:
+            file_name = file_name.replace(sep, '_')
+    result['filename'] = re.sub(r'^\.+', '_', file_name.strip(' '))
+    return result
+
+
+def fill_crc32(result, file, file_name, file_content):
+    result['crc32'] = binascii.crc32(file_content)
+    return result
+
+
+def adjust_content_type(result, file, file_name, file_content):
+    if result['content_type'] == 'application/ogg':
+        if result['unistorage_type'] == 'video':
+            content_type = 'video/ogg'
+        elif result['unistorage_type'] == 'audio':
+            content_type = 'audio/ogg'
+        result['content_type'] = content_type
+    return result
 
 
 def get_file_data(file, file_name=None):
     file.seek(0)
     file_content = file.read()
     file.seek(0)
-    
-    content_type = m.from_buffer(file_content)
-    file.seek(0)
 
-    data = {
-        'filename': secure_filename(file_name),
-        'crc32': binascii.crc32(file_content)
-    }
-    data.update(get_unistorage_type_and_extra(file, file_name, file_content, content_type))  # XXX!
+    result = {}
+    for x in (fill_content_type, fill_filename, fill_crc32, get_unistorage_type_and_extra, adjust_content_type):
+        result = x(result, file, file_name, file_content)
     
-    if content_type == 'application/ogg':
-        if data['unistorage_type'] == 'video':
-            content_type = 'video/ogg'
-        elif data['unistorage_type'] == 'audio':
-            content_type = 'audio/ogg'
-    data['content_type'] = content_type
-
-    return data
+    return result
