@@ -390,15 +390,18 @@ class RegularFile(File):
         :type db: pymongo.Connection
         :param fs: файловая система
         :type fs: gridfs.GridFS
-        :param file_storage: файл
-        :type file_storage: file-like object или :class:`werkzeug.datastructures.FileStorage`
+        :param file: файл
+        :type file: file-like object или :class:`werkzeug.datastructures.FileStorage`
         :param **kwargs: дополнительные параметры, которые станут атрибутами файла в GridFS
         """
         kwargs.update(file_utils.get_file_data(file, file_name))
         kwargs.update({'pending': False})
 
         cls(**kwargs).validate()
-        file_id = fs.put(file, **kwargs)
+        file_content = file.read()
+        if len(file_content) > 30 * 1024 * 1024:
+            kwargs.update({'chunkSize': 8 * 1024 * 1024})
+        file_id = fs.put(file_content, **kwargs)
 
         db[Statistics.collection].update({
             'user_id': kwargs.get('user_id'),
