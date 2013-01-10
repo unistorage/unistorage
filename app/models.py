@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+# Debug imports
+import time
+from flask import request
+# /
+
 import random
 from datetime import datetime
 from urlparse import urljoin
@@ -394,15 +399,29 @@ class RegularFile(File):
         :type file: file-like object или :class:`werkzeug.datastructures.FileStorage`
         :param **kwargs: дополнительные параметры, которые станут атрибутами файла в GridFS
         """
+        debug = getattr(request, 'debug', False)
+        if debug:
+            start = time.time()
+            print 'Call to the `file_utils.get_file_data`',
         kwargs.update(file_utils.get_file_data(file, file_name))
+        if debug:
+            print 'took %.3f seconds' % (time.time() - start)
         kwargs.update({'pending': False})
 
         cls(**kwargs).validate()
         file_content = file.read()
         if len(file_content) > 30 * 1024 * 1024:
             kwargs.update({'chunkSize': 8 * 1024 * 1024})
+        if debug:
+            start = time.time()
+            print 'Call to the `fs.put`',
         file_id = fs.put(file_content, **kwargs)
+        if debug:
+            print 'took %.3f seconds' % (time.time() - start)
 
+        if debug:
+            start = time.time()
+            print 'Statistics update',
         db[Statistics.collection].update({
             'user_id': kwargs.get('user_id'),
             'type_id': kwargs.get('type_id'),
@@ -413,6 +432,8 @@ class RegularFile(File):
                 'files_size': fs.get(file_id).length
             }
         }, upsert=True)
+        if debug:
+            print 'took %.3f seconds' % (time.time() - start)
         return file_id
 
 

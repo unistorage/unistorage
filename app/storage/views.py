@@ -35,6 +35,8 @@ def login_required(func):
 @login_required
 def file_create():
     """Вьюшка, сохраняющая файл в хранилище."""
+    request.debug = request.headers.get('Debug', False)
+    
     file = request.files.get('file')
     if not file:
         return error({'msg': 'File wasn\'t found'}), 400
