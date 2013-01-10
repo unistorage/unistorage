@@ -399,7 +399,11 @@ class RegularFile(File):
         :type file: file-like object или :class:`werkzeug.datastructures.FileStorage`
         :param **kwargs: дополнительные параметры, которые станут атрибутами файла в GridFS
         """
-        debug = getattr(request, 'debug', False)
+        try:
+            debug = getattr(request, 'debug', False)
+        except:
+            debug = False
+
         if debug:
             start = time.time()
             print 'Call to the `file_utils.get_file_data`',
