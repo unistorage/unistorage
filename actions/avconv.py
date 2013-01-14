@@ -6,6 +6,7 @@ import tempfile
 import subprocess
 import cPickle as pickle
 from StringIO import StringIO
+from datetime import datetime, timedelta
 
 import settings
 
@@ -57,12 +58,15 @@ def extract_video_data(stream, stderr_data):
         elif '.' in val:
             return parse_float(val)
 
+    duration = parse_float(stream.get('duration')) or \
+               parse_float(stderr_data.get('duration'))
+
     return {
         'width': parse_int(stream.get('width')),
         'height': parse_int(stream.get('height')),
         'codec': stream.get('codec_name'),
         'bitrate': stderr_data.get('video_bitrate'),
-        'duration': parse_float(stream.get('duration')),
+        'duration': duration,
         'fps': parse_avg_frame_rate(stream.get('avg_frame_rate')),
     }
 
@@ -83,12 +87,14 @@ def extract_audio_data(stream, stderr_data):
     :param stream: словарь, содержащий данные о потоке из stdout-а ffmpeg
     :param stderr_data: словарь, содержащие данные из stderr-а ffmpeg
     """
+    duration = parse_float(stream.get('duration')) or \
+               parse_float(stderr_data.get('duration'))
     return {
         'channels': parse_int(stream.get('channels')),
         'sample_rate': parse_float(stream.get('sample_rate')),
         'codec': stream.get('codec_name'),
         'bitrate': stderr_data.get('audio_bitrate'),
-        'duration': parse_float(stream.get('duration'))
+        'duration': duration
     }
 
 
@@ -120,6 +126,15 @@ def parse_stderr(stderr):
     match = re.search(regexp, stderr)
     if match:
         data['video_size'] = match.group('size')
+
+    regexp = r'Duration: (?P<duration>\d+:\d+:\d+\.\d+)'
+    match = re.search(regexp, stderr)
+    if match:
+        d = datetime.strptime(match.group('duration'),"%H:%M:%S.%f")
+        duration = timedelta(
+            hours=d.hour, minutes=d.minute,
+            seconds=d.second, microseconds=d.microsecond)
+        data['duration'] = duration.total_seconds() 
     return data
 
 

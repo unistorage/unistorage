@@ -19,3 +19,4 @@ class FunctionalTest(StorageFunctionalTest):
         file_uri = self.put_file('./videos/broken/no-video.flv')
         response = self.app.get(file_uri).json
         self.assertEquals(response['data']['unistorage_type'], 'audio')
+        self.assertEquals(response['data']['extra']['duration'], 210.1)
