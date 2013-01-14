@@ -67,7 +67,8 @@ def extract_video_data(stream, stderr_data):
         'codec': stream.get('codec_name'),
         'bitrate': stderr_data.get('video_bitrate'),
         'duration': duration,
-        'fps': parse_avg_frame_rate(stream.get('avg_frame_rate')),
+        'fps': parse_avg_frame_rate(stream.get('avg_frame_rate')) or 
+               parse_avg_frame_rate(stream.get('r_frame_rate')),
     }
 
 
