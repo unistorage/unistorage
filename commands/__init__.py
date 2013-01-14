@@ -29,7 +29,7 @@ def test_cov():
     """Test and report coverage"""
     if not nose:
         exit(missing_dev_reqs_message)
-    success = nose.run(argv=['tests', '--with-coverage', '--cover-package=app,storage,actions',
+    success = nose.run(argv=['tests', '--with-coverage', '--cover-package=app,actions',
         '--cover-html', '--verbosity=2'])
     exit(0 if success else 1)
 

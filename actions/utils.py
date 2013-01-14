@@ -29,14 +29,28 @@ def get_unistorage_type(content_type, extra=None):
         if extra is None:
             return 'video'
         else:
-            if not extra.get('video'):
+            audio = extra.get('audio')
+            video = extra.get('video')
+            if audio and not video:
                 return 'audio'
-            else:
+            elif video:
                 return 'video'
+            else:
+                return 'unknown'
 
     if content_type.startswith('video'):
-        return 'video'
-    
+        if extra is None:
+            return 'video'
+        else:
+            audio = extra.get('audio')
+            video = extra.get('video')
+            if audio and not video:
+                return 'audio'
+            elif video:
+                return 'video'
+            else:
+                return 'unknown'
+
     if content_type.startswith('audio') or \
             content_type in ('application/adts', 'application/pcm'):
         return 'audio'

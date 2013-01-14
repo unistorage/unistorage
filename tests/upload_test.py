@@ -14,3 +14,8 @@ class FunctionalTest(StorageFunctionalTest):
         file_uri = self.put_file('./videos/video.webm')
         response = self.app.get(file_uri).json
         self.assertEquals(response['data']['unistorage_type'], 'video')
+
+    def test_video_without_video(self):
+        file_uri = self.put_file('./videos/broken/no-video.flv')
+        response = self.app.get(file_uri).json
+        self.assertEquals(response['data']['unistorage_type'], 'audio')
