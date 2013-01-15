@@ -135,7 +135,6 @@ def parse_stderr(stderr):
     match = re.search(regexp, stderr)
     if match:
         data['file_bitrate'] = '%dk' % int(match.group('bitrate'))
-    print data
 
     regexp = r'Duration: (?P<duration>\d+:\d+:\d+\.\d+)'
     match = re.search(regexp, stderr)
