@@ -42,6 +42,15 @@ with app.app_context():
 
             new_unistorage_type = new_file_data['unistorage_type']
             new_extra = new_file_data['extra']
+
+            set_spec = {
+               '$set': {
+                    'unistorage_type': new_unistorage_type,
+                    'extra': new_extra,
+                }
+            }
+            db.fs.files.update({'_id': _id}, set_spec)
+
             try:
                 validate_extra(new_unistorage_type, new_extra)
             except Exception as e:
@@ -50,13 +59,6 @@ with app.app_context():
                 print message
                 log.write('%s %s\n' % (_id, message))
             else:
-                set_spec = {
-                   '$set': {
-                        'unistorage_type': new_unistorage_type,
-                        'extra': new_extra,
-                    }
-                }
-                db.fs.files.update({'_id': _id}, set_spec)
                 print '  Fixed'
         else:
             print 'OK'
