@@ -4,3 +4,4 @@ nose-exclude
 coverage
 Sphinx==1.1.3
 blinker
+jsonschema==0.8.0

@@ -1,0 +1,22 @@
+{
+    "type" : "object",
+    "properties" : {
+        "status" : {"type" : "string", "required": true},
+        "ttl" : {"type" : "integer", "required": true},
+        "data": {
+            "type" : "object",
+            "required": true,
+            "properties" : {
+                "mimetype" : {"type" : "string", "required": true},
+                "unistorage_type" : {
+                    "type" : "string",
+                    "required": true,
+                    "enum": ["image", "video", "audio", "doc", "unknown"]
+                },
+                "name" : {"type" : "string", "required": true},
+                "url" : {"type" : "string", "required": true},
+                "size" : {"type" : "integer", "required": true}
+            }
+        }
+    }
+}

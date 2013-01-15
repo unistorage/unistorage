@@ -1,0 +1,50 @@
+{
+    "type" : "object",
+    "extends": {"$ref": "file:regular-file.json"},
+    "properties" : {
+        "data": {
+            "properties" : {
+                "unistorage_type" : {
+                    "type" : "string",
+                    "required": true,
+                    "enum": ["video"]
+                },
+                "extra": {
+                    "type" : "object",
+                    "required": true,
+                    "properties" : {
+                        "audio": {
+                            "type": ["object", "null"],
+                            "required": true,
+                            "properties" : {
+                                "channels" : {"type" : "integer", "required": true},
+                                "duration" : {"type" : "number", "required": true},
+                                "codec" : {"type" : "string", "required": true},
+                                "bitrate" : {"type" : "string", "required": true},
+                                "sample_rate" : {"type" : "number", "required": true}
+                            }
+                        },
+                        "video": {
+                            "type": ["object"],
+                            "required": true,
+                            "properties" : {
+                                "width" : {"type" : "integer", "required": true},
+                                "height" : {"type" : "integer", "required": true},
+                                "codec" : {"type" : "string", "required": true},
+                                "fps" : {
+                                    "type" : "number",
+                                    "required": true,
+                                    "exclusiveMinimum": true,
+                                    "minimum": 0
+                                },
+                                "duration" : {"type" : "number", "required": true},
+                                "bitrate" : {"type" : "string", "required": true}
+                            }
+                        },
+                        "format" : {"type" : "string", "required": true}
+                    }
+                }
+            }
+        }
+    }
+}

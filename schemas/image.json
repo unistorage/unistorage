@@ -1,0 +1,23 @@
+{
+    "type" : "object",
+    "extends": {"$ref": "file:regular-file.json"},
+    "properties" : {
+        "data": {
+            "properties" : {
+                "unistorage_type" : {
+                    "type" : "string",
+                    "required": true,
+                    "enum": ["image"]
+                },
+                "extra": {
+                    "type" : "object",
+                    "required": true,
+                    "properties" : {
+                        "width" : {"type" : "integer", "required": true},
+                        "height" : {"type" : "integer", "required": true}
+                    }
+                }
+            }
+        }
+    }
+}

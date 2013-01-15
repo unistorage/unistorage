@@ -1,0 +1,27 @@
+{
+    "type" : "object",
+    "extends": {"$ref": "file:regular-file.json"},
+    "properties" : {
+        "data": {
+            "properties" : {
+                "unistorage_type" : {
+                    "type" : "string",
+                    "required": true,
+                    "enum": ["audio"]
+                },
+                "extra": {
+                    "type" : "object",
+                    "required": true,
+                    "properties": {
+                        "channels" : {"type" : "integer", "required": true},
+                        "duration" : {"type" : "number", "required": true},
+                        "codec" : {"type" : "string", "required": true},
+                        "bitrate" : {"type" : "string", "required": true},
+                        "sample_rate" : {"type" : "number", "required": true},
+                        "format" : {"type" : "string", "required": true}
+                    }
+                }
+            }
+        }
+    }
+}
