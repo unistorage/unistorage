@@ -26,9 +26,11 @@ with app.app_context():
         #'extra.audio.codec': 'vorbis'
     })
 
-    for _file in files_to_update:
+    count = files_to_update.count()
+
+    for i, _file in enumerate(files_to_update):
         _id = _file['_id']
-        print 'Processing %s' % _id
+        print 'Processing %s (%i/%i)' % (_id, i, count)
         try:
             validate_extra(_file)
         except Exception as e:
