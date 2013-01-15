@@ -208,8 +208,8 @@ def apply_hacks(result, stdout_data, stderr_data):
 
     # Решаем проблему с неправдоподобными длительностями:
     format_duration = stderr_data.get('duration')
-    audio_duration = result['audio']['duration']
-    video_duration = result['video']['duration']
+    video_duration = video and video['duration']
+    audio_duration = audio and audio['duration']
     result['video']['duration'] = get_first_sane_duration(
         [video_duration, format_duration, audio_duration])
     result['audio']['duration'] = get_first_sane_duration(
