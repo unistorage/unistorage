@@ -135,6 +135,11 @@ def parse_stderr(stderr):
     match = re.search(regexp, stderr)
     if match:
         data['file_bitrate'] = '%dk' % int(match.group('bitrate'))
+    
+    regexp = r'Stream.*Video:.*?\s(?P<size>\d+x\d+)(?:,|\n)'
+    match = re.search(regexp, stderr)
+    if match:
+        data['video_size'] = match.group('size')
 
     regexp = r'Duration: (?P<duration>\d+:\d+:\d+\.\d+)'
     match = re.search(regexp, stderr)
