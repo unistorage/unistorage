@@ -210,10 +210,12 @@ def apply_hacks(result, stdout_data, stderr_data):
     format_duration = stderr_data.get('duration')
     video_duration = video and video['duration']
     audio_duration = audio and audio['duration']
-    result['video']['duration'] = get_first_sane_duration(
-        [video_duration, format_duration, audio_duration])
-    result['audio']['duration'] = get_first_sane_duration(
-        [audio_duration, format_duration, video_duration])
+    if video:
+        result['video']['duration'] = get_first_sane_duration(
+            [video_duration, format_duration, audio_duration])
+    if audio:
+        result['audio']['duration'] = get_first_sane_duration(
+            [audio_duration, format_duration, video_duration])
 
     return result
 
