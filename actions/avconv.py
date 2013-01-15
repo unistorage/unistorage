@@ -32,6 +32,13 @@ def parse_int(val):
         return None
 
 
+def get_first_sane_duration(durations):
+    for duration in durations:
+        if duration and duration < 24 * 60 * 60:
+            return duration
+    return None
+
+
 def extract_video_data(stream, stderr_data):
     """Парсит сырые данные, полученные от ffmpeg. Возвращает только нужные поля,
     приведённые к своим типам -- словарь, удовлетворяющий следующей схеме:
@@ -144,11 +151,14 @@ def parse_stderr(stderr):
     regexp = r'Duration: (?P<duration>\d+:\d+:\d+\.\d+)'
     match = re.search(regexp, stderr)
     if match:
-        d = datetime.strptime(match.group('duration'),"%H:%M:%S.%f")
-        duration = timedelta(
-            hours=d.hour, minutes=d.minute,
-            seconds=d.second, microseconds=d.microsecond)
-        data['duration'] = duration.total_seconds() 
+        try:
+            d = datetime.strptime(match.group('duration'), '%H:%M:%S.%f')
+            duration = timedelta(
+                hours=d.hour, minutes=d.minute,
+                seconds=d.second, microseconds=d.microsecond)
+            data['duration'] = duration.total_seconds()
+        except:
+            pass
     return data
 
 
@@ -194,7 +204,16 @@ def apply_hacks(result, stdout_data, stderr_data):
         format_data = stdout_data['format']
         duration = format_data.get('duration')
         if duration and not video['duration']:
-            result['video']['duration'] = parse_float(duration) 
+            result['video']['duration'] = parse_float(duration)
+
+    # Решаем проблему с неправдоподобными длительностями:
+    format_duration = stderr_data.get('duration')
+    audio_duration = result['audio']['duration']
+    video_duration = result['video']['duration']
+    result['video']['duration'] = get_first_sane_duration(
+        [video_duration, format_duration, audio_duration])
+    result['audio']['duration'] = get_first_sane_duration(
+        [audio_duration, format_duration, video_duration])
 
     return result
 
