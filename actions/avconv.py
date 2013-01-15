@@ -60,12 +60,20 @@ def extract_video_data(stream, stderr_data):
 
     duration = parse_float(stream.get('duration')) or \
                parse_float(stderr_data.get('duration'))
-
+    
+    video_bitrate = stderr_data.get('video_bitrate')
+    if not video_bitrate:
+        file_bitrate = stderr_data.get('file_bitrate')
+        audio_bitrate = stderr_data.get('audio_bitrate')
+        if file_bitrate and audio_bitrate:
+            # XXX
+            video_bitrate = '%ik' % (int(file_bitrate.rstrip('k')) -
+                                     int(audio_bitrate.rstrip('k')))
     return {
         'width': parse_int(stream.get('width')),
         'height': parse_int(stream.get('height')),
         'codec': stream.get('codec_name'),
-        'bitrate': stderr_data.get('video_bitrate'),
+        'bitrate': video_bitrate,
         'duration': duration,
         'fps': parse_avg_frame_rate(stream.get('avg_frame_rate')) or 
                parse_avg_frame_rate(stream.get('r_frame_rate')),
@@ -123,10 +131,11 @@ def parse_stderr(stderr):
         key = '%s_bitrate' % stream_type
         data[key] = '%dk' % int(match.group('bitrate'))
 
-    regexp = r'Stream.*Video:.*?\s(?P<size>\d+x\d+)(?:,|\n)'
+    regexp = '\n\s+Duration:.*?, bitrate: (?P<bitrate>\d+) kb/s\n'
     match = re.search(regexp, stderr)
     if match:
-        data['video_size'] = match.group('size')
+        data['file_bitrate'] = '%dk' % int(match.group('bitrate'))
+    print data
 
     regexp = r'Duration: (?P<duration>\d+:\d+:\d+\.\d+)'
     match = re.search(regexp, stderr)
