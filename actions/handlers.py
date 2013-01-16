@@ -4,6 +4,7 @@
 ==============================
 """
 from flask import request
+import time  # debug
 
 import settings
 import actions
@@ -27,8 +28,18 @@ def apply_actions(source_file, action_list, label):
     :type action_list: `list(tuple(action_name, action_cleaned_args))`
     :rtype: :class:`ObjectId`
     """
+    try:
+        debug = getattr(request, 'debug', False)
+    except:
+        debug = False
+
     source_id = source_file.get_id()
+    if debug:
+        start = time.time()
+        print 'Call to the `target_file = File.get_one`', 
     target_file = File.get_one(db, {'original': source_id, 'label': label})
+    if debug:
+        print 'took %.3f seconds' % (time.time() - start)
 
     if target_file:
         return target_file.get_id()
@@ -52,12 +63,28 @@ def apply_actions(source_file, action_list, label):
         'original_content_type': source_file.content_type
     }
     pending_target_kwargs.update(target_kwargs)
-
+    if debug:
+        start = time.time()
+        print 'Call to the `target_id = PendingFile.put_to_fs`', 
     target_id = PendingFile.put_to_fs(db, fs, **pending_target_kwargs)
+    if debug:
+        print 'took %.3f seconds' % (time.time() - start)
+
+    if debug:
+        start = time.time()
+        print 'Call to the `perform_actions.delay`', 
     perform_actions.delay(source_id, target_id, target_kwargs)
+    if debug:
+        print 'took %.3f seconds' % (time.time() - start)
+
+    if debug:
+        start = time.time()
+        print 'Call to the `db[File.collection].update`', 
     db[File.collection].update(
         {'_id': source_id},
         {'$set': {'modifications.%s' % label: target_id}})
+    if debug:
+        print 'took %.3f seconds' % (time.time() - start)
     return target_id
 
 

@@ -103,12 +103,27 @@ def file_view(_id=None):
     - Применение шаблона к файлу `id`, если GET-запрос содержит аргумент `template`
     - Выдача информации о файле `id` во всех остальных случаях
     """
+    request.debug = request.headers.get('Debug', False)
+    try:
+        debug = getattr(request, 'debug', False)
+    except:
+        debug = False
+
+    if debug:
+        start = time.time()
+        print 'Call to the `source_file = File.get_one`',
     source_file = File.get_one(db, {'_id': _id})
+    if debug:
+        print 'took %.3f seconds' % (time.time() - start)
     
     if not source_file:
         return error({'msg': 'File wasn\'t found'}), 404
-    
+    if debug:
+        start = time.time()
+        print 'Call to the `AccessPermission(source_file).test`', 
     AccessPermission(source_file).test(http_exception=403)
+    if debug:
+        print 'took %.3f seconds' % (time.time() - start)
 
     try:
         action_presented = 'action' in request.args
@@ -123,7 +138,12 @@ def file_view(_id=None):
             raise ValidationError('You can\'t specify both `action` and `template`.')
         
         if apply_:
+            #if debug:
+                #start = time.time()
+                #print 'Call to the `apply_', 
             target_id = apply_(source_file, request.args.to_dict())
+            #if debug:
+                #print 'took %.3f seconds' % (time.time() - start)
             return ok({
                 'resource_uri': get_resource_uri_for('file', target_id)
             })
