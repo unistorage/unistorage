@@ -172,6 +172,7 @@ def get_extension(fname):
 def apply_hacks(result, stdout_data, stderr_data):
     video = result['video']
     audio = result['audio']
+    format = result['format']
 
     if not video:
         return result
@@ -213,9 +214,31 @@ def apply_hacks(result, stdout_data, stderr_data):
     if video:
         result['video']['duration'] = get_first_sane_duration(
             [video_duration, format_duration, audio_duration])
+        
     if audio:
         result['audio']['duration'] = get_first_sane_duration(
             [audio_duration, format_duration, video_duration])
+
+    # Решаем проблему, когда известен только один из битрейтов -- аудио или видео
+    file_bitrate = stderr_data.get('file_bitrate')
+    file_duration = get_first_sane_duration(
+        [format_duration, video_duration, audio_duration])
+    file_size = stdout_data.get('format', {}).get('size')
+    if not file_bitrate and file_duration and file_size:
+        try:
+            file_bitrate = '%ik' % (float(file_size) * 8 / float(file_duration) / 1000.)
+        except:
+            pass
+    
+    if file_bitrate and video and audio:
+        video_bitrate = video['bitrate']
+        audio_bitrate = audio['bitrate']
+        if (not video_bitrate) and audio_bitrate:
+            video['bitrate'] = '%ik' % (int(file_bitrate.rstrip('k')) -
+                                        int(audio_bitrate.rstrip('k'))) 
+        if (not audio_bitrate) and video_bitrate:
+            audio['bitrate'] = '%ik' % (int(file_bitrate.rstrip('k')) -
+                                        int(video_bitrate.rstrip('k'))) 
 
     return result
 
