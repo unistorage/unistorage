@@ -469,12 +469,12 @@ class PendingFile(File):
     @classmethod
     def find(cls, *args, **kwargs):
         kwargs.update({'pending': True})
-        return cls.find(*args, **kwargs)
+        return super(PendingFile, cls).find(*args, **kwargs)
 
     @classmethod
     def get_one(cls, *args, **kwargs):
         kwargs.update({'pending': True})
-        return cls.get_one(*args, **kwargs)
+        return super(PendingFile, cls).get_one(*args, **kwargs)
 
     @classmethod
     def get_from_fs(cls, db, fs, **kwargs):
@@ -495,3 +495,18 @@ class PendingFile(File):
         assert '_id' in kwargs
         if fs.exists(pending=True, **kwargs):
             fs.delete(kwargs['_id'])
+
+    def move_to_updating(self, db, fs):
+        result = UpdatingPendingFile(self).save(db)
+        PendingFile.remove_from_fs(db, fs, _id=self.get_id())
+        return result
+
+
+class UpdatingPendingFile(PendingFile):
+    collection = 'updating_pending_files'
+    structure = dict(PendingFile.structure, **{
+        'upload_date': datetime,
+        'length': int,
+        'md5': basestring,
+        'chunk_size': int,
+    })

@@ -13,7 +13,7 @@ from bson.objectid import ObjectId
 import settings
 import actions
 import connections
-from app.models import PendingFile, RegularFile
+from app.models import PendingFile, UpdatingPendingFile, RegularFile
 from file_utils import get_file_data
 
 
@@ -73,11 +73,14 @@ def perform_actions(source_id, target_id, target_kwargs):
             data = get_file_data(curr_file, file_name=source_file_name + curr_file_ext)
             curr_unistorage_type = data['unistorage_type']
 
-        target_file = curr_file
-        target_file_name = '%s_%s.%s' % (source_file_name, target_kwargs['label'], curr_file_ext)
+        result_file = curr_file
+        result_file_name = '%s_%s.%s' % (source_file_name, target_kwargs['label'], curr_file_ext)
         
-        PendingFile.remove_from_fs(db, fs, _id=target_id)
-        RegularFile.put_to_fs(db, fs, target_file_name, target_file, _id=target_id, **target_kwargs)
-        target_file.close()
+        updating_pending_file_id = \
+            PendingFile.get_one(db, {'_id': target_id}).move_to_updating(db, fs)
+        RegularFile.put_to_fs(
+            db, fs, result_file_name, result_file, _id=target_id, **target_kwargs)
+        UpdatingPendingFile.get_one(db, {'_id': updating_pending_file_id}).remove(db)
+        result_file.close()
     except Exception as e:
         raise Exception(str(e))

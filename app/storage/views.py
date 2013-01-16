@@ -17,7 +17,8 @@ from utils import ok, error, jsonify, methods_required
 from . import bp
 from app import db, fs
 from app.uris import parse_file_uri, get_resource_uri_for
-from app.models import File, RegularFile, PendingFile, Template, ZipCollection
+from app.models import (File, RegularFile, PendingFile, UpdatingPendingFile,
+                        Template, ZipCollection)
 from app.perms import AccessPermission
 
 
@@ -112,7 +113,8 @@ def file_view(_id=None):
     if debug:
         start = time.time()
         print 'Call to the `source_file = File.get_one`',
-    source_file = File.get_one(db, {'_id': _id})
+    source_file = File.get_one(db, {'_id': _id}) or \
+        UpdatingPendingFile.get_one(db, {'_id': _id})
     if debug:
         print 'took %.3f seconds' % (time.time() - start)
     
