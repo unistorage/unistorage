@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import json
+import pipes
 import os.path
 import tempfile
 import subprocess
@@ -169,7 +170,7 @@ def get_extension(fname):
     return extension and extension.lstrip('.')
 
 
-def apply_hacks(result, stdout_data, stderr_data):
+def apply_hacks(result, stdout_data, stderr_data, fname):
     video = result['video']
     audio = result['audio']
     format = result['format']
@@ -214,10 +215,24 @@ def apply_hacks(result, stdout_data, stderr_data):
     if video:
         result['video']['duration'] = get_first_sane_duration(
             [video_duration, format_duration, audio_duration])
-        
     if audio:
         result['audio']['duration'] = get_first_sane_duration(
             [audio_duration, format_duration, video_duration])
+
+    if not audio:
+        result['video']['bitrate'] = stderr_data.get('file_bitrate')
+
+    if format == 'webm':
+        if audio:
+            cmd = '%s -i %s -vn -acodec copy -f ogg -y - | wc -c' % \
+                (settings.AVCONV_BIN, pipes.quote(fname))
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            stdout, stderr = proc.communicate()
+            try:
+                audio_size = int(stdout)  # размер аудиопотока в байтах
+                result['audio']['bitrate'] = '%ik' % (audio_size * 8. / audio_duration / 1000.)
+            except:
+                pass
 
     # Решаем проблему, когда известен только один из битрейтов -- аудио или видео
     file_bitrate = stderr_data.get('file_bitrate')
@@ -235,10 +250,10 @@ def apply_hacks(result, stdout_data, stderr_data):
         audio_bitrate = audio['bitrate']
         if (not video_bitrate) and audio_bitrate:
             video['bitrate'] = '%ik' % (int(file_bitrate.rstrip('k')) -
-                                        int(audio_bitrate.rstrip('k'))) 
+                                        int(audio_bitrate.rstrip('k')))
         if (not audio_bitrate) and video_bitrate:
             audio['bitrate'] = '%ik' % (int(file_bitrate.rstrip('k')) -
-                                        int(video_bitrate.rstrip('k'))) 
+                                        int(video_bitrate.rstrip('k')))
 
     return result
 
@@ -272,7 +287,7 @@ def avprobe(fname):
         'audio': audio,
         'format': format
     }
-    result = apply_hacks(result, stdout_data, stderr_data)
+    result = apply_hacks(result, stdout_data, stderr_data, fname)
     return result
 
 
