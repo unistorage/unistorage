@@ -33,6 +33,13 @@ def parse_int(val):
         return None
 
 
+def bitrate_to_int(val):
+    if isinstance(val, basestring) and val.endswith('k'):
+        return int(val.rstrip('k'))
+    else:
+        return int(val)
+
+
 def get_first_sane_duration(durations):
     for duration in durations:
         if duration and duration < 24 * 60 * 60:
@@ -74,9 +81,7 @@ def extract_video_data(stream, stderr_data):
         file_bitrate = stderr_data.get('file_bitrate')
         audio_bitrate = stderr_data.get('audio_bitrate')
         if file_bitrate and audio_bitrate:
-            # XXX
-            video_bitrate = '%ik' % (int(file_bitrate.rstrip('k')) -
-                                     int(audio_bitrate.rstrip('k')))
+            video_bitrate = bitrate_to_int(file_bitrate) - bitrate_to_int(audio_bitrate)
     return {
         'width': parse_int(stream.get('width')),
         'height': parse_int(stream.get('height')),
@@ -137,12 +142,12 @@ def parse_stderr(stderr):
     for match in re.finditer(regexp, stderr):
         stream_type = match.group('stream_type').lower()
         key = '%s_bitrate' % stream_type
-        data[key] = '%dk' % int(match.group('bitrate'))
+        data[key] = int(match.group('bitrate')) * 1000
 
     regexp = '\n\s+Duration:.*?, bitrate: (?P<bitrate>\d+) kb/s\n'
     match = re.search(regexp, stderr)
     if match:
-        data['file_bitrate'] = '%dk' % int(match.group('bitrate'))
+        data['file_bitrate'] = int(match.group('bitrate')) * 1000
     
     regexp = r'Stream.*Video:.*?\s(?P<size>\d+x\d+)(?:,|\n)'
     match = re.search(regexp, stderr)
@@ -183,7 +188,7 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
         format_data = stdout_data['format']
         bitrate = format_data.get('bit_rate')
         if bitrate and not video['bitrate']:
-            result['video']['bitrate'] = '%ik' % (parse_float(bitrate) / 1000)
+            result['video']['bitrate'] = '%ik' % (parse_float(bitrate))
 
         duration = format_data.get('duration')
         if duration and not video['duration']:
@@ -230,7 +235,7 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
             stdout, stderr = proc.communicate()
             try:
                 audio_size = int(stdout)  # размер аудиопотока в байтах
-                result['audio']['bitrate'] = '%ik' % (audio_size * 8. / audio_duration / 1000.)
+                result['audio']['bitrate'] = int(audio_size * 8. / audio_duration)
             except:
                 pass
 
@@ -241,7 +246,7 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
     file_size = stdout_data.get('format', {}).get('size')
     if not file_bitrate and file_duration and file_size:
         try:
-            file_bitrate = '%ik' % (float(file_size) * 8 / float(file_duration) / 1000.)
+            file_bitrate = int(float(file_size) * 8 / file_duration)
         except:
             pass
     
@@ -249,11 +254,9 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
         video_bitrate = video['bitrate']
         audio_bitrate = audio['bitrate']
         if (not video_bitrate) and audio_bitrate:
-            video['bitrate'] = '%ik' % (int(file_bitrate.rstrip('k')) -
-                                        int(audio_bitrate.rstrip('k')))
+            video['bitrate'] = bitrate_to_int(file_bitrate) - bitrate_to_int(audio_bitrate)
         if (not audio_bitrate) and video_bitrate:
-            audio['bitrate'] = '%ik' % (int(file_bitrate.rstrip('k')) -
-                                        int(video_bitrate.rstrip('k')))
+            audio['bitrate'] = bitrate_to_int(file_bitrate) - bitrate_to_int(video_bitrate)
 
     return result
 
