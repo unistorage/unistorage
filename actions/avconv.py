@@ -9,6 +9,8 @@ import cPickle as pickle
 from StringIO import StringIO
 from datetime import datetime, timedelta
 
+import magic
+
 import settings
 
 
@@ -178,7 +180,6 @@ def get_extension(fname):
 def apply_hacks(result, stdout_data, stderr_data, fname):
     video = result['video']
     audio = result['audio']
-    format = result['format']
 
     if not video:
         return result
@@ -227,7 +228,16 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
     if not audio:
         result['video']['bitrate'] = stderr_data.get('file_bitrate')
 
-    if format == 'webm':
+    # Если webm закачивается без расширения, ffmpeg выдаёт формат matroska
+    if result['format'] == 'matroska':
+        m = magic.Magic(mime=True, magic_file=settings.MAGIC_FILE_PATH)
+        with open(fname) as file:
+            content_type = m.from_buffer(file.read(1024))
+
+        if content_type == 'video/webm':
+            result['format'] = 'webm'
+
+    if result['format'] == 'webm':
         if audio:
             cmd = '%s -i %s -vn -acodec copy -f ogg -y - | wc -c' % \
                 (settings.AVCONV_BIN, pipes.quote(fname))
