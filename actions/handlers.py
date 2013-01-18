@@ -33,22 +33,17 @@ def apply_actions(source_file, action_list, label):
     except:
         debug = False
 
-    source_id = source_file.get_id()
-    if debug:
-        start = time.time()
-        print 'Call to the `target_file = File.get_one`', 
-    target_file = File.get_one(db, {'original': source_id, 'label': label})
-    if debug:
-        print 'took %.3f seconds' % (time.time() - start)
-
-    if target_file:
-        return target_file.get_id()
+    if source_file.modifications:
+        target_id = source_file.modifications.get(label)
+        if target_id:
+            return target_id
 
     ttl_timedelta = settings.AVERAGE_TASK_TIME
     ttl = int(ttl_timedelta.total_seconds())
 
     # Атрибуты, которые должны быть как у временного файла, так и у постоянного (после выполнения
     # операции)
+    source_id = source_file.get_id()
     target_kwargs = {
         'user_id': request.user['_id'],
         'type_id': source_file.type_id,
