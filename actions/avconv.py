@@ -189,7 +189,7 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
         format_data = stdout_data['format']
         bitrate = format_data.get('bit_rate')
         if bitrate and not video['bitrate']:
-            result['video']['bitrate'] = '%ik' % (parse_float(bitrate))
+            result['video']['bitrate'] = int(parse_float(bitrate) * 1000)
 
         duration = format_data.get('duration')
         if duration and not video['duration']:
@@ -214,6 +214,9 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
         if duration and not video['duration']:
             result['video']['duration'] = parse_float(duration)
 
+    if video and video['fps'] == 1000:
+        video['fps'] = 25
+
     # Решаем проблему с неправдоподобными длительностями:
     format_duration = stderr_data.get('duration')
     video_duration = video and video['duration']
@@ -237,17 +240,19 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
         if content_type == 'video/webm':
             result['format'] = 'webm'
 
-    if result['format'] == 'webm':
-        if audio:
-            cmd = '%s -i %s -vn -acodec copy -f ogg -y - | wc -c' % \
-                (settings.AVCONV_BIN, pipes.quote(fname))
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            stdout, stderr = proc.communicate()
-            try:
-                audio_size = int(stdout)  # размер аудиопотока в байтах
-                result['audio']['bitrate'] = int(audio_size * 8. / audio_duration)
-            except:
-                pass
+    # Для видео. коу которых известен только битрейт всего файла
+    if stderr_data.get('file_bitrate') and \
+            (audio and not audio['bitrate']) and (video and not video['bitrate']):
+
+        cmd = '%s -i %s -vn -acodec copy -f %s -y - | wc -c' % \
+            (settings.AVCONV_BIN, pipes.quote(fname), pipes.quote(result['format']))
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        stdout, stderr = proc.communicate()
+        try:
+            audio_size = int(stdout)  # размер аудиопотока в байтах
+            result['audio']['bitrate'] = int(audio_size * 8. / audio_duration)
+        except:
+            pass
 
     # Решаем проблему, когда известен только один из битрейтов -- аудио или видео
     file_bitrate = stderr_data.get('file_bitrate')
