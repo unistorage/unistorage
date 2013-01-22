@@ -23,7 +23,7 @@ with app.app_context():
         'pending': False,
         #'unistorage_type': 'video',
         #'extra.audio.codec': 'vorbis'
-    })
+    }, timeout=False)
 
     count = files_to_update.count()
     log = open('./failed_fixes.txt', 'a+')

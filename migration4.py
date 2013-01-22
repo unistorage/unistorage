@@ -10,7 +10,7 @@ with app.app_context():
         'modifications': {
             '$exists': True
         }
-    })
+    }, timeout=False)
 
     count = files_to_update.count()
     for i, _file in enumerate(files_to_update, start=1):

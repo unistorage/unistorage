@@ -22,7 +22,7 @@ with app.app_context():
     files_to_update = db.fs.files.find({
         'pending': False,
         'unistorage_type': 'video'
-    })
+    }, timeout=False)
 
     count = files_to_update.count()
     for i, _file in enumerate(files_to_update):
