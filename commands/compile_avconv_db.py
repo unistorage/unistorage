@@ -21,12 +21,11 @@ def noop(line):
 
 
 def parse_codec(line):
-    m = re.match(r'^(?P<decoding>D|\s)'
-                 r'(?P<encoding>E|\s)'
-                 r'(?P<codec_type>V|A|S|\s)'
-                 r'(?:S|\s)(?:D|\s)(?:T|\s)\s'
+    m = re.match(r'^(?P<decoding>D|\.)'
+                 r'(?P<encoding>E|\.)'
+                 r'(?P<codec_type>V|A|S|\.)'
+                 r'(?:I|\.)(?:L|\.)(?:S|\.)\s*'
                  r'(?P<codec_name>\w+)', line)
-
     codec_name = m.group('codec_name')
     codec_type = m.group('codec_type')
 
@@ -49,10 +48,9 @@ def parse_codecs(avconv):
 
         if not line:
             parse = noop
-
         parse(line)
         
-        if line == '------':
+        if line == '-------':
             parse = parse_codec
 
 
