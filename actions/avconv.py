@@ -339,7 +339,7 @@ encoder_args = {
         'aac': ['-strict', 'experimental']
     },
     'vcodecs': {
-        'h263p': ['-threads', '1'],
+        'h263p': ['-threads', '1', '-vf', 'scale=trunc(iw/4)*4:trunc(ih/4)*4'],
         'libtheora': ['-qscale', '6'],
         'libx264': ['-flags', '+loop', '-cmp', '+chroma', '-partitions',
                     '+parti4x4+partp8x8+partb8x8', '-subq', '5', '-trellis', '1', '-refs', '1',

@@ -118,7 +118,8 @@ class ImageMagickWrapper(object):
 
 
 def wrap(image):
-    if image.format == 'GIF' or is_rgba_png(image):
+    if True:  # TODO: Get rid of PIL!
+        # image.format == 'GIF' or is_rgba_png(image):
         wrapper = ImageMagickWrapper
     else:
         wrapper = PILWrapper
