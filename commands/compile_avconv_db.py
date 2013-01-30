@@ -92,9 +92,9 @@ def make_avconv_db(decoders, encoders, formats):
             acodecs[name]['encoding'] = True
 
     return {
-        'acodecs': acodecs,
-        'vcodecs': vcodecs,
-        'formats': formats,
+        'acodecs': dict(acodecs),
+        'vcodecs': dict(vcodecs),
+        'formats': dict(formats),
     }
 
 
