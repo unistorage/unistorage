@@ -18,7 +18,7 @@ def check_avconv_codecs():
 
     acodecs = (
         'vorbis', 'libvorbis',
-        'amrnb', 'libopencore_amrnb',
+        'libopencore_amrnb',
         'mp3', 'libmp3lame', 'aac',
         'alac', 'ac3', 'flac'
     )
