@@ -8,8 +8,8 @@ import sh
 import settings
 
 
-vcodecs = {}
-acodecs = {}
+vcodecs = defaultdict(dict)
+acodecs = defaultdict(dict)
 formats = defaultdict(partial(dict, [
     ('encoding', False),
     ('decoding', False)
@@ -28,6 +28,37 @@ def parse_codec(line):
                  r'(?P<codec_name>\w+)', line)
     codec_name = m.group('codec_name')
     codec_type = m.group('codec_type')
+
+    decoding_supported = m.group('decoding') == 'D'
+    encoding_supported = m.group('encoding') == 'E'
+    actions_supported = {
+        'decoding': decoding_supported,
+        'encoding': encoding_supported
+    }
+    if codec_type == 'V':
+        vcodecs[codec_name] = actions_supported
+    elif codec_type == 'A':
+        acodecs[codec_name] = actions_supported
+# V..... = Video
+ #A..... = Audio
+ #S..... = Subtitle
+ #.F.... = Frame-level multithreading
+ #..S... = Slice-level multithreading
+ #...X.. = Codec is experimental
+ #....B. = Supports draw_horiz_band
+ #.....D = Supports direct rendering method 1
+
+
+def parse_decoder(line):
+    m = re.match(r'(?P<decoder_type>V|A|S)'
+                 r'(?:F|\.)'
+                 r'(?:S|\.)'
+                 r'(?:X|\.)'
+                 r'(?:B|\.)'
+                 r'(?:D|\.)\s*'
+                 r'(?P<decoder_name>\w+)', line)
+    decoder_type = m.group('decoder_type')
+    decoder_name = m.group('decoder_name')
 
     decoding_supported = m.group('decoding') == 'D'
     encoding_supported = m.group('encoding') == 'E'
