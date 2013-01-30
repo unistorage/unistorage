@@ -46,7 +46,7 @@ class Test(SmokeTest):
         results_dir = os.path.join(TEST_TARGET_DIR, 'convert')
         os.makedirs(results_dir)
 
-        for format in ('gif', 'jpeg', 'bmp', 'tiff', 'png'):
+        for format in ('gif', 'jpeg', 'bmp', 'png'):
             for source_name, source_file in self.source_files():
                 result, ext = convert(source_file, format)
 
