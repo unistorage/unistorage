@@ -1,6 +1,6 @@
+# coding: utf-8
 import re
 import cPickle as pickle
-from functools import partial
 from collections import defaultdict
 
 import sh
@@ -8,84 +8,97 @@ import sh
 import settings
 
 
-vcodecs = defaultdict(dict)
-acodecs = defaultdict(dict)
-formats = defaultdict(partial(dict, [
-    ('encoding', False),
-    ('decoding', False)
-]))
-
-
-def noop(line):
+def noop(*args, **kwargs):
     pass
 
 
-def parse_codec(line):
-    m = re.match(r'^(?P<decoding>D|\.)'
-                 r'(?P<encoding>E|\.)'
-                 r'(?P<codec_type>V|A|S|\.)'
-                 r'(?:I|\.)(?:L|\.)(?:S|\.)\s*'
-                 r'(?P<codec_name>\w+)', line)
-    codec_name = m.group('codec_name')
-    codec_type = m.group('codec_type')
-
-    decoding_supported = m.group('decoding') == 'D'
-    encoding_supported = m.group('encoding') == 'E'
-    actions_supported = {
-        'decoding': decoding_supported,
-        'encoding': encoding_supported
-    }
-    if codec_type == 'V':
-        vcodecs[codec_name] = actions_supported
-    elif codec_type == 'A':
-        acodecs[codec_name] = actions_supported
-# V..... = Video
- #A..... = Audio
- #S..... = Subtitle
- #.F.... = Frame-level multithreading
- #..S... = Slice-level multithreading
- #...X.. = Codec is experimental
- #....B. = Supports draw_horiz_band
- #.....D = Supports direct rendering method 1
-
-
-def parse_decoder(line):
+def parse_decoder(line, decoders):
     m = re.match(r'(?P<decoder_type>V|A|S)'
-                 r'(?:F|\.)'
-                 r'(?:S|\.)'
-                 r'(?:X|\.)'
-                 r'(?:B|\.)'
-                 r'(?:D|\.)\s*'
+                 r'(?:F|\.)(?:S|\.)(?:X|\.)'
+                 r'(?:B|\.)(?:D|\.)\s*'
                  r'(?P<decoder_name>\w+)', line)
-    decoder_type = m.group('decoder_type')
-    decoder_name = m.group('decoder_name')
-
-    decoding_supported = m.group('decoding') == 'D'
-    encoding_supported = m.group('encoding') == 'E'
-    actions_supported = {
-        'decoding': decoding_supported,
-        'encoding': encoding_supported
-    }
-    if codec_type == 'V':
-        vcodecs[codec_name] = actions_supported
-    elif codec_type == 'A':
-        acodecs[codec_name] = actions_supported
+    decoders.append({
+        'type': m.group('decoder_type'),
+        'name': m.group('decoder_name'),
+    })
 
 
-def parse_codecs(avconv):
+def parse_decoders(stream):
+    decoders = []
+
     parse = noop
-    for line in avconv('-codecs'):
+    for line in stream:
+        # Выкидываем пробел из начала и перевод строки из конца:
         line = line[1:-1]
-
         if not line:
             parse = noop
-        parse(line)
+
+        parse(line, decoders)
         
-        if line == '-------':
-            parse = parse_codec
+        if line == '------':
+            parse = parse_decoder
+
+    return decoders
 
 
-def parse_format(line):
+def parse_encoder(line, encoders):
+    m = re.match(r'(?P<encoder_type>V|A|S)'
+                 r'(?:F|\.)(?:S|\.)(?:X|\.)'
+                 r'(?:B|\.)(?:D|\.)\s*'
+                 r'(?P<encoder_name>\w+)', line)
+    encoders.append({
+        'type': m.group('encoder_type'),
+        'name': m.group('encoder_name'),
+    })
+
+
+def parse_encoders(stream):
+    encoders = []
+
+    parse = noop
+    for line in stream:
+        # Выкидываем пробел из начала и перевод строки из конца:
+        line = line[1:-1]
+        if not line:
+            parse = noop
+
+        parse(line, encoders)
+        
+        if line == '------':
+            parse = parse_encoder
+
+    return encoders
+
+
+def make_avconv_db(decoders, encoders, formats):
+    default = lambda: {'decoding': False, 'encoding': False}
+    vcodecs = defaultdict(default)
+    acodecs = defaultdict(default)
+
+    for decoder in decoders:
+        type_ = decoder['type']
+        name = decoder['name']
+        if type_ == 'V':
+            vcodecs[name]['decoding'] = True
+        if type_ == 'A':
+            acodecs[name]['decoding'] = True
+    
+    for encoder in encoders:
+        type_ = encoder['type']
+        name = encoder['name']
+        if type_ == 'V':
+            vcodecs[name]['encoding'] = True
+        if type_ == 'A':
+            acodecs[name]['encoding'] = True
+
+    return {
+        'acodecs': acodecs,
+        'vcodecs': vcodecs,
+        'formats': formats,
+    }
+
+
+def parse_format(line, formats):
     m = re.match(r'^(?P<decoding>D|\s)'
                  r'(?P<encoding>E|\s)\s'
                  r'(?P<format_names>[\w,]+)', line)
@@ -99,15 +112,21 @@ def parse_format(line):
         format['encoding'] = format['encoding'] or encoding_supported
 
 
-def parse_formats(avconv):
+def parse_formats(stream):
     parse = noop
-    for line in avconv('-formats'):
-        line = line[1:-1]
+    formats = defaultdict(lambda: {'decoding': False, 'encoding': False})
 
-        parse(line)
+    for line in stream:
+        line = line[1:-1]
+        if not line:
+            parse = noop
+        
+        parse(line, formats)
 
         if line == '--':
             parse = parse_format
+
+    return formats
 
 
 def compile_avconv_db():
@@ -115,13 +134,10 @@ def compile_avconv_db():
     assert sh.which(settings.AVCONV_BIN)
     avconv = sh.Command(settings.AVCONV_BIN)
 
-    parse_codecs(avconv)
-    parse_formats(avconv)
-    data = {
-        'acodecs': acodecs,
-        'vcodecs': vcodecs,
-        'formats': dict(formats)
-    }
+    decoders = parse_decoders(avconv('-decoders'))
+    encoders = parse_decoders(avconv('-decoders'))
+    formats = parse_formats(avconv('-formats'))
+
+    data = make_avconv_db(decoders, encoders, formats)
     with open(settings.AVCONV_DB_PATH, 'w') as avconv_db:
         pickle.dump(data, avconv_db)
-
