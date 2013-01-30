@@ -135,7 +135,7 @@ def compile_avconv_db():
     avconv = sh.Command(settings.AVCONV_BIN)
 
     decoders = parse_decoders(avconv('-decoders'))
-    encoders = parse_decoders(avconv('-decoders'))
+    encoders = parse_decoders(avconv('-encoders'))
     formats = parse_formats(avconv('-formats'))
 
     data = make_avconv_db(decoders, encoders, formats)
