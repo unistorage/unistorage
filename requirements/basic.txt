@@ -23,3 +23,6 @@ sh==1.05
 
 # temporary:
 git+https://github.com/mitsuhiko/jinja2.git
+
+raven
+blinker

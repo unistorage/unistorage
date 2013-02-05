@@ -14,6 +14,7 @@ DEBUG = False
 SECRET_KEY = 'qwertyuiop[]'
 ADMINS = ['anthony.romanovich@gmail.com']
 
+SENTRY_DSN = ''
 
 # Логин и пароль от интерфейса администратора (/admin/)
 ADMIN_USERNAME = 'admin'
