@@ -15,7 +15,12 @@ import settings
 
 
 m = magic.Magic(mime=True, magic_file=settings.MAGIC_FILE_PATH)
-
+try:
+    # Precaution :)
+    m = magic.Magic(mime=True, keep_going=True,
+                    magic_file=settings.MAGIC_FILE_PATH)
+except:
+    pass
 
 def secure_filename(filename):
     """Modified version of :func:`werkzeug.secure_filename`"""

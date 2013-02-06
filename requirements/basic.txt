@@ -1,28 +1,29 @@
+# Временно (ибо Jinja2.6 имеет баг в фильтре `filesizeformat`):
+git+https://github.com/mitsuhiko/jinja2.git
+
 Flask==0.9
 Flask-Assets==0.7
 Flask-Script==0.5.1
-wtforms
+WTForms==1.0.2
 
 Flask-Principal==0.3.3
 repoze.who==2.0
 
 pymongo==2.4.1
 monk==0.5.1
-# temporary:
+# Форк kombu с поддержкой репликасетов:
 git+https://github.com/mediasite/kombu.git@2.4#egg=kombu
 celery==3.0.11
 
-python-magic==0.4.2
-kaa-base
-kaa-metadata
+# Временно взамен python-magic==0.4.2 до тех пор, пока 
+# https://github.com/ahupp/python-magic/pull/28 не окажется в пакете на PyPi:
+git+https://github.com/aromanovich/python-magic.git@d529597e3d26e89f7f86c39a7959f582fd1b3c9e
 
-pytz
-pyyaml
-pytils
+pytz==2012f
+PyYAML==3.10
+pytils==0.2.3
 sh==1.05
 
-# temporary:
-git+https://github.com/mitsuhiko/jinja2.git
-
-raven
-blinker
+# Интеграция с Sentry:
+raven==3.1.6
+blinker==1.2
