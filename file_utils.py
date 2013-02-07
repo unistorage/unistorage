@@ -9,18 +9,14 @@ from unicodedata import normalize
 import magic
 from werkzeug.datastructures import FileStorage
 
+import settings
 from actions.utils import get_unistorage_type
 from actions.avconv import avprobe
-import settings
+from identify import identify
 
+m = magic.Magic(mime=True, keep_going=True,
+                magic_file=settings.MAGIC_FILE_PATH)
 
-m = magic.Magic(mime=True, magic_file=settings.MAGIC_FILE_PATH)
-try:
-    # Precaution :)
-    m = magic.Magic(mime=True, keep_going=True,
-                    magic_file=settings.MAGIC_FILE_PATH)
-except:
-    pass
 
 def secure_filename(filename):
     """Modified version of :func:`werkzeug.secure_filename`"""
@@ -30,17 +26,6 @@ def secure_filename(filename):
         if sep:
             filename = filename.replace(sep, '_')
     return re.sub(r'^\.+', '_', filename.strip(' '))
-
-
-def identify(file, format):
-    args = [settings.IDENTIFY_BIN, '-format', '%s\n' % format, '-']
-    proc = subprocess.Popen(args, stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    proc_input = file.read()
-    file.seek(0)
-
-    stdout_data, stderr_data = proc.communicate(input=proc_input)
-    return stdout_data.split('\n')[0].strip()
 
 
 def get_content_type(file):
@@ -68,13 +53,7 @@ def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
             inaccurate_extra = get_avprobe_result(file_content, file_name=file_name)
     elif inaccurate_unistorage_type == 'image':
         try:
-            image_format, image_size = identify(file, '%m %wx%h').split()
-            image_width, image_height = map(int, image_size.split('x'))
-            inaccurate_extra = {
-                'format': image_format.lower(),
-                'width': image_width,
-                'height': image_height
-            }
+            inaccurate_extra = identify(file)
         except:
             pass
 
