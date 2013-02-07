@@ -83,7 +83,7 @@ def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
                 data['video']['filters'] = vf_params
 
                 if data['audio']:
-                    data['audio']['bitrate'] = data['audio']['bitrate'] or '128k'
+                    data['audio']['bitrate'] = data['audio']['bitrate'] or 128000
 
                 fps = data['video'].get('fps')
                 if fps:

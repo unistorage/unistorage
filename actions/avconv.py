@@ -35,13 +35,6 @@ def parse_int(val):
         return None
 
 
-def bitrate_to_int(val):
-    if isinstance(val, basestring) and val.endswith('k'):
-        return int(val.rstrip('k'))
-    else:
-        return int(val)
-
-
 def get_first_sane_duration(durations):
     for duration in durations:
         if duration and duration < 24 * 60 * 60:
@@ -57,10 +50,9 @@ def extract_video_data(stream, stderr_data):
         'width': int,
         'height': int,
         'codec': string,  # имя кодека в терминологии ffmpeg
-        'bitrate': string,  # битрейт в формате "%dk", например, "256k"
+        'bitrate': int,  # битрейт
         'duration': float,  # длительность видео в секундах
         'fps': float,  # frame per second
-
     }
     ```
 
@@ -83,7 +75,7 @@ def extract_video_data(stream, stderr_data):
         file_bitrate = stderr_data.get('file_bitrate')
         audio_bitrate = stderr_data.get('audio_bitrate')
         if file_bitrate and audio_bitrate:
-            video_bitrate = bitrate_to_int(file_bitrate) - bitrate_to_int(audio_bitrate)
+            video_bitrate = file_bitrate - audio_bitrate
     return {
         'width': parse_int(stream.get('width')),
         'height': parse_int(stream.get('height')),
@@ -103,7 +95,7 @@ def extract_audio_data(stream, stderr_data):
         'channels': int,  # количество каналов
         'sample_rate': float,
         'codec': string,  # имя кодека в терминологии ffmpeg
-        'bitrate': string,  # битрейт в формате "%dk", например, "256k"
+        'bitrate': int,
         'duration': float,  # длительность видео в секундах
     }
     ```
@@ -132,19 +124,26 @@ def parse_stderr(stderr):
     Возвращает словарь, удовлетворяющий следующей схеме:
     ```
     {
-        'audio_bitrate': string or None,  # битрейт в формате "%dk", например, "256k"
-        'video_bitrate': string or None
+        'audio_bitrate': int or None,
+        'video_bitrate': int or None,
+        'file_bitrate': int or None,  # Общий битрейт файла
+        'video_size': str or None,  # Размер видео в формате \d+x\d+
+        'duration': float or None,  # Общая продолжительность файла
     }
     """
     data = {
         'audio_bitrate': None,
-        'video_bitrate': None
+        'video_bitrate': None,
+        'file_bitrate': None,
+        'video_size': None,
+        'duration': None,
     }
     regexp = r'Stream.*(?P<stream_type>Audio|Video):.*?(?P<bitrate>\d+) kb/s'
     for match in re.finditer(regexp, stderr):
         stream_type = match.group('stream_type').lower()
         key = '%s_bitrate' % stream_type
-        data[key] = int(match.group('bitrate')) * 1000
+        if not data[key]:
+            data[key] = int(match.group('bitrate')) * 1000
 
     regexp = '\n\s+Duration:.*?, bitrate: (?P<bitrate>\d+) kb/s\n'
     match = re.search(regexp, stderr)
@@ -269,9 +268,9 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
         video_bitrate = video['bitrate']
         audio_bitrate = audio['bitrate']
         if (not video_bitrate) and audio_bitrate:
-            video['bitrate'] = bitrate_to_int(file_bitrate) - bitrate_to_int(audio_bitrate)
+            video['bitrate'] = file_bitrate - audio_bitrate
         if (not audio_bitrate) and video_bitrate:
-            audio['bitrate'] = bitrate_to_int(file_bitrate) - bitrate_to_int(video_bitrate)
+            audio['bitrate'] = file_bitrate - video_bitrate
 
     return result
 
