@@ -5,13 +5,13 @@ from cStringIO import StringIO
 import settings
 from actions import ActionException
 
-from identify import identify
+from identify import identify_file
 
 
 class ImageMagickWrapper(object):
     def __init__(self, image):
         self._image = image
-        image_data = identify(image)
+        image_data = identify_file(image)
         self._is_animated = image_data['is_animated']
         self._format = image_data['format'].upper()
         self._args = [settings.CONVERT_BIN, '-']

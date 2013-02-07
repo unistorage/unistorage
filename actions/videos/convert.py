@@ -1,13 +1,12 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 import os
 import tempfile
 
-from actions import ActionException
 from actions.utils import ValidationError
 from actions.common import validate_presence
 from actions.avconv import avprobe, avconv
-from actions.videos.utils import run_flvtool
-from actions.common.codecs_validation import require_acodec_presence, require_vcodec_presence
+from actions.common.codecs_validation import \
+    require_acodec_presence, require_vcodec_presence
 
 
 name = 'convert'

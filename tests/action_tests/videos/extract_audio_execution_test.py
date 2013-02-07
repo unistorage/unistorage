@@ -1,7 +1,7 @@
-from tests.utils import StorageFunctionalTest, WorkerMixin
+from tests.utils import StorageFunctionalTest
 
 
-class FunctionalTest(StorageFunctionalTest, WorkerMixin):
+class FunctionalTest(StorageFunctionalTest):
     def test_extract_audio_from_3gp_to_mp3(self):
         original_uri = self.put_file('videos/sample.3gp')
 

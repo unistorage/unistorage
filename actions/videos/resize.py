@@ -1,16 +1,16 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 import os
 import tempfile
 
-from actions.common import validate_presence
-from actions.common.resize_validation import validate_and_get_args
-from actions.videos.utils import run_flvtool
+from actions.common.resize_validation import validate_and_get_args \
+    as common_resize_validate_and_get_args
 from actions.avconv import avprobe, avconv
 
 
 name = 'resize'
 applicable_for = 'video'
 result_unistorage_type = 'video'
+validate_and_get_args = common_resize_validate_and_get_args
 
 
 def to_int(x):

@@ -1,14 +1,14 @@
 import settings
 from app import db
-from tests.utils import StorageFunctionalTest, WorkerMixin
+from tests.utils import StorageFunctionalTest
 
 
-class FunctionalTest(StorageFunctionalTest, WorkerMixin):
+class FunctionalTest(StorageFunctionalTest):
     def test(self):
         original_uri = self.put_file('images/some.jpeg')
         original_id = self.get_id_from_uri(original_uri)
         self.check(original_uri, width=640, height=480, mime='image/jpeg')
-        
+       
         resize_action_url = '%s?action=resize&mode=keep&w=400' % original_uri
         r = self.app.get(resize_action_url)
         self.assertEquals(r.json['status'], 'ok')

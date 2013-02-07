@@ -1,12 +1,10 @@
 import os
 import tempfile
 
-import actions
-from actions.utils import ValidationError
-from actions.avconv import avprobe, avconv, get_codec_supported_actions
-from actions.videos.utils import run_flvtool
+from actions.avconv import avprobe, avconv
 from actions.images.resize import perform as image_resize
-from actions.common.codecs_validation import require_acodec_presence, require_vcodec_presence
+from actions.common.codecs_validation import \
+    require_acodec_presence, require_vcodec_presence
 from actions.common.watermark_validation import \
     validate_and_get_args as common_watermark_validation
 

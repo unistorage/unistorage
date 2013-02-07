@@ -4,6 +4,7 @@ import time
 
 from flask import url_for
 from celery import current_app
+from celery.signals import task_sent
 from bson.objectid import ObjectId
 
 import app
@@ -11,6 +12,7 @@ import settings
 from app import db, fs
 from app.models import User, RegularFile
 from app.admin.forms import get_random_token
+from actions.tasks import perform_actions
 from tests.flask_webtest import FlaskTestCase, FlaskTestApp
 
 
@@ -22,22 +24,22 @@ def fixture_path(path):
 
 
 class WorkerMixin(object):
-    def run_worker(self):
-        tests_dir = os.path.dirname(os.path.abspath(__file__))
-        script_name = os.path.join(tests_dir, 'celery_worker.py')
-        subprocess.Popen(
-            ['PYTHONPATH=%s:$PYTHONPATH UNISTORAGE_TESTING=1 %s' %
-                (os.getcwd(), script_name)], shell=True)
+    def __call__(self, result=None):
+        try:
+            self._sent_tasks = []
+            @task_sent.connect
+            def task_sent_handler(sender=None, task_id=None, task=None, args=None,
+                                  kwargs=None, **kwds):
+                self._sent_tasks.append((task, args, kwargs))
+            super(WorkerMixin, self).__call__(result)
+        finally:
+            self._sent_tasks = []
 
-        while True:
-            time.sleep(0.1)
-            reserved_tasks = current_app.control.inspect().reserved()
-            if not reserved_tasks:
-                continue
-            for tasks in reserved_tasks.values():
-                if not tasks:
-                    current_app.control.broadcast('shutdown', destination=['test_worker'])
-                    return
+    def run_worker(self):
+        while self._sent_tasks:
+            (task, args, kwargs) = self._sent_tasks.pop(0)
+            self.assertEqual(task, 'actions.tasks.perform_actions')
+            perform_actions(*args, **kwargs)
 
 
 class ContextMixin(object):
@@ -97,7 +99,7 @@ class StorageFlaskTestApp(FlaskTestApp):
         return super(StorageFlaskTestApp, self).do_request(req, status, expect_errors)
 
 
-class StorageFunctionalTest(ContextMixin, FlaskTestCase):
+class StorageFunctionalTest(ContextMixin, WorkerMixin, FlaskTestCase):
     def setUp(self):
         super(StorageFunctionalTest, self).setUp()
         
@@ -113,19 +115,19 @@ class StorageFunctionalTest(ContextMixin, FlaskTestCase):
             params.update({'type_id': type_id})
             
         r = self.app.post('/', params, upload_files=files)
-        self.assertEquals(r.json['status'], 'ok')
+        self.assertEqual(r.json['status'], 'ok')
         return r.json['resource_uri']
 
     def assert_fileinfo(self, r, key, value):
-        self.assertEquals(r.json['data']['extra'][key], value)
+        self.assertEqual(r.json['data']['extra'][key], value)
 
     def check(self, url, width=None, height=None, mime=None):
         r = self.app.get(url)
-        self.assertEquals(r.json['status'], 'ok')
+        self.assertEqual(r.json['status'], 'ok')
         if width:
             self.assert_fileinfo(r, 'width', width)
         if height:
             self.assert_fileinfo(r, 'height', height)
         if mime:
-            self.assertEquals(r.json['data']['mimetype'], mime)
+            self.assertEqual(r.json['data']['mimetype'], mime)
         return r

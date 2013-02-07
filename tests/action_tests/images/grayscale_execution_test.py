@@ -1,7 +1,7 @@
-from tests.utils import StorageFunctionalTest, WorkerMixin
+from tests.utils import StorageFunctionalTest
 
 
-class FunctionalTest(StorageFunctionalTest, WorkerMixin):
+class FunctionalTest(StorageFunctionalTest):
     def test(self):
         uri = self.put_file('images/some.png')
         self.check(uri, width=43, height=43, mime='image/png')

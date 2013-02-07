@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 import re
 import subprocess
 import binascii
@@ -12,7 +12,8 @@ from werkzeug.datastructures import FileStorage
 import settings
 from actions.utils import get_unistorage_type
 from actions.avconv import avprobe
-from identify import identify
+from identify import identify_buffer
+
 
 m = magic.Magic(mime=True, keep_going=True,
                 magic_file=settings.MAGIC_FILE_PATH)
@@ -53,7 +54,7 @@ def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
             inaccurate_extra = get_avprobe_result(file_content, file_name=file_name)
     elif inaccurate_unistorage_type == 'image':
         try:
-            inaccurate_extra = identify(file)
+            inaccurate_extra = identify_buffer(file_content)
         except:
             pass
 

@@ -29,7 +29,7 @@ def login_required(func):
 def login():
     who_api = who.get_api(request.environ)
     form = forms.LoginForm(request.form)
-    
+
     if request.method == 'POST' and form.validate():
         authenticated, headers = who_api.login(form.data)
         if authenticated:

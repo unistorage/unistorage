@@ -1,17 +1,16 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 import subprocess
 from cStringIO import StringIO
 
 import settings
-from identify import identify
+from identify import identify_file
 from actions import ActionException
-
 
 
 class ImageMagickWrapper(object):
     def __init__(self, image):
         self._image = image
-        image_data = identify(image)
+        image_data = identify_file(image)
         self._is_animated = image_data['is_animated']
         self._format = image_data['format'].upper()
         self._args = [settings.CONVERT_BIN, '-']
@@ -44,14 +43,12 @@ class ImageMagickWrapper(object):
             self._args.insert(2, '-coalesce')
 
         self._args.append('%s:-' % format.upper())
-        proc_input = self._image #.fp
+        proc_input = self._image
         proc_input.seek(0)
 
-        try:
-            proc = subprocess.Popen(self._args, stdin=subprocess.PIPE,
-                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        except OSError:
-            raise ActionException('Failed to start ImageMagick\'s convert: %s' % self._args[0])
+        proc = subprocess.Popen(
+            self._args, stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         result, error = proc.communicate(input=proc_input.read())
         return_code = proc.wait()
