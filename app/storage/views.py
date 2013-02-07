@@ -1,12 +1,16 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 """
 Storage views
 =============
 """
-import functools
 import time
+import json
+import logging
+import functools
+import os.path
 from datetime import datetime
 
+import jsonschema
 from flask import request, abort
 
 import settings
@@ -20,6 +24,9 @@ from app.uris import parse_file_uri, get_resource_uri_for
 from app.models import (File, RegularFile, PendingFile, UpdatingPendingFile,
                         Template, ZipCollection)
 from app.perms import AccessPermission
+
+
+logger = logging.getLogger(__name__)
 
 
 def login_required(func):
@@ -81,7 +88,9 @@ def get_regular_file(user, file):
     :param file: :term:`обычный файл`
     :type file: :class:`app.models.File`
     """
-    return ok({
+    
+    data = {
+        'status': 'ok',
         'data': {
             'name': file.filename,
             'size': file.length,
@@ -91,7 +100,22 @@ def get_regular_file(user, file):
             'extra': file.get('extra', {})
         },
         'ttl': settings.TTL
-    })
+    }
+
+    if file.unistorage_type in ('video', 'audio', 'image'):
+        schema_path = os.path.join(
+            settings.PROJECT_PATH, './schemas/%s.json' % file.unistorage_type)
+        with open(schema_path) as schema_file:
+            schema = json.load(schema_file)
+            regular_file_schema_path = \
+                os.path.join(settings.PROJECT_PATH, './schemas/regular-file.json')
+            schema['extends'] = {u'$ref': u'file://%s' % regular_file_schema_path}
+            try:
+                jsonschema.validate(data, schema)
+            except:
+                logger.error('Schema validation failed!', exc_info=True, extra=data)
+
+    return jsonify(data)
 
 
 @bp.route('/<ObjectId:_id>/')
@@ -105,27 +129,13 @@ def file_view(_id=None):
     - Выдача информации о файле `id` во всех остальных случаях
     """
     request.debug = request.headers.get('Debug', False)
-    try:
-        debug = getattr(request, 'debug', False)
-    except:
-        debug = False
 
-    if debug:
-        start = time.time()
-        print 'Call to the `source_file = File.get_one`',
     source_file = File.get_one(db, {'_id': _id}) or \
         UpdatingPendingFile.get_one(db, {'_id': _id})
-    if debug:
-        print 'took %.3f seconds' % (time.time() - start)
     
     if not source_file:
         return error({'msg': 'File wasn\'t found'}), 404
-    if debug:
-        start = time.time()
-        print 'Call to the `AccessPermission(source_file).test`', 
     AccessPermission(source_file).test(http_exception=403)
-    if debug:
-        print 'took %.3f seconds' % (time.time() - start)
 
     try:
         action_presented = 'action' in request.args
@@ -140,12 +150,7 @@ def file_view(_id=None):
             raise ValidationError('You can\'t specify both `action` and `template`.')
         
         if apply_:
-            #if debug:
-                #start = time.time()
-                #print 'Call to the `apply_', 
             target_id = apply_(source_file, request.args.to_dict())
-            #if debug:
-                #print 'took %.3f seconds' % (time.time() - start)
             return ok({
                 'resource_uri': get_resource_uri_for('file', target_id)
             })

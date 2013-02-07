@@ -70,13 +70,6 @@ MAGIC_FILE_PATH = ':'.join((
 AVCONV_DB_PATH = os.path.join(PROJECT_PATH, 'avconv.db')
 
 
-logging_conf_path = os.path.join(PROJECT_PATH, 'logging.conf')
-config = yaml.load(open(logging_conf_path))
-config['handlers']['mail']['toaddrs'] = ADMINS
-
-logging.config.dictConfig(config)
-
-
 try:
     from settings_local import *
 except ImportError:
@@ -90,3 +83,10 @@ if any([command in sys.argv for command in test_commands]) or \
         from settings_test import *
     except ImportError:
         pass
+
+
+if SENTRY_DSN:
+    from raven.conf import setup_logging
+    from raven.handlers.logging import SentryHandler
+    handler = SentryHandler(SENTRY_DSN)
+    setup_logging(handler)

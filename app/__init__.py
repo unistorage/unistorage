@@ -36,7 +36,7 @@ def create_app():
     register_blueprints(app)
     register_bundles(app)
 
-    import storage
+    import storage  # Ибо циклический импорт
 
     @app.errorhandler(404)
     def not_found_error_handler(e):
@@ -60,8 +60,7 @@ def configure_app(app):
     
     sentry_dsn = getattr(settings, 'SENTRY_DSN', False)
     if sentry_dsn:
-        app.config['SENTRY_DSN'] = sentry_dsn
-        Sentry(app)
+        Sentry(app, dsn=sentry_dsn)
 
 
 def register_blueprints(app):
