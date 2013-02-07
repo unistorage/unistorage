@@ -113,7 +113,7 @@ def get_regular_file(user, file):
             try:
                 jsonschema.validate(data, schema)
             except:
-                logger.warning('Schema validation failed!', exc_info=True, extra=data)
+                logger.warning('Schema validation failed!', exc_info=True, extra=dict(data))
 
     return jsonify(data)
 
