@@ -15,7 +15,6 @@ before_install:
   - sudo apt-get install ffmpeg
   - sudo apt-get install -t squeeze -y --force-yes $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
   - sudo apt-get install -t squeeze -y --force-yes openoffice.org-ure $(apt-cache --no-generate pkgnames openoffice.org3 | tr '\n' ' ')
-  - sudo ln -s /usr/lib/i386-linux-gnu/libz.so /usr/lib/
   - sudo npm install -g less
   - wget https://raw.github.com/mediasite/openoffice-wrapper/master/oowrapper.py
   - chmod +x ./oowrapper.py

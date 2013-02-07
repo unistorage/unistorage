@@ -1,5 +1,7 @@
 from actions.common import validate_presence
 from actions.common.resize_validation import validate_and_get_args
+from identify import identify
+from . import ImageMagickWrapper
 
 
 name = 'resize'
@@ -7,20 +9,22 @@ applicable_for = 'image'
 result_unistorage_type = 'image'
 
 
-def perform(source_file, mode, target_width, target_height):
-    from PIL import Image
-    from utils import wrap, to_int
+def to_int(x):
+    return int(round(x, 0))
 
-    source_image = Image.open(source_file)
-    target_image = wrap(source_image)
+
+def perform(source_file, mode, target_width, target_height):
+    target_image = ImageMagickWrapper(source_file)
 
     if mode == 'resize':
         return target_image.resize(target_width, target_height).finalize()
+    
+    image_data = identify(source_file)
+    source_width, source_height = image_data['width'], image_data['height']
 
-    source_width, source_height = map(float, source_image.size)
     # If mode == 'keep', either target_width or target_height can be None
-    factors = [target_width / source_width if target_width else 1,
-               target_height / source_height if target_height else 1]
+    factors = [float(target_width) / source_width if target_width else 1.0,
+               float(target_height) / source_height if target_height else 1.0]
 
     factor = max(factors) if mode == 'crop' else min(factors)
     width = to_int(source_width * factor)

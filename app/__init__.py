@@ -12,6 +12,7 @@ from flask.wrappers import Request
 from flask.ext.assets import Environment, Bundle
 from werkzeug.local import LocalProxy
 from werkzeug.routing import BaseConverter, ValidationError
+from raven.contrib.flask import Sentry
 
 import settings
 import connections
@@ -119,5 +120,10 @@ def create_app():
         'js/libs/moment.min.js',
         output='gen/statistics-js.js')
     assets.register('statistics_js', statistics_js)
+
+    sentry_dsn = getattr(settings, 'SENTRY_DSN', False)
+    if sentry_dsn:
+        app.config['SENTRY_DSN'] = sentry_dsn
+        sentry = Sentry(app)
 
     return app

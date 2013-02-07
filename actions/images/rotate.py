@@ -1,5 +1,6 @@
 from actions.utils import ValidationError
 from actions.common import validate_presence
+from . import ImageMagickWrapper
 
 
 name = 'rotate'
@@ -18,8 +19,4 @@ def validate_and_get_args(args, source_file=None):
 
 
 def perform(source_file, angle):
-    from PIL import Image
-    from utils import wrap
-
-    source_image = Image.open(source_file)
-    return wrap(source_image).rotate(angle).finalize()
+    return ImageMagickWrapper(source_file).rotate(angle).finalize()

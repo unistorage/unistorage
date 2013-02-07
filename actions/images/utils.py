@@ -1,75 +1,18 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 import subprocess
 from cStringIO import StringIO
 
-from PIL import Image, ImageOps
-
 import settings
+from identify import identify
 from actions import ActionException
-
-
-def to_int(x):
-    return int(round(x, 0))
-
-
-def is_animated(image):
-    try:
-        image.seek(1)
-    except EOFError:
-        is_animated = False
-    else:
-        is_animated = True
-    image.seek(0)
-    return is_animated
-
-
-def is_rgba_png(image):
-    return image.mode == 'RGBA'
-
-
-class PILWrapper(object):
-    def __init__(self, image):
-        self._image = image
-        self._format = self._image.format.upper()
-    
-    def make_grayscale(self):
-        self._image = ImageOps.grayscale(self._image)
-        return self
-
-    def resize(self, width, height):
-        self._image = self._image.resize((width, height), resample=Image.ANTIALIAS)
-        return self
-
-    def rotate(self, angle):
-        self._image = self._image.rotate(angle)
-        return self
-    
-    def crop_to_center(self, target_width, target_height):
-        width, height = self._image.size
-        width_to_crop = width - target_width
-        height_to_crop = height - target_height
-
-        left, top = to_int(width_to_crop / 2), to_int(height_to_crop / 2)
-        right, bottom = width - left, height - top
-
-        self._image = self._image.crop((left, top, right, bottom))
-        return self
-
-    def finalize(self, **kwargs):
-        format = kwargs.get('format', self._format).upper()
-        if self._image.mode != 'RGB' and format in ('JPEG', 'BMP'):
-            self._image = self._image.convert('RGB')
-        result = StringIO()
-        self._image.save(result, format)
-        result.seek(0)
-        return result, format.lower()
 
 
 class ImageMagickWrapper(object):
     def __init__(self, image):
         self._image = image
-        self._is_animated = is_animated(self._image)
-        self._format = self._image.format.upper()
+        image_data = identify(image)
+        self._is_animated = image_data['is_animated']
+        self._format = image_data['format'].upper()
         self._args = [settings.CONVERT_BIN, '-']
     
     def make_grayscale(self):
@@ -100,7 +43,7 @@ class ImageMagickWrapper(object):
             self._args.insert(2, '-coalesce')
 
         self._args.append('%s:-' % format.upper())
-        proc_input = self._image.fp
+        proc_input = self._image #.fp
         proc_input.seek(0)
 
         try:
@@ -115,12 +58,3 @@ class ImageMagickWrapper(object):
             raise ActionException('ImageMagick\'s convert (%s) failed.' % self._args[0])
 
         return StringIO(result), format.lower()
-
-
-def wrap(image):
-    if True:  # TODO: Get rid of PIL!
-        # image.format == 'GIF' or is_rgba_png(image):
-        wrapper = ImageMagickWrapper
-    else:
-        wrapper = PILWrapper
-    return wrapper(image)
