@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-# Debug imports
-import time
-from flask import request
-# /
-
+# coding: utf-8
 import random
 from datetime import datetime
 from urlparse import urljoin
@@ -148,7 +143,7 @@ class Statistics(ValidationMixin, modeling.Document):
         'type_id': ObjectId,
         'timestamp': datetime,
         'files_count': int,
-        'files_size': int
+        'files_size': int,
     }
     required = ['user_id', 'timestamp']
 
@@ -320,7 +315,7 @@ class File(ValidationMixin, ServableMixin, modeling.Document):
         'filename': basestring,
         'content_type': basestring,
         'unistorage_type': basestring,
-        'pending': bool
+        'pending': bool,
     }
     required = ('user_id', 'filename', 'content_type', 'unistorage_type')
 
@@ -358,7 +353,7 @@ class ZipCollection(ValidationMixin, ServableMixin, modeling.Document):
         'user_id': ObjectId,
         'file_ids': [ObjectId],
         'filename': basestring,
-        'created_at': datetime.utcnow
+        'created_at': datetime.utcnow,
     }
     required = ['user_id', 'file_ids', 'filename', 'created_at']
 
@@ -400,45 +395,25 @@ class RegularFile(File):
         :type file: file-like object или :class:`werkzeug.datastructures.FileStorage`
         :param **kwargs: дополнительные параметры, которые станут атрибутами файла в GridFS
         """
-        try:
-            debug = getattr(request, 'debug', False)
-        except:
-            debug = False
-
-        if debug:
-            start = time.time()
-            print 'Call to the `file_utils.get_file_data`',
         kwargs.update(file_utils.get_file_data(file, file_name))
-        if debug:
-            print 'took %.3f seconds' % (time.time() - start)
         kwargs.update({'pending': False})
 
         cls(**kwargs).validate()
         file_content = file.read()
         if len(file_content) > 30 * 1024 * 1024:
             kwargs.update({'chunkSize': 8 * 1024 * 1024})
-        if debug:
-            start = time.time()
-            print 'Call to the `fs.put`',
         file_id = fs.put(file_content, **kwargs)
-        if debug:
-            print 'took %.3f seconds' % (time.time() - start)
 
-        if debug:
-            start = time.time()
-            print 'Statistics update',
         db[Statistics.collection].update({
             'user_id': kwargs.get('user_id'),
             'type_id': kwargs.get('type_id'),
-            'timestamp': get_today_utc_midnight()
+            'timestamp': get_today_utc_midnight(),
         }, {
             '$inc': {
                 'files_count': 1,
-                'files_size': fs.get(file_id).length
+                'files_size': fs.get(file_id).length,
             }
         }, upsert=True)
-        if debug:
-            print 'took %.3f seconds' % (time.time() - start)
         return file_id
 
 

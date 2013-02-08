@@ -41,6 +41,7 @@ class WorkerMixin(object):
             self.assertEqual(task, 'actions.tasks.perform_actions')
             perform_actions(*args, **kwargs)
 
+from app import mongo
 
 class ContextMixin(object):
     """
@@ -51,7 +52,7 @@ class ContextMixin(object):
         super(ContextMixin, self).setUp()
         self.ctx = app.create_app().test_request_context()
         self.ctx.push()
-        db.connection.drop_database(settings.MONGO_DB_NAME)
+        mongo.cx.drop_database(settings.MONGO_DB_NAME)
 
     def tearDown(self):
         super(ContextMixin, self).tearDown()

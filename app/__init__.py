@@ -2,6 +2,7 @@
 from gridfs import GridFS
 from werkzeug.local import LocalProxy
 from flask import Flask, _app_ctx_stack
+from flask.ext.pymongo import PyMongo
 from flask.ext.assets import Environment, Bundle
 from raven.contrib.flask import Sentry
 
@@ -10,23 +11,9 @@ import connections
 from utils import ObjectIdConverter, CustomRequest
 
 
-def get_db():
-    ctx = _app_ctx_stack.top
-    connection = getattr(ctx, 'mongo_connection', None)
-    if connection is None:
-        connection = connections.get_mongodb_connection()
-        ctx.mongo_connection = connection
-    return connection[settings.MONGO_DB_NAME]
-
-
-def close_database_connection(error=None):
-    connection = getattr(_app_ctx_stack.top, 'mongo_connection', None)
-    if connection is not None:
-        connection.close()
-
-
-db = LocalProxy(get_db)
-fs = LocalProxy(lambda: GridFS(get_db()))
+mongo = PyMongo()
+db = LocalProxy(lambda: mongo.db)
+fs = LocalProxy(lambda: GridFS(mongo.db))
 
 
 def create_app():
@@ -54,9 +41,16 @@ def create_app():
 def configure_app(app):
     app.url_map.converters['ObjectId'] = ObjectIdConverter
     app.secret_key = settings.SECRET_KEY
-    app.teardown_appcontext(close_database_connection)
+    #app.teardown_appcontext(close_database_connection)
     app.request_class = CustomRequest
     app.config['PROPAGATE_EXCEPTIONS'] = settings.DEBUG
+
+    app.config.update({
+        'MONGO_HOST': 'localhost',
+        'MONGO_PORT': 27017,
+        'MONGO_DBNAME': settings.MONGO_DB_NAME,
+    })
+    mongo.init_app(app)
     
     sentry_dsn = getattr(settings, 'SENTRY_DSN', False)
     if sentry_dsn:
