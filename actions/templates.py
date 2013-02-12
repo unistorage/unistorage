@@ -55,7 +55,8 @@ def validate_and_get_template(args):
     :type args: `dict(applicable_for=..., actions=list(...))`
     :raises: ValidationError
     :rtype: `dict(applicable_for=unistorage_type,
-                  action_list=list(tuple(action_name, action_cleaned_args)))`
+                  action_list=list(dict),
+                  cleaned_action_list=list(dict))`
     """
     applicable_for = args.get('applicable_for')
     if not applicable_for:

@@ -1,6 +1,6 @@
 {
     "type" : "object",
-    "extends": {"$ref": "file:regular-file.json"},
+    "extends": {"$ref": "./regular-file.json"},
     "properties" : {
         "data": {
             "properties" : {

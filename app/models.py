@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-# Debug imports
-import time
-from flask import request
-# /
-
+# coding: utf-8
 import random
 from datetime import datetime
 from urlparse import urljoin
@@ -52,7 +47,7 @@ class User(ValidationMixin, modeling.Document):
         'name': basestring,
         'token': basestring,
         'needs': [tuple],
-        'domains': [basestring]
+        'domains': [basestring],
     }
     required = ('token',)
 
@@ -100,7 +95,7 @@ class Template(ValidationMixin, modeling.Document):
         'user_id': ObjectId,
         'applicable_for': basestring,
         'action_list': list,
-        'cleaned_action_list': list
+        'cleaned_action_list': list,
     }
     required = ('user_id', 'applicable_for', 'action_list')
 
@@ -108,7 +103,7 @@ class Template(ValidationMixin, modeling.Document):
     def get_by_resource_uri(cls, db, template_uri):
         try:
             template_id = parse_template_uri(template_uri)
-        except ValueError as e:
+        except ValueError:
             return None
 
         return cls.get_one(db, {'_id': template_id})
@@ -148,7 +143,7 @@ class Statistics(ValidationMixin, modeling.Document):
         'type_id': ObjectId,
         'timestamp': datetime,
         'files_count': int,
-        'files_size': int
+        'files_size': int,
     }
     required = ['user_id', 'timestamp']
 
@@ -320,7 +315,7 @@ class File(ValidationMixin, ServableMixin, modeling.Document):
         'filename': basestring,
         'content_type': basestring,
         'unistorage_type': basestring,
-        'pending': bool
+        'pending': bool,
     }
     required = ('user_id', 'filename', 'content_type', 'unistorage_type')
 
@@ -358,7 +353,7 @@ class ZipCollection(ValidationMixin, ServableMixin, modeling.Document):
         'user_id': ObjectId,
         'file_ids': [ObjectId],
         'filename': basestring,
-        'created_at': datetime.utcnow
+        'created_at': datetime.utcnow,
     }
     required = ['user_id', 'file_ids', 'filename', 'created_at']
 
@@ -400,45 +395,27 @@ class RegularFile(File):
         :type file: file-like object или :class:`werkzeug.datastructures.FileStorage`
         :param **kwargs: дополнительные параметры, которые станут атрибутами файла в GridFS
         """
-        try:
-            debug = getattr(request, 'debug', False)
-        except:
-            debug = False
-
-        if debug:
-            start = time.time()
-            print 'Call to the `file_utils.get_file_data`',
         kwargs.update(file_utils.get_file_data(file, file_name))
-        if debug:
-            print 'took %.3f seconds' % (time.time() - start)
-        kwargs.update({'pending': False})
 
         cls(**kwargs).validate()
         file_content = file.read()
+
+        # Если файл большой, увеличиваем размер чанков:
         if len(file_content) > 30 * 1024 * 1024:
             kwargs.update({'chunkSize': 8 * 1024 * 1024})
-        if debug:
-            start = time.time()
-            print 'Call to the `fs.put`',
-        file_id = fs.put(file_content, **kwargs)
-        if debug:
-            print 'took %.3f seconds' % (time.time() - start)
 
-        if debug:
-            start = time.time()
-            print 'Statistics update',
+        file_id = fs.put(file_content, **kwargs)
+
         db[Statistics.collection].update({
             'user_id': kwargs.get('user_id'),
             'type_id': kwargs.get('type_id'),
-            'timestamp': get_today_utc_midnight()
+            'timestamp': get_today_utc_midnight(),
         }, {
             '$inc': {
                 'files_count': 1,
-                'files_size': fs.get(file_id).length
+                'files_size': fs.get(file_id).length,
             }
         }, upsert=True)
-        if debug:
-            print 'took %.3f seconds' % (time.time() - start)
         return file_id
 
 
@@ -498,14 +475,21 @@ class PendingFile(File):
             fs.delete(kwargs['_id'])
 
     def move_to_updating(self, db, fs):
+        """Перемещает временный файл в коллекцию обновляющихся временных файлов.
+        (Вначале копирует временный файл, после чего удаляет оригинал.)
+        """
         result = UpdatingPendingFile(self).save(db)
         PendingFile.remove_from_fs(db, fs, _id=self.get_id())
         return result
 
 
 class UpdatingPendingFile(PendingFile):
+    """Реализация сущности :term:`обновляющийся временный файл`.
+    По сути, является :class:`PendingFile`, но хранится в отдельной коллекции.
+    """
     collection = 'updating_pending_files'
     structure = dict(PendingFile.structure, **{
+        # TODO Переместить эту структуру в :class:`File`?
         'upload_date': datetime,
         'length': int,
         'md5': basestring,
