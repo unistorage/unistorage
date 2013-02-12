@@ -43,6 +43,8 @@ def login_required(func):
 @login_required
 def file_create():
     """Вьюшка, сохраняющая файл в хранилище."""
+    request.debug = request.headers.get('Debug', False)
+    
     file = request.files.get('file')
     if not file:
         return error({'msg': 'File wasn\'t found'}), 400
@@ -105,13 +107,14 @@ def get_regular_file(user, file):
             settings.PROJECT_PATH, './schemas/%s.json' % file.unistorage_type)
         with open(schema_path) as schema_file:
             schema = json.load(schema_file)
-            schema['id'] = 'file://%s' % schema_path
-
+            regular_file_schema_path = \
+                os.path.join(settings.PROJECT_PATH, './schemas/regular-file.json')
+            schema['extends'] = {u'$ref': u'file://%s' % regular_file_schema_path}
             try:
                 jsonschema.validate(data, schema)
-            except Exception:
+            except:
                 logger.warning('Schema validation failed!', exc_info=True,
-                               extra={'response': data})
+                        extra={'response': dict(data)})
 
     return jsonify(data)
 
@@ -126,6 +129,8 @@ def file_view(_id=None):
     - Применение шаблона к файлу `id`, если GET-запрос содержит аргумент `template`
     - Выдача информации о файле `id` во всех остальных случаях
     """
+    request.debug = request.headers.get('Debug', False)
+
     source_file = File.get_one(db, {'_id': _id}) or \
         UpdatingPendingFile.get_one(db, {'_id': _id})
     
