@@ -48,7 +48,7 @@ def apply_actions(source_file, action_list, label):
     })
 
     #perform_actions.delay(source_id, target_id, target_kwargs)
-    perform_actions_v2.delay(target_id)
+    perform_actions.delay(target_id)
 
     db[File.collection].update(
         {'_id': source_id},

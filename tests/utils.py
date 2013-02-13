@@ -12,7 +12,7 @@ import settings
 from app import db, fs
 from app.models import User, RegularFile
 from app.admin.forms import get_random_token
-from actions.tasks import perform_actions, perform_actions_v2
+from actions.tasks import perform_actions
 from tests.flask_webtest import FlaskTestCase, FlaskTestApp
 
 
@@ -38,8 +38,8 @@ class WorkerMixin(object):
     def run_worker(self):
         while self._sent_tasks:
             (task, args, kwargs) = self._sent_tasks.pop(0)
-            self.assertEqual(task, 'actions.tasks.perform_actions_v2')
-            perform_actions_v2(*args, **kwargs)
+            self.assertEqual(task, 'actions.tasks.perform_actions')
+            perform_actions(*args, **kwargs)
 
 
 class ContextMixin(object):

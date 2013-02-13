@@ -32,7 +32,7 @@ def resolve_object_ids(fs, args):
 
 
 @celery.task
-def perform_actions(source_id, target_id, target_kwargs):
+def perform_actions(target_id):
     perform_actions_v2(target_id)
 
 
