@@ -94,9 +94,9 @@ def get_regular_file(user, file):
             'mimetype': file.content_type,
             'unistorage_type': file.unistorage_type,
             'url': file.get_binary_data_url(db),
-            'extra': file.get('extra', {})
+            'extra': file.get('extra', {}),
         },
-        'ttl': settings.TTL
+        'ttl': settings.TTL,
     }
 
     if file.unistorage_type in ('video', 'audio', 'image'):

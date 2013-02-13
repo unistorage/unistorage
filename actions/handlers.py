@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 """
 Применение операций и шаблонов
 ==============================
 """
 from flask import request
-import time  # debug
 
 import settings
 import actions
-from actions.tasks import perform_actions
+from actions.tasks import perform_actions, perform_actions_v2
 from app import db, fs
 from app.models import Template, File, PendingFile
 from app.perms import AccessPermission
@@ -28,11 +27,6 @@ def apply_actions(source_file, action_list, label):
     :type action_list: `list(tuple(action_name, action_cleaned_args))`
     :rtype: :class:`ObjectId`
     """
-    try:
-        debug = getattr(request, 'debug', False)
-    except:
-        debug = False
-
     if source_file.modifications:
         target_id = source_file.modifications.get(label)
         if target_id:
@@ -41,45 +35,24 @@ def apply_actions(source_file, action_list, label):
     ttl_timedelta = settings.AVERAGE_TASK_TIME
     ttl = int(ttl_timedelta.total_seconds())
 
-    # Атрибуты, которые должны быть как у временного файла, так и у постоянного (после выполнения
-    # операции)
     source_id = source_file.get_id()
-    target_kwargs = {
+
+    target_id = PendingFile.put_to_fs(db, fs, **{
         'user_id': request.user['_id'],
         'type_id': source_file.type_id,
         'original': source_id,
         'label': label,
-    }
-
-    # Атрибуты временного файла
-    pending_target_kwargs = {
         'ttl': ttl,
         'actions': action_list,
-        'original_content_type': source_file.content_type
-    }
-    pending_target_kwargs.update(target_kwargs)
-    if debug:
-        start = time.time()
-        print 'Call to the `target_id = PendingFile.put_to_fs`', 
-    target_id = PendingFile.put_to_fs(db, fs, **pending_target_kwargs)
-    if debug:
-        print 'took %.3f seconds' % (time.time() - start)
+        'original_content_type': source_file.content_type,
+    })
 
-    if debug:
-        start = time.time()
-        print 'Call to the `perform_actions.delay`', 
-    perform_actions.delay(source_id, target_id, target_kwargs)
-    if debug:
-        print 'took %.3f seconds' % (time.time() - start)
+    #perform_actions.delay(source_id, target_id, target_kwargs)
+    perform_actions_v2.delay(target_id)
 
-    if debug:
-        start = time.time()
-        print 'Call to the `db[File.collection].update`', 
     db[File.collection].update(
         {'_id': source_id},
         {'$set': {'modifications.%s' % label: target_id}})
-    if debug:
-        print 'took %.3f seconds' % (time.time() - start)
     return target_id
 
 
