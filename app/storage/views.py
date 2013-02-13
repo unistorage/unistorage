@@ -43,8 +43,6 @@ def login_required(func):
 @login_required
 def file_create():
     """Вьюшка, сохраняющая файл в хранилище."""
-    request.debug = request.headers.get('Debug', False)
-    
     file = request.files.get('file')
     if not file:
         return error({'msg': 'File wasn\'t found'}), 400
@@ -88,7 +86,6 @@ def get_regular_file(user, file):
     :param file: :term:`обычный файл`
     :type file: :class:`app.models.File`
     """
-    
     data = {
         'status': 'ok',
         'data': {
@@ -107,9 +104,8 @@ def get_regular_file(user, file):
             settings.PROJECT_PATH, './schemas/%s.json' % file.unistorage_type)
         with open(schema_path) as schema_file:
             schema = json.load(schema_file)
-            regular_file_schema_path = \
-                os.path.join(settings.PROJECT_PATH, './schemas/regular-file.json')
-            schema['extends'] = {u'$ref': u'file://%s' % regular_file_schema_path}
+            # Присваиваем абсолютный URI, чтобы в схеме работали относительные $ref
+            schema['id'] = 'file://%s' % schema_path
             try:
                 jsonschema.validate(data, schema)
             except:
@@ -129,8 +125,6 @@ def file_view(_id=None):
     - Применение шаблона к файлу `id`, если GET-запрос содержит аргумент `template`
     - Выдача информации о файле `id` во всех остальных случаях
     """
-    request.debug = request.headers.get('Debug', False)
-
     source_file = File.get_one(db, {'_id': _id}) or \
         UpdatingPendingFile.get_one(db, {'_id': _id})
     
