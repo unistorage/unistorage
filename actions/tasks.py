@@ -33,11 +33,6 @@ def resolve_object_ids(fs, args):
 
 @celery.task
 def perform_actions(target_id):
-    perform_actions_v2(target_id)
-
-
-@celery.task
-def perform_actions_v2(target_id):
     """Проверяет существование исходного обычного файла с идентификатором `source_id` и временного с
     идентификатором `target_id`. Последовательно применяет к исходному файлу операции, записанные
     в поле `actions` временного файла; удаляёт файл с `target_id` и записывает на его место

@@ -7,7 +7,7 @@ from flask import request
 
 import settings
 import actions
-from actions.tasks import perform_actions, perform_actions_v2
+from actions.tasks import perform_actions
 from app import db, fs
 from app.models import Template, File, PendingFile
 from app.perms import AccessPermission
@@ -46,8 +46,6 @@ def apply_actions(source_file, action_list, label):
         'actions': action_list,
         'original_content_type': source_file.content_type,
     })
-
-    #perform_actions.delay(source_id, target_id, target_kwargs)
     perform_actions.delay(target_id)
 
     db[File.collection].update(
