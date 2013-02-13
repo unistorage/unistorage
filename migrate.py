@@ -23,7 +23,7 @@ def _validate(file_):
     _validate_extra(unistorage_type, extra)
 
 
-def _update_extra(id_, file_, log=None):
+def _update_extra(id_, file_):
     gridout = fs.get(id_)
     new_file_data = file_utils.get_file_data(gridout, file_['filename'])
     new_unistorage_type = new_file_data['unistorage_type']
@@ -39,7 +39,7 @@ def _update_extra(id_, file_, log=None):
     })
 
 
-def migrate(query, force=False):
+def migrate(query, force=False, no_input=False):
     """
     Updates files matching to `query`.
     If `force`, all files will be updated.
@@ -59,16 +59,18 @@ def migrate(query, force=False):
         print 'No such entries found.'
         return
     
-    print '%i files to be updated. Are you sure? (y/N)' % count
-    a = raw_input('> ')
-    if a not in ('y', 'Y'):
-        exit()
+    if not no_input:
+        print '%i files to be updated. Are you sure? (y/N)' % count
+        a = raw_input('> ')
+        if a not in ('y', 'Y'):
+            exit()
 
-    print 'Log failed fixes (to ./failed-fixes.txt)? (y/N)'
-    a = raw_input('> ')
     log = None
-    if a in ('y', 'Y'):
-        log = open('./failed-fixes.txt', 'a+')
+    if not no_input:
+        print 'Log failed fixes (to ./failed-fixes.txt)? (y/N)'
+        a = raw_input('> ')
+        if a in ('y', 'Y'):
+            log = open('./failed-fixes.txt', 'a+')
 
     for i, file_ in enumerate(files_to_update):
         id_ = file_['_id']

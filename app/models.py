@@ -6,6 +6,7 @@ from urlparse import urljoin
 from bson import ObjectId
 from monk import modeling
 from monk.validation import ValidationError
+from monk.modeling import dict_to_db
 from flask.ext.principal import RoleNeed
 
 import settings
@@ -304,7 +305,14 @@ class File(ValidationMixin, ServableMixin, modeling.Document):
     """
     collection = 'fs.files'
     structure = {
+        # Поля из GridFS-спецификации
         '_id': ObjectId,
+        'upload_date': datetime,
+        'length': int,
+        'md5': basestring,
+        'chunk_size': int,
+        # /
+
         'user_id': ObjectId,
         'type_id': basestring,
 
@@ -318,6 +326,26 @@ class File(ValidationMixin, ServableMixin, modeling.Document):
         'pending': bool,
     }
     required = ('user_id', 'filename', 'content_type', 'unistorage_type')
+    
+    def save(self, db):
+        # TODO: Копипаста из monk.modelling
+        assert self.collection
+        self._ensure_indexes(db)
+
+        outgoing = dict(dict_to_db(self, self.structure))
+        # TODO Сделанная ради этого:
+        outgoing['contentType'] = outgoing.pop('content_type', None)
+        outgoing['uploadDate'] = outgoing.pop('upload_date', None)
+        outgoing['chunkSize'] = outgoing.pop('chunk_size', None)
+
+        object_id = db[self.collection].save(outgoing)
+
+        if self.get('_id') is None:
+            self['_id'] = object_id
+        else:
+            pass
+
+        return object_id
 
     @classmethod
     def wrap_incoming(cls, data, db):
@@ -368,12 +396,12 @@ class RegularFile(File):
     @classmethod
     def find(cls, *args, **kwargs):
         kwargs.update({'pending': False})
-        return cls.find(*args, **kwargs)
+        return super(RegularFile, cls).find(*args, **kwargs)
 
     @classmethod
     def get_one(cls, *args, **kwargs):
         kwargs.update({'pending': False})
-        return cls.get_one(*args, **kwargs)
+        return super(RegularFile, cls).get_one(*args, **kwargs)
 
     @classmethod
     def get_from_fs(cls, db, fs, **kwargs):
@@ -489,10 +517,7 @@ class UpdatingPendingFile(PendingFile):
     По сути, является :class:`PendingFile`, но хранится в отдельной коллекции.
     """
     collection = 'updating_pending_files'
-    structure = dict(PendingFile.structure, **{
-        # TODO Переместить эту структуру в :class:`File`?
-        'upload_date': datetime,
-        'length': int,
-        'md5': basestring,
-        'chunk_size': int,
-    })
+#    structure = dict(PendingFile.structure, **{
+        ## TODO Переместить эту структуру в :class:`File`?
+
+    #})

@@ -14,7 +14,8 @@
                     "required": true,
                     "properties" : {
                         "width" : {"type" : "integer", "required": true},
-                        "height" : {"type" : "integer", "required": true}
+                        "height" : {"type" : "integer", "required": true},
+                        "format" : {"type" : "string", "required": true}
                     }
                 }
             }
