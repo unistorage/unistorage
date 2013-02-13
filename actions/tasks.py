@@ -33,6 +33,11 @@ def resolve_object_ids(fs, args):
 
 @celery.task
 def perform_actions(source_id, target_id, target_kwargs):
+    perform_actions_v2(target_id)
+
+
+@celery.task
+def perform_actions_v2(target_id):
     """Проверяет существование исходного обычного файла с идентификатором `source_id` и временного с
     идентификатором `target_id`. Последовательно применяет к исходному файлу операции, записанные
     в поле `actions` временного файла; удаляёт файл с `target_id` и записывает на его место
@@ -47,9 +52,9 @@ def perform_actions(source_id, target_id, target_kwargs):
     db = connection[settings.MONGO_DB_NAME]
     fs = gridfs.GridFS(db)
 
-    source_file = RegularFile.get_from_fs(db, fs, _id=source_id)
-    # Исключительно для проверки существования временного файла с target_id:
     target_file = PendingFile.get_from_fs(db, fs, _id=target_id)
+    source_id = target_file.original
+    source_file = RegularFile.get_from_fs(db, fs, _id=source_id)
 
     source_file_name, source_file_ext = os.path.splitext(source_file.name)
 
@@ -73,30 +78,18 @@ def perform_actions(source_id, target_id, target_kwargs):
         curr_unistorage_type = data['unistorage_type']
 
     result_file = curr_file
-    result_file_name = '%s_%s.%s' % (source_file_name, target_kwargs['label'], curr_file_ext)
+    result_file_name = '%s_%s.%s' % (source_file_name, target_file.label, curr_file_ext)
     # Необходимо обеспечить "атомарность" операции "удалить временный файл и
     # записать результат в обычный файл". Для этого операция производится как
     # "скопировать временный файл в отдельную коллекцию, удалить оригинальный
     # временный файл, записать обычный файл". 
     updating_pending_file_id = \
         PendingFile.get_one(db, {'_id': target_id}).move_to_updating(db, fs)
-    RegularFile.put_to_fs(
-        db, fs, result_file_name, result_file, _id=target_id, **target_kwargs)
-    UpdatingPendingFile.get_one(db, {'_id': updating_pending_file_id}).remove(db)
-    result_file.close()
-
-
-@celery.task
-def perform_actions_v2(target_id):
-    connection = connections.get_mongodb_connection()
-    db = connection[settings.MONGO_DB_NAME]
-    fs = gridfs.GridFS(db)
-
-    target_file = PendingFile.get_from_fs(db, fs, _id=target_id)
-
-    perform_actions(target_file.original, target_id, {
+    RegularFile.put_to_fs(db, fs, result_file_name, result_file, _id=target_id, **{
         'user_id': target_file.user_id,
         'type_id': target_file.type_id,
         'original': target_file.original,
         'label': target_file.label,
     })
+    UpdatingPendingFile.get_one(db, {'_id': updating_pending_file_id}).remove(db)
+    result_file.close()
