@@ -84,3 +84,19 @@ def perform_actions(source_id, target_id, target_kwargs):
         db, fs, result_file_name, result_file, _id=target_id, **target_kwargs)
     UpdatingPendingFile.get_one(db, {'_id': updating_pending_file_id}).remove(db)
     result_file.close()
+
+
+@celery.task
+def perform_actions_v2(target_id):
+    connection = connections.get_mongodb_connection()
+    db = connection[settings.MONGO_DB_NAME]
+    fs = gridfs.GridFS(db)
+
+    target_file = PendingFile.get_from_fs(db, fs, _id=target_id)
+
+    perform_actions(target_file.original, target_id, {
+        'user_id': target_file.user_id,
+        'type_id': target_file.type_id,
+        'original': target_file.original,
+        'label': target_file.label,
+    })
