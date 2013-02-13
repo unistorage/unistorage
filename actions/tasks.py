@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 """
 Код, исполняемый воркерами
 ==========================
 """
 import os.path
-import traceback
 
 import gridfs
 from celery import Celery
@@ -13,8 +12,8 @@ from bson.objectid import ObjectId
 import settings
 import actions
 import connections
-from app.models import PendingFile, UpdatingPendingFile, RegularFile
 from file_utils import get_file_data
+from app.models import PendingFile, UpdatingPendingFile, RegularFile
 
 
 celery = Celery('tasks', broker=settings.CELERY_BROKER)
@@ -22,7 +21,8 @@ celery = Celery('tasks', broker=settings.CELERY_BROKER)
 
 def resolve_object_ids(fs, args):
     """Проходит по списку `args`, заменяя встреченные `ObjectId` на соответствующие им
-    GridOut-объекты."""
+    GridOut-объекты.
+    """
     def try_resolve(arg):
         if isinstance(arg, ObjectId):
             return fs.get(arg)
@@ -43,44 +43,44 @@ def perform_actions(source_id, target_id, target_kwargs):
     :param target_kwargs: словарь с атрибутами, которые появятся у результирующего файла после
     применения операций
     """
-    try:
-        connection = connections.get_mongodb_connection()
-        db = connection[settings.MONGO_DB_NAME]
-        fs = gridfs.GridFS(db)
+    connection = connections.get_mongodb_connection()
+    db = connection[settings.MONGO_DB_NAME]
+    fs = gridfs.GridFS(db)
 
-        source_file = RegularFile.get_from_fs(db, fs, _id=source_id)
-        # Исключительно для проверки существования временного файла с target_id:
-        target_file = PendingFile.get_from_fs(db, fs, _id=target_id)
+    source_file = RegularFile.get_from_fs(db, fs, _id=source_id)
+    # Исключительно для проверки существования временного файла с target_id:
+    target_file = PendingFile.get_from_fs(db, fs, _id=target_id)
 
-        source_file_name, source_file_ext = os.path.splitext(source_file.name)
+    source_file_name, source_file_ext = os.path.splitext(source_file.name)
 
-        curr_file = source_file
-        curr_file_ext = source_file_ext
-        curr_unistorage_type = source_file.unistorage_type
+    curr_file = source_file
+    curr_file_ext = source_file_ext
+    curr_unistorage_type = source_file.unistorage_type
 
-        for action_name, action_args in target_file.actions:
-            action = actions.get_action(curr_unistorage_type, action_name)
-            action_args = resolve_object_ids(fs, action_args)
-            
-            try:
-                next_file, next_file_ext = action.perform(curr_file, *action_args)
-            finally:
-                curr_file.close()
-
-            curr_file = next_file
-            curr_file_ext = next_file_ext
-
-            data = get_file_data(curr_file, file_name=source_file_name + curr_file_ext)
-            curr_unistorage_type = data['unistorage_type']
-
-        result_file = curr_file
-        result_file_name = '%s_%s.%s' % (source_file_name, target_kwargs['label'], curr_file_ext)
+    for action_name, action_args in target_file.actions:
+        action = actions.get_action(curr_unistorage_type, action_name)
+        action_args = resolve_object_ids(fs, action_args)
         
-        updating_pending_file_id = \
-            PendingFile.get_one(db, {'_id': target_id}).move_to_updating(db, fs)
-        RegularFile.put_to_fs(
-            db, fs, result_file_name, result_file, _id=target_id, **target_kwargs)
-        UpdatingPendingFile.get_one(db, {'_id': updating_pending_file_id}).remove(db)
-        result_file.close()
-    except Exception as e:
-        raise Exception(str(e))
+        try:
+            next_file, next_file_ext = action.perform(curr_file, *action_args)
+        finally:
+            curr_file.close()
+
+        curr_file = next_file
+        curr_file_ext = next_file_ext
+
+        data = get_file_data(curr_file, file_name=source_file_name + curr_file_ext)
+        curr_unistorage_type = data['unistorage_type']
+
+    result_file = curr_file
+    result_file_name = '%s_%s.%s' % (source_file_name, target_kwargs['label'], curr_file_ext)
+    # Необходимо обеспечить "атомарность" операции "удалить временный файл и
+    # записать результат в обычный файл". Для этого операция производится как
+    # "скопировать временный файл в отдельную коллекцию, удалить оригинальный
+    # временный файл, записать обычный файл". 
+    updating_pending_file_id = \
+        PendingFile.get_one(db, {'_id': target_id}).move_to_updating(db, fs)
+    RegularFile.put_to_fs(
+        db, fs, result_file_name, result_file, _id=target_id, **target_kwargs)
+    UpdatingPendingFile.get_one(db, {'_id': updating_pending_file_id}).remove(db)
+    result_file.close()
