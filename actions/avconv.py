@@ -285,8 +285,6 @@ def avprobe(fname):
     stdout_data = parse_stdout(stdout)
     stderr_data = parse_stderr(stderr)
 
-    print stdout_data
-
     formats = stdout_data['format']['format_name'].split(',')
     extension = get_extension(fname)
     format = extension in formats and extension or formats[0]
