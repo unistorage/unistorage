@@ -34,7 +34,7 @@ class Test(SmokeTest):
             for acodec in convert_targets[format]['acodec']:
                 for vcodec in convert_targets[format]['vcodec']:
                     for source_name, source_file in self.source_files():
-                        result, ext = convert(source_file, format, vcodec, acodec, only_try=True)
+                        result, ext = convert(source_file, format, vcodec, acodec)
 
                         target_name = '%s_using_vcodec_%s_acodec_%s.%s' % \
                             (source_name, vcodec, acodec, ext)
