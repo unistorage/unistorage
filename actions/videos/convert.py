@@ -71,7 +71,7 @@ def validate_and_get_args(args, source_file=None):
     return [format, vcodec, acodec]
 
 
-def perform(source_file, format, vcodec, acodec, only_try=False):
+def perform(source_file, format, vcodec, acodec):
     source_file_ext = ''
     if hasattr(source_file, 'filename'):
         source_file_name, source_file_ext = os.path.splitext(source_file.filename)
@@ -84,21 +84,25 @@ def perform(source_file, format, vcodec, acodec, only_try=False):
     tmp_target_file.close()
     
     try:
+        source_data = avprobe(tmp_source_file.name)
+
         options = {
             'format': format,
             'video': {
-                'codec': vcodec
+                'codec': vcodec,
+                'fps': source_data['video']['fps'],
             }
         }
+        
         if vcodec in ('mpeg1', 'mpeg2', 'divx'):
+            # MPEG1/2 does not support 15/1 fps, например. Поэтому принудительно
+            # ставим разумное значение в 25 fps
             options['video']['fps'] = 25
-
-        source_data = avprobe(tmp_source_file.name)
 
         if source_data['audio']:
             options['audio'] = {
                 'codec': acodec,
-                'sample_rate': 44100
+                'sample_rate': 44100,
             }
 
             channels = source_data['audio']['channels']
