@@ -34,6 +34,7 @@ def _update_extra(id_, file_):
     db.fs.files.update({'_id': id_}, {
        '$set': {
             'unistorage_type': new_unistorage_type,
+            'contentType': new_file_data['content_type'],
             'extra': new_extra,
         }
     })
