@@ -27,6 +27,7 @@ def restart(query, no_input=False):
     for i, action in enumerate(actions_to_update):
         id_ = action['_id']
         print 'Processing %s (%i/%i)' % (id_, i, count)
+        perform_actions.delay(id_)
         print 'OK'
 
 
