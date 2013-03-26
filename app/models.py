@@ -318,6 +318,7 @@ class File(ValidationMixin, ServableMixin, modeling.Document):
 
         'extra': dict,
         'original': ObjectId,
+        'actions': list,
         'modifications': dict,
         'label': basestring,
         'filename': basestring,

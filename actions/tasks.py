@@ -85,6 +85,7 @@ def perform_actions(target_id):
         'type_id': target_file.type_id,
         'original': target_file.original,
         'label': target_file.label,
+        'actions': target_file.actions,
     })
     UpdatingPendingFile.get_one(db, {'_id': updating_pending_file_id}).remove(db)
     result_file.close()
