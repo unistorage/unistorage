@@ -2,9 +2,11 @@ import os
 import subprocess
 from cStringIO import StringIO
 
-import actions
-import actions.common.watermark_validation
 import settings
+import actions
+from actions.common.watermark_validation import \
+    get_watermark_bbox_geometry, \
+    validate_and_get_args as common_validate_and_get_args
 from identify import identify_file
 from actions import ActionException
 
@@ -12,7 +14,7 @@ from actions import ActionException
 name = 'watermark'
 applicable_for = 'image'
 result_unistorage_type = 'image'
-validate_and_get_args = actions.common.watermark_validation.validate_and_get_args
+validate_and_get_args = common_validate_and_get_args
 
 
 CORNER_MAP = {
@@ -23,20 +25,11 @@ CORNER_MAP = {
 }
 
 
-def get_watermark_bbox_geometry(source_width, source_height, w, h, h_pad, v_pad):
-    is_float = lambda value: isinstance(value, float)
-    bbox_width = round(source_width * w) if is_float(w) else w
-    bbox_height = round(source_height * h) if is_float(h) else h
-    bbox_h_offset = round(source_width * h_pad) if is_float(h_pad) else h_pad
-    bbox_v_offset = round(source_height * v_pad) if is_float(v_pad) else v_pad
-    return '%dx%d+%d+%d' % (bbox_width, bbox_height, bbox_h_offset, bbox_v_offset)
-
-
 def perform(source_file, watermark_file, w, h, h_pad, v_pad, corner):
     source_data = identify_file(source_file)
     watermark_format = identify_file(watermark_file)['format']
 
-    watermark_bbox_geometry = get_watermark_bbox_geometry(
+    watermark_bbox_geometry = '%dx%d+%d+%d' % get_watermark_bbox_geometry(
         source_data['width'], source_data['height'], w, h, h_pad, v_pad)
 
     fd_in, fd_out = os.pipe()

@@ -52,4 +52,38 @@ def validate_and_get_args(args, source_file=None):
     if watermark.unistorage_type != 'image':
         raise ValidationError('File with id %s is not an image.' % watermark_id)
 
+    if source_file:
+        extra = source_file.extra
+        unistorage_type = source_file.unistorage_type
+        if unistorage_type == 'image':
+            width = extra['width']
+            height = extra['height']
+        elif unistorage_type == 'video':
+            width = extra['video']['width']
+            height = extra['video']['height']
+
+        validate_bbox(width, height, w, h, w_pad, h_pad)
+
     return [watermark_id, w, h, w_pad, h_pad, corner]
+
+
+def validate_bbox(source_width, source_height, w, h, w_pad, h_pad):
+    wm_width, wm_height, wm_w_offset, wm_h_offset = \
+        get_watermark_bbox_geometry(source_width, source_height, w, h, w_pad, h_pad)
+
+    x1 = wm_w_offset
+    y1 = wm_h_offset
+    x2 = x1 + wm_width
+    y2 = y1 + wm_height
+    if not (0 <= x1 <= source_width and 0 <= x2 <= source_height) or \
+       not (0 <= y1 <= source_width and 0 <= y2 <= source_height):
+        raise ValidationError('Watermark overflows the source image!')
+
+
+def get_watermark_bbox_geometry(source_width, source_height, w, h, h_pad, v_pad):
+    is_float = lambda value: isinstance(value, float)
+    bbox_width = round(source_width * w) if is_float(w) else w
+    bbox_height = round(source_height * h) if is_float(h) else h
+    bbox_h_offset = round(source_width * h_pad) if is_float(h_pad) else h_pad
+    bbox_v_offset = round(source_height * v_pad) if is_float(v_pad) else v_pad
+    return (bbox_width, bbox_height, bbox_h_offset, bbox_v_offset)
