@@ -40,18 +40,7 @@ def _update_extra(id_, file_):
     })
 
 
-def migrate(query, force=False, no_input=False):
-    """
-    Updates files matching to `query`.
-    If `force`, all files will be updated.
-    If not, only those which `extra` field is broken.
-    Example:
-    >>> migrate({
-    ...     'unistorage_type': 'video',
-    ...     'extra.video.duration': None,
-    ... })
-    """
-    query.update({'pending': False})
+def generic_migrate(query, callback, no_input=False):
     files_to_update = db.fs.files.find(query, timeout=False)
 
     count = files_to_update.count()
@@ -76,6 +65,26 @@ def migrate(query, force=False, no_input=False):
     for i, file_ in enumerate(files_to_update):
         id_ = file_['_id']
         print 'Processing %s (%i/%i)' % (id_, i, count)
+        callback(id_, file_, log=log)
+
+    if log:
+        log.close()
+
+
+def migrate(query, force=False, no_input=False):
+    """
+    Updates files matching to `query`.
+    If `force`, all files will be updated.
+    If not, only those which `extra` field is broken.
+    Example:
+    >>> migrate({
+    ...     'unistorage_type': 'video',
+    ...     'extra.video.duration': None,
+    ... })
+    """
+    query.update({'pending': False})
+
+    def callback(id_, file_, log=None):
         try:
             _validate(file_)
             if force:
@@ -101,8 +110,7 @@ def migrate(query, force=False, no_input=False):
         else:
             print 'OK'
 
-    if log:
-        log.close()
+    generic_migrate(query, callback, no_input=no_input)
 
 
 def main():
