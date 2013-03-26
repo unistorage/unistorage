@@ -43,8 +43,7 @@ def perform(source_file, watermark_file, w, h, h_pad, v_pad, corner):
     args = [
         settings.CONVERT_BIN, '-', '-coalesce', '-gravity', CORNER_MAP[corner],
         '-geometry', watermark_bbox_geometry, 'null:',
-        '%s:fd:%d' % (watermark_format, fd_in), '-layers', 'composite',
-        '-layers', 'optimize', '-'
+        '%s:fd:%d' % (watermark_format, fd_in), '-layers', 'composite', '-'
     ]
     proc = subprocess.Popen(
         args, stdin=subprocess.PIPE,
