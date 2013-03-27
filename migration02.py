@@ -1,28 +1,37 @@
-from app import db
+from bson import ObjectId
+from celery import chain
 
+import settings
+from app import db
 from actions.tasks import perform_actions
 
 
-def recursively_redo(file_):
-    modifications = file_.get('modifications')
-    if not modifications:
-        return
+def get_linearized_tree(file_):
+    chain_tasks = []
+    if file_.get('original'):
+        chain_tasks = [perform_actions.si(file_['_id'])]
+
+    modifications = file_.get('modifications', {})
 
     for child_id in modifications.values():
         child = db.fs.files.find_one({'_id': child_id})
+        chain_tasks.extend(get_linearized_tree(child))
         db.fs.files.update({'_id': child_id}, {
            '$set': {
                 'pending': True,
-                'ttl': 5,
+                'ttl': int(settings.AVERAGE_TASK_TIME.total_seconds()),
             }
         })
-        action, args = child['actions'][0]
-        print 'Redo %s modification (%s, %s) -- see %s' % \
-            (file_['_id'], action, args, child_id)
-        perform_actions.delay(child_id)
-        recursively_redo(child)
+    return chain_tasks
 
 
 def callback(id_, file_, log=None):
     if not file_.get('original'):
-        recursively_redo(file_)
+        chain_tasks = get_linearized_tree(file_)
+        if chain_tasks:
+            print '  %i tasks enqueued' % len(chain_tasks)
+            chain(*chain_tasks)()
+        else:
+            print '  Skipped'
+    else:
+        print '  Skipped'
