@@ -24,11 +24,13 @@ def get_linearized_tree(file_, actions_to_redo, redo_needed):
 
     modifications = file_.get('modifications', {})
 
+    result = redo_needed
     for child_id in modifications.values():
         child = db.fs.files.find_one({'_id': child_id})
-        linearized_tree, redo_needed = get_linearized_tree(child, actions_to_redo, redo_needed)
-        if redo_needed:
+        linearized_tree, tree_redo_needed = get_linearized_tree(child, actions_to_redo, redo_needed)
+        if tree_redo_needed:
             chain_tasks.extend(linearized_tree)
+            result = result or tree_redo_needed
         db.fs.files.update({'_id': child_id}, {
            '$set': {
                 'pending': True,
@@ -36,7 +38,7 @@ def get_linearized_tree(file_, actions_to_redo, redo_needed):
             }
         })
 
-    return chain_tasks, redo_needed
+    return chain_tasks, result
 
 def get_callback(actions_to_redo):
     def callback(id_, file_, log=None):
