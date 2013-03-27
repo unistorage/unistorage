@@ -80,12 +80,21 @@ def perform_actions(target_id):
     # временный файл, записать обычный файл". 
     updating_pending_file_id = \
         PendingFile.get_one(db, {'_id': target_id}).move_to_updating(db, fs)
-    RegularFile.put_to_fs(db, fs, result_file_name, result_file, _id=target_id, **{
+    kwargs = {
         'user_id': target_file.user_id,
         'type_id': target_file.type_id,
         'original': target_file.original,
         'label': target_file.label,
         'actions': target_file.actions,
-    })
+    }
+    
+    # Если операция применяется к временному файлу, который ранее был постоянным
+    # (такое случается при переделывании операций), нам необходимо сохранить
+    # словарь с модификациями
+    modifications = getattr(target_file, 'modifications', None)
+    if modifications:
+        kwargs['modifications'] = modifications
+
+    RegularFile.put_to_fs(db, fs, result_file_name, result_file, _id=target_id, **kwargs)
     UpdatingPendingFile.get_one(db, {'_id': updating_pending_file_id}).remove(db)
     result_file.close()
