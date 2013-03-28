@@ -46,11 +46,12 @@ def _update_extra(id_, file_):
     })
 
 
-def get_callback(force):
+def get_callback(force=False):
     """Если `force` установлено в True, миграция будет перечитывать файлы
     и с валидными данными.
     """
     def callback(id_, file_, log=None):
+        print 'hererer', file_['extra']
         if file_['pending']:
             return
 
@@ -61,6 +62,7 @@ def get_callback(force):
         except Exception as e:
             print u'  Данные не удовлетворяют схеме:'
             print u'  %s: %s' % (e, getattr(e, 'path', ''))
+            update_needed = True
 
         if update_needed or force:
             try:
