@@ -1,3 +1,7 @@
+# coding: utf-8
+"""По `label` конструирует список `actions` и записывает его
+в данные файла.
+"""
 from bson import ObjectId
 
 from app import db
@@ -78,12 +82,14 @@ def parse(label):
         return action, parts
     if action == 'extract_audio':
         return action, parts
+    if action == 'grayscale':
+        return action, []
 
 
 
 def callback(id_, file_, log=None):
     label = file_.get('label')
-    if label and not file_.get('actions'):
+    if label == 'grayscale':
         try:
             action = parse(label)
             db.fs.files.update({'_id': id_}, {
@@ -97,3 +103,6 @@ def callback(id_, file_, log=None):
             print '  Fixed: %s -> %s' % (label, action)
     else:
         print '  Skip...'
+
+#from migrations.m01_grayscale import callback
+#migrate({}, callback)

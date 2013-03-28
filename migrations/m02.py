@@ -1,3 +1,4 @@
+# coding: utf-8
 """
 Usage:
 >>> from migration02 import get_callback
@@ -31,12 +32,12 @@ def get_linearized_tree(file_, actions_to_redo, redo_needed):
         if tree_redo_needed:
             chain_tasks.extend(linearized_tree)
             result = result or tree_redo_needed
-        db.fs.files.update({'_id': child_id}, {
-           '$set': {
-                'pending': True,
-                'ttl': int(settings.AVERAGE_TASK_TIME.total_seconds()),
-            }
-        })
+            db.fs.files.update({'_id': child_id}, {
+               '$set': {
+                    'pending': True,
+                    'ttl': int(settings.AVERAGE_TASK_TIME.total_seconds()),
+                }
+            })
 
     return chain_tasks, result
 
