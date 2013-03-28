@@ -31,10 +31,8 @@ def perform(source_file, mode, target_width, target_height):
     width = to_int(source_width * factor)
     height = to_int(source_height * factor)
 
-    if factor < 1:
-        target_image.resize(width, height)
-
-        if mode == 'crop':
-            target_image.crop_to_center(target_width, target_height)
+    target_image.resize(width, height)
+    if mode == 'crop':
+        target_image.crop_to_center(target_width, target_height)
 
     return target_image.finalize()
