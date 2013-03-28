@@ -45,6 +45,7 @@ def perform(source_file, watermark_file, w, h, h_pad, v_pad, corner):
     os.close(fd_out)
 
     stdout_data, stderr_data = proc.communicate(input=source_file.read())
+    os.close(fd_in)
     if proc.returncode != 0:
         raise ActionException('`composite` failed: %s' % stderr_data)
     return StringIO(stdout_data), source_data['format']
