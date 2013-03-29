@@ -75,8 +75,8 @@ def validate_bbox(source_width, source_height, w, h, w_pad, h_pad):
     y1 = wm_h_offset
     x2 = x1 + wm_width
     y2 = y1 + wm_height
-    if not (0 <= x1 <= source_width and 0 <= x2 <= source_height) or \
-       not (0 <= y1 <= source_width and 0 <= y2 <= source_height):
+    if not (0 <= x1 <= source_width and 0 <= y1 <= source_height) or \
+       not (0 <= x2 <= source_width and 0 <= y2 <= source_height):
         raise ValidationError('Watermark overflows the source image!')
 
 
