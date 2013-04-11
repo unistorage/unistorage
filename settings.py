@@ -11,6 +11,7 @@ PROJECT_PATH = os.path.realpath(os.path.dirname(__file__))
 
 
 DEBUG = False
+TESTING = False
 SECRET_KEY = 'qwertyuiop[]'
 ADMINS = ['anthony.romanovich@gmail.com']
 
