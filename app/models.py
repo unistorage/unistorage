@@ -3,6 +3,7 @@ import random
 from datetime import datetime
 from urlparse import urljoin
 
+import newrelic.agent
 from bson import ObjectId
 from monk import modeling
 from monk.validation import ValidationError
@@ -410,6 +411,7 @@ class RegularFile(File):
         return super(RegularFile, cls).get_from_fs(db, fs, **kwargs)
 
     @classmethod
+    @newrelic.agent.function_trace()
     def put_to_fs(cls, db, fs, file_name, file, **kwargs):
         """Обновляет поля `extra`, `content_type`, `filename` у kwargs, помещает `file` в GridFS
         и обновляет статистику.
