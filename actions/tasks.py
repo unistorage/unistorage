@@ -17,6 +17,8 @@ from app.models import PendingFile, UpdatingPendingFile, RegularFile
 
 
 celery = Celery('tasks')
+import celeryconfig
+celery.config_from_object(celeryconfig)
 
 
 def resolve_object_ids(fs, args):
