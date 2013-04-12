@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 import os
 import tempfile
 
@@ -31,6 +31,10 @@ def validate_and_get_args(args, source_file=None):
     except ValueError:
         raise ValidationError('`position` must be numeric value.')
 
+    if source_file:
+        duration = source_file.extra['video']['duration']
+        if position > duration:
+            raise ValidationError('`position` must be less than video duration.')
     return [format, position]
 
 
