@@ -11,7 +11,7 @@ CELERY_IMPORTS = ('actions.tasks',)
 CELERY_IGNORE_RESULT = True
 
 # Очередь для сообщений
-CELERY_DEFAULT_QUEUE = 'test'
+CELERY_DEFAULT_QUEUE = 'ha.unistorage'
 
 # Включаем хартбиты, чтобы обнаруживать падение брокера
 BROKER_HEARTBEAT = 10
@@ -31,9 +31,6 @@ for host in settings.BROKER_HOSTS:
         (settings.BROKER_USERNAME, settings.BROKER_PASSWORD,
          host, settings.BROKER_VHOST)
     BROKER_URL.append(broker_url)
-
-print BROKER_URL
-BROKER_URL = BROKER_URL[0]
 
 # Подключаем логирование ошибок в Sentry
 sentry_dsn = settings.SENTRY_DSN
