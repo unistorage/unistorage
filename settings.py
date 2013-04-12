@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 import sys
 import os
 import logging.config
@@ -21,39 +21,39 @@ SENTRY_DSN = ''
 ADMIN_USERNAME = 'admin'
 ADMIN_PASSWORD = 'admin'  # Should we put md5 here?
 
+MONGO_REPLICATION_ON = True
 
 # Настройки доступа к Mongo
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
 MONGO_DB_NAME = 'grid_fs'
 
-MONGO_REPLICATION_ON = True
 # Следующие две настройки используются только при MONGO_REPLICATION_ON = True
 MONGO_REPLICA_SET_URI = 'localhost:27017,localhost:27018'
 MONGO_REPLICA_SET_NAME = 'grid_fs_set'
 
-CELERY_BROKER = 'mongodb://localhost:27017,localhost:27018/q/#grid_fs_set'
+# Настройки брокера сообщений
+BROKER_HOSTS = []  # Например, ['localhost:5672']
+BROKER_USERNAME = ''
+BROKER_PASSWORD = ''
+BROKER_VHOST = ''
 
 # Бинарники ImageMagick
 CONVERT_BIN = '/usr/bin/convert'
 IDENTIFY_BIN = '/usr/bin/identify'
 COMPOSITE_BIN = '/usr/bin/composite'
 
-
 # Бинарники avconv
 AVCONV_BIN = '/usr/bin/ffmpeg'
 AVPROBE_BIN = '/usr/bin/ffprobe'
 QT_FASTSTART_BIN = '/usr/bin/qt-faststart'
 
-
 # Остальные бинарники
 OO_WRAPPER_BIN = 'oowrapper.py'
 FLVTOOL_BIN = '/usr/bin/flvtool2'
 
-
 # Путь к gridfs-serve
 GRIDFS_SERVE_URL = 'http://127.0.0.1/'
-
 
 TTL = int(timedelta(days=7).total_seconds())  # TTL ответов со статусом "ok"
 AVERAGE_TASK_TIME = timedelta(seconds=60)  # TTL ответов со статусом "wait"

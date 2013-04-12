@@ -16,7 +16,7 @@ from file_utils import get_file_data
 from app.models import PendingFile, UpdatingPendingFile, RegularFile
 
 
-celery = Celery('tasks', broker=settings.CELERY_BROKER)
+celery = Celery('tasks')
 
 
 def resolve_object_ids(fs, args):
