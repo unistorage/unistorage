@@ -1,7 +1,7 @@
-from tests.utils import StorageFunctionalTest, WorkerMixin
+from tests.utils import StorageFunctionalTest
 
 
-class FunctionalTest(StorageFunctionalTest, WorkerMixin):
+class FunctionalTest(StorageFunctionalTest):
     def test_convert_mp3_to_ogg(self):
         original_uri = self.put_file('audios/god-save-the-queen.mp3')
 

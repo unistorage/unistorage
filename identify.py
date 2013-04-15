@@ -12,16 +12,17 @@ class IdentifyException(Exception):
     pass
 
 
-def identify(file_):
+def identify_buffer(buffer_):
+    """Возвращает информацию об изображении, содержащемся в
+    наборе байтов `buffer_`. Возвращает то же самое, что и
+    :func:`identify_file`.
+    """
     identify_format = '{"width": %w, "height": %h, "format": "%m"}\n'
     args = [settings.IDENTIFY_BIN, '-format', identify_format, '-']
     
     proc = subprocess.Popen(
         args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
-
-    buffer_ = file_.read()
-    file_.seek(0)
 
     stdout_data, stderr_data = proc.communicate(input=buffer_)
     if proc.returncode != 0:
@@ -30,9 +31,28 @@ def identify(file_):
     try:
         frames = map(json.loads, stdout_data.strip().split('\n'))
     except:
-        raise IdentifyException('Could not decode data `identify` output.')
+        raise IdentifyException('Can\'t decode data `identify` output.')
 
     result = frames[0]
     result['format'] = result['format'].lower()
     result['is_animated'] = len(frames) > 1
     return result
+
+
+def identify_file(file_):
+    """Возвращает информацию об изображении, содержащемся в
+    file-like object `file_`.
+
+    :rtype: словарь вида ``
+        {
+            width: int,
+            height: int,
+            format: basestring,
+            'is_animated': bool
+        }
+        ``
+    """
+    buffer_ = file_.read()
+    file_.seek(0)
+
+    return identify_buffer(buffer_)

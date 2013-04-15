@@ -1,7 +1,7 @@
-from tests.utils import StorageFunctionalTest, WorkerMixin
+from tests.utils import StorageFunctionalTest
 
 
-class FunctionalTest(StorageFunctionalTest, WorkerMixin):
+class FunctionalTest(StorageFunctionalTest):
     def test(self):
         watermark_uri = self.put_file('watermarks/watermark.png')
         source_uri = self.put_file('videos/gizmo.mp4')

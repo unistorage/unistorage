@@ -11,9 +11,12 @@ repoze.who==2.0
 
 pymongo==2.4.1
 monk==0.5.1
-# Форк kombu с поддержкой репликасетов:
-git+https://github.com/mediasite/kombu.git@2.4#egg=kombu
-celery==3.0.11
+
+# Важно именно в таком порядке:
+git+git://github.com/ramm/py-amqp.git
+git+git://github.com/aromanovich/kombu.git
+celery==3.0.15
+# /
 
 # Временно взамен python-magic==0.4.2 до тех пор, пока 
 # https://github.com/ahupp/python-magic/pull/28 не окажется в пакете на PyPi:
@@ -23,7 +26,11 @@ pytz==2012f
 PyYAML==3.10
 pytils==0.2.3
 sh==1.05
+jsonschema==0.8.0
 
 # Интеграция с Sentry:
 raven==3.1.6
 blinker==1.2
+
+ipython==0.13.1
+newrelic==1.11.0.55

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 """
 Валидация шаблонов
 ==================
@@ -10,9 +10,9 @@ from utils import ValidationError
 
 
 def validate_and_get_template_actions(source_unistorage_type, action_args_list):
-    """Рассматривая `source_unistorage_type` как семейство типов исходных файлов, проверяет
-    применимость каждой последующей операции к результату предыдущей. Возвращает "очищенный"
-    список операций и их параметров.
+    """Рассматривая `source_unistorage_type` как семейство типов исходных
+    файлов, проверяет применимость каждой последующей операции к результату
+    предыдущей. Возвращает "очищенный" список операций и их параметров.
 
     :param source_unistorage_type: :term:`семейство типов`
     :param action_args_list: список аргументов операций
@@ -26,7 +26,8 @@ def validate_and_get_template_actions(source_unistorage_type, action_args_list):
     for index, action_args in enumerate(action_args_list, 1):
         action_name = action_args.get('action')
         if not action_name:
-            raise ValidationError('Error on step %d: action is not specified.' % index)
+            raise ValidationError(
+                'Error on step %d: action is not specified.' % index)
         
         action = actions.get_action(current_unistorage_type, action_name)
         if not action:
@@ -46,8 +47,9 @@ def validate_and_get_template_actions(source_unistorage_type, action_args_list):
     
         
 def validate_and_get_template(args):
-    """Проверяет, что `applicable_for` и `actions` присутствуют в `args`; проверяет совместимость
-    операций, указанных в `actions`. Возвращает "очищенные" данные для создания шаблона.
+    """Проверяет, что `applicable_for` и `actions` присутствуют в `args`;
+    проверяет совместимость операций, указанных в `actions`. Возвращает
+    "очищенные" данные для создания шаблона.
 
     :param args: аргументы
     :type args: `dict(applicable_for=..., actions=list(...))`
@@ -65,7 +67,8 @@ def validate_and_get_template(args):
     
     action_args_list = [url_decode(url) for url in action_strings]
     action_list = [action.to_dict() for action in action_args_list]
-    cleaned_action_list = validate_and_get_template_actions(applicable_for, action_args_list)
+    cleaned_action_list = validate_and_get_template_actions(
+        applicable_for, action_args_list)
 
     return {
         'applicable_for': applicable_for,

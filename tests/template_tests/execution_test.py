@@ -1,7 +1,7 @@
-from tests.utils import WorkerMixin, StorageFunctionalTest
+from tests.utils import StorageFunctionalTest
 
 
-class FunctionalTest(StorageFunctionalTest, WorkerMixin):
+class FunctionalTest(StorageFunctionalTest):
     def apply_template(self, image_uri, template_uri):
         apply_template_url = '%s?template=%s' % (image_uri, template_uri)
         return self.app.get(apply_template_url, status='*')

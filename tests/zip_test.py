@@ -1,10 +1,10 @@
 from flask import url_for
 
 import settings
-from tests.utils import WorkerMixin, StorageFunctionalTest
+from tests.utils import StorageFunctionalTest
 
 
-class FunctionalTest(StorageFunctionalTest, WorkerMixin):
+class FunctionalTest(StorageFunctionalTest):
     def assert_error(self, data, error):
         r = self.app.post(url_for('.zip_create'), data, status='*')
         self.assertEquals(r.json['status'], 'error')

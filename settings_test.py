@@ -1,4 +1,5 @@
 DEBUG = True
+TESTING = True
 
 SENTRY_DSN = None
 

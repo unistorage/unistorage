@@ -1,12 +1,10 @@
 import os
 import tempfile
 
-import actions
-from actions.utils import ValidationError
-from actions.avconv import avprobe, avconv, get_codec_supported_actions
-from actions.videos.utils import run_flvtool
+from actions.avconv import avprobe, avconv
 from actions.images.resize import perform as image_resize
-from actions.common.codecs_validation import require_acodec_presence, require_vcodec_presence
+from actions.common.codecs_validation import \
+    require_acodec_presence, require_vcodec_presence
 from actions.common.watermark_validation import \
     validate_and_get_args as common_watermark_validation
 
@@ -85,7 +83,7 @@ def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
                 data['video']['filters'] = vf_params
 
                 if data['audio']:
-                    data['audio']['bitrate'] = data['audio']['bitrate'] or '128k'
+                    data['audio']['bitrate'] = data['audio']['bitrate'] or 128000
 
                 fps = data['video'].get('fps')
                 if fps:
