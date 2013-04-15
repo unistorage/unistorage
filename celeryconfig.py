@@ -14,7 +14,7 @@ CELERY_IGNORE_RESULT = True
 CELERY_DEFAULT_QUEUE = 'ha.unistorage'
 
 # Включаем хартбиты, чтобы обнаруживать падение брокера
-BROKER_HEARTBEAT = 10
+BROKER_HEARTBEAT = 60
 
 # И включаем поддержку RabbitMQ-шных publisher confirms:
 # `task.delay()` будет блокироваться до получения подтверждения от брокера,
