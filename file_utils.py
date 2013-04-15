@@ -7,6 +7,7 @@ import os.path
 from unicodedata import normalize
 
 import magic
+import newrelic.agent
 from werkzeug.datastructures import FileStorage
 
 import settings
@@ -43,6 +44,7 @@ def get_avprobe_result(file_content, file_name=None):
         return avprobe(tmp_file.name)
 
 
+@newrelic.agent.function_trace()
 def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
     inaccurate_unistorage_type = get_unistorage_type(content_type)
     inaccurate_extra = {}
@@ -74,6 +76,7 @@ def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
     }
 
 
+@newrelic.agent.function_trace()
 def get_file_data(file, file_name=None):
     file.seek(0)
     file_content = file.read()

@@ -9,6 +9,7 @@ import cPickle as pickle
 from StringIO import StringIO
 from datetime import datetime, timedelta
 
+import newrelic.agent
 import magic
 
 import settings
@@ -275,6 +276,7 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
     return result
 
 
+@newrelic.agent.function_trace()
 def avprobe(fname):
     args = [settings.AVPROBE_BIN, '-print_format', 'json',
             '-show_format', '-show_streams', fname]
