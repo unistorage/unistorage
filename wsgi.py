@@ -1,3 +1,5 @@
+import newrelic.agent
+
 import settings
 from app import create_app
 
