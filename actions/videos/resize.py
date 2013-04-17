@@ -25,12 +25,8 @@ def to_even(x):
 
 
 def perform(source_file, mode, target_width, target_height):
-    source_file_ext = ''
-    if hasattr(source_file, 'filename'):
-        source_file_name, source_file_ext = os.path.splitext(source_file.filename)
-
     file_content = source_file.read()
-    with tempfile.NamedTemporaryFile(suffix=source_file_ext) as source_tmp:
+    with tempfile.NamedTemporaryFile() as source_tmp:
         source_tmp.write(file_content)
         source_tmp.flush()
 
