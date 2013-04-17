@@ -26,7 +26,7 @@ def generic_migrate(query, callback, no_input=False):
         if a in ('y', 'Y'):
             log = open('./failed-fixes.txt', 'a+')
 
-    for i, file_ in enumerate(files_to_update):
+    for i, file_ in enumerate(files_to_update, start=1):
         id_ = file_['_id']
         print 'Processing %s (%i/%i)' % (id_, i, count)
         callback(id_, file_, log=log)

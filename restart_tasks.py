@@ -24,7 +24,7 @@ def restart(query, no_input=False):
         if a not in ('y', 'Y'):
             exit()
 
-    for i, action in enumerate(actions_to_update):
+    for i, action in enumerate(actions_to_update, start=1):
         id_ = action['_id']
         print 'Processing %s (%i/%i)' % (id_, i, count)
         perform_actions.delay(id_)
