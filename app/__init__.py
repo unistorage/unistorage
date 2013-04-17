@@ -1,5 +1,6 @@
 # coding: utf-8
 from gridfs import GridFS
+from pymongo.errors import AutoReconnect, TimeoutError, ConnectionFailure
 from werkzeug.local import LocalProxy
 from flask import Flask, _app_ctx_stack
 from flask.ext.assets import Environment, Bundle
@@ -47,6 +48,14 @@ def create_app():
     def server_error_handler(e):
         return storage.utils.error(
             {'msg': 'Something is wrong. We are working on it'}), 500
+    
+    for error in (AutoReconnect, TimeoutError, ConnectionFailure):
+        @app.errorhandler(error)
+        def error_handler(e):
+            response = app.make_response(
+                (storage.utils.error({'msg': 'Service unavailable, please try again later'}), 503))
+            response.headers['Retry-After'] = 60
+            return response
 
     return app
 
