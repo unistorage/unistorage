@@ -15,7 +15,9 @@
                     "properties" : {
                         "width" : {"type" : "integer", "required": true},
                         "height" : {"type" : "integer", "required": true},
-                        "format" : {"type" : "string", "required": true}
+                        "format" : {"type" : "string", "required": true},
+                        "is_animated" : {"type" : "boolean", "required": true},
+                        "orientation" : {"type" : "integer", "required": true}
                     }
                 }
             }

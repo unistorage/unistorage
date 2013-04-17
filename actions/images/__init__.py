@@ -29,6 +29,10 @@ class ImageMagickWrapper(object):
         self._args.extend(['-rotate', str(-angle)])
         return self
     
+    def auto_orient(self):
+        self._args.extend(['-auto-orient'])
+        return self
+
     def crop_to_center(self, width, height):
         self._args.extend(['-gravity', 'Center',
                            '-crop', '%dx%d+0+0' % (width, height), '+repage'])

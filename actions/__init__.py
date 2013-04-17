@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 import importlib
 from collections import defaultdict
 
@@ -31,6 +31,7 @@ actions_to_register = (
     'images.watermark',
     'images.grayscale',
     'images.rotate',
+    'images.orient',
 
     'videos.convert',
     'videos.resize',
