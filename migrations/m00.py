@@ -51,7 +51,6 @@ def get_callback(force=False):
     и с валидными данными.
     """
     def callback(id_, file_, log=None):
-        print 'hererer', file_['extra']
         if file_['pending']:
             return
 
