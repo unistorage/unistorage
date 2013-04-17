@@ -56,6 +56,7 @@ FLVTOOL_BIN = '/usr/bin/flvtool2'
 GRIDFS_SERVE_URL = 'http://127.0.0.1/'
 
 TTL = int(timedelta(days=7).total_seconds())  # TTL ответов со статусом "ok"
+TTL_DEVIATION = int(timedelta(days=1).total_seconds())  # Плюс-минус разброс для TTL
 AVERAGE_TASK_TIME = timedelta(seconds=60)  # TTL ответов со статусом "wait"
 ZIP_COLLECTION_TTL = timedelta(days=1)  # TTL ZIP-коллекций
 

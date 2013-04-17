@@ -6,9 +6,10 @@ Storage views
 import time
 import json
 import logging
+import random
 import functools
 import os.path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import jsonschema
 from flask import request, abort
@@ -86,6 +87,7 @@ def get_regular_file(user, file):
     :param file: :term:`обычный файл`
     :type file: :class:`app.models.File`
     """
+    deviation = settings.TTL_DEVIATION
     data = {
         'status': 'ok',
         'data': {
@@ -96,7 +98,7 @@ def get_regular_file(user, file):
             'url': file.get_binary_data_url(db),
             'extra': file.get('extra', {}),
         },
-        'ttl': settings.TTL,
+        'ttl': settings.TTL + random.randint(-deviation, deviation),
     }
 
     if file.unistorage_type in ('video', 'audio', 'image'):
