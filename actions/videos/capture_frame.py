@@ -39,7 +39,7 @@ def validate_and_get_args(args, source_file=None):
 
 
 def perform(source_file, format, position):
-    tmp_source_file = tempfile.NamedTemporaryFile(suffix='', delete=False)
+    tmp_source_file = tempfile.NamedTemporaryFile(delete=False)
     tmp_source_file.write(source_file.read())
     tmp_source_file.close()
 
