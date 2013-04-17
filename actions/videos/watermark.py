@@ -61,12 +61,8 @@ def resize_watermark(wm, wm_bbox):
 
 
 def perform(source_file, wm_file, w, h, h_pad, v_pad, corner):
-    source_file_ext = ''
-    if hasattr(source_file, 'filename'):
-        source_file_name, source_file_ext = os.path.splitext(source_file.filename)
-
     file_content = source_file.read()
-    with tempfile.NamedTemporaryFile(suffix=source_file_ext) as source_tmp:
+    with tempfile.NamedTemporaryFile() as source_tmp:
         source_tmp.write(file_content)
         source_tmp.flush()
 
