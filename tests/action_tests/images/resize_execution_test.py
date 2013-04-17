@@ -35,7 +35,10 @@ class FunctionalTest(StorageFunctionalTest):
         self.assertTrue(resized_image_id in original_image['modifications'].values())
 
         r = self.check(resized_image_uri, width=400, height=300, mime='image/jpeg')
-        self.assertEquals(int(r.json['ttl']), settings.TTL)
+        self.assertTrue(
+            settings.TTL - settings.TTL_DEVIATION <=
+            int(r.json['ttl']) <=
+            settings.TTL + settings.TTL_DEVIATION)
 
     def test_validation_errors(self):
         uri = self.put_file('images/some.jpeg')

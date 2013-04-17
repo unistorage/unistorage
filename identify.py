@@ -17,7 +17,8 @@ def identify_buffer(buffer_):
     наборе байтов `buffer_`. Возвращает то же самое, что и
     :func:`identify_file`.
     """
-    identify_format = '{"width": %w, "height": %h, "format": "%m"}\n'
+    identify_format = '{"width": %w, "height": %h, "format": "%m", ' \
+                      '"orientation": "%[EXIF:Orientation]"}\n'
     args = [settings.IDENTIFY_BIN, '-format', identify_format, '-']
     
     proc = subprocess.Popen(
@@ -36,6 +37,10 @@ def identify_buffer(buffer_):
     result = frames[0]
     result['format'] = result['format'].lower()
     result['is_animated'] = len(frames) > 1
+    try:
+        result['orientation'] = int(result['orientation'])
+    except ValueError:
+        result['orientation'] = 1
     return result
 
 
@@ -48,7 +53,8 @@ def identify_file(file_):
             width: int,
             height: int,
             format: basestring,
-            'is_animated': bool
+            orientation: int,  # ориентация в терминах EXIF, число от 1 до 8
+            is_animated: bool,
         }
         ``
     """
