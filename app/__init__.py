@@ -48,8 +48,8 @@ def create_app():
     def server_error_handler(e):
         return storage.utils.error(
             {'msg': 'Something is wrong. We are working on it'}), 500
-    
-    for error in (AutoReconnect, TimeoutError, ConnectionFailure):
+
+    for error in (503, AutoReconnect, TimeoutError, ConnectionFailure):
         @app.errorhandler(error)
         def error_handler(e):
             response = app.make_response(
@@ -66,7 +66,7 @@ def configure_app(app):
     app.teardown_appcontext(close_database_connection)
     app.request_class = CustomRequest
     app.config['PROPAGATE_EXCEPTIONS'] = settings.DEBUG
-    
+
     sentry_dsn = getattr(settings, 'SENTRY_DSN', False)
     if sentry_dsn:
         Sentry(app, dsn=sentry_dsn)
@@ -97,12 +97,12 @@ def register_bundles(app):
         'js/libs/jquery.min.js',
         output='gen/jquery.js')
     assets.register('jquery', jquery)
-    
+
     common_js = Bundle(
         'js/libs/chosen.jquery.js',
         output='gen/common.js')
     assets.register('common_js', common_js)
-    
+
     statistics_js = Bundle(
         'js/statistics.js',
         'js/libs/moment.min.js',
