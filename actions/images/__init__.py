@@ -47,7 +47,7 @@ class ImageMagickWrapper(object):
             self._args.insert(2, '-coalesce')
 
         self._args.append('%s:-' % format.upper())
-        proc_input = self._image #.fp
+        proc_input = self._image
         proc_input.seek(0)
 
         try:

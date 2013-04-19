@@ -6,7 +6,7 @@ class FunctionalTest(StorageFunctionalTest):
         original_uri = self.put_file('docs/test.docx')
         r = self.app.get(original_uri)
         self.check(original_uri, mime='application/msword')
-        
+
         convert_action_url = '%s?action=convert&to=html' % original_uri
         r = self.app.get(convert_action_url)
         self.assertEquals(r.json['status'], 'ok')

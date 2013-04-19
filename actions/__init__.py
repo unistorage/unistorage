@@ -38,6 +38,7 @@ actions_to_register = (
     'audios.convert',
 
     'docs.convert',
+    'docs.extract_page',
     
     'presentations.convert',
 )
