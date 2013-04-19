@@ -1,5 +1,8 @@
-# -*- coding: utf-8 -*-
-UNISTORAGE_TYPES = ('unknown', 'image', 'video', 'audio', 'doc')
+# coding: utf-8
+import mimetypes
+
+
+UNISTORAGE_TYPES = ('unknown', 'image', 'video', 'audio', 'doc', 'presentation')
 
 DOCUMENT_TYPES = (
     'application/msword',
@@ -8,11 +11,17 @@ DOCUMENT_TYPES = (
     'application/x-pdf', 'application/rtf', 'application/x-rtf', 'text/richtext',
     'text/plain', 'text/html')
 
+PRESENTATION_TYPES = (
+    'application/vnd.ms-powerpoint',
+    'application/vnd.oasis.opendocument.presentation',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+)
 
-def get_unistorage_type(content_type, extra=None):
-    """По `content_type` файла и, возможно, дополнительной информации (поле `extra` в БД)
-    выясняет :term:`unistorage_type`, к которому принадлежит файл. Если параметр `extra` не
-    указан, результат считается предположительным.
+
+def get_unistorage_type(content_type, file_name=None, extra=None):
+    """По `content_type` файла и, возможно, дополнительной информации (имя файла, 
+    поле `extra` в БД) выясняет :term:`unistorage_type`, к которому принадлежит файл.
+    Если параметр `extra` не указан, результат считается предположительным.
     """
     if content_type.startswith('image'):
         if extra is None:
@@ -55,11 +64,24 @@ def get_unistorage_type(content_type, extra=None):
             content_type in ('application/adts', 'application/pcm'):
         return 'audio'
 
+    if content_type == 'application/msword':
+        if mimetypes.guess_type(file_name) in PRESENTATION_TYPES:
+            return 'presentation'
+        else:
+            return 'doc'
+
     if content_type in DOCUMENT_TYPES:
         return 'doc'
+
+    if content_type in PRESENTATION_TYPES:
+        return 'presentation'
     
     return 'unknown'
 
 
 class ValidationError(Exception):
+    pass
+
+
+class ActionError(Exception):
     pass

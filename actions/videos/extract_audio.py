@@ -10,7 +10,10 @@ from actions.common.codecs_validation import require_acodec_presence
 
 name = 'extract_audio'
 applicable_for = 'video'
-result_unistorage_type = 'audio'
+
+
+def get_result_unistorage_type(*args):
+    return 'audio'
 
 
 # XXX Код ниже почти один-в-один совпадает с кодом из actions/audios/convert.py.

@@ -46,7 +46,7 @@ def get_avprobe_result(file_content, file_name=None):
 
 @newrelic.agent.function_trace()
 def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
-    inaccurate_unistorage_type = get_unistorage_type(content_type)
+    inaccurate_unistorage_type = get_unistorage_type(content_type, file_name=file_name)
     inaccurate_extra = {}
     if inaccurate_unistorage_type in ('audio', 'video'):
         if isinstance(file, FileStorage) and hasattr(file.stream, 'name') and \
@@ -60,7 +60,8 @@ def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
         except:
             pass
 
-    unistorage_type = get_unistorage_type(content_type, extra=inaccurate_extra)
+    unistorage_type = get_unistorage_type(content_type, file_name=file_name,
+                                          extra=inaccurate_extra)
     extra = {}
     if unistorage_type == 'audio':
         extra.update(inaccurate_extra['audio'])
@@ -89,7 +90,8 @@ def get_file_data(file, file_name=None):
         'filename': secure_filename(file_name),
         'crc32': binascii.crc32(file_content)
     }
-    data.update(get_unistorage_type_and_extra(file, file_name, file_content, content_type))  # XXX!
+    data.update(get_unistorage_type_and_extra(
+        file, file_name, file_content, content_type))
     
     if content_type == 'application/ogg':
         if data['unistorage_type'] == 'video':

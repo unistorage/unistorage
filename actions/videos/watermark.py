@@ -11,7 +11,10 @@ from actions.common.watermark_validation import \
 
 name = 'watermark'
 applicable_for = 'video'
-result_unistorage_type = 'video'
+
+
+def get_result_unistorage_type(*args):
+    return 'video'
 
 
 def validate_and_get_args(args, source_file=None):
@@ -28,7 +31,7 @@ CORNER_MAP = {
     'ne': 'main_w-overlay_w-%(v_pad)d:%(h_pad)d',
     'se': 'main_w-overlay_w-%(v_pad)d:main_h-overlay_h-%(h_pad)d',
     'sw': '%(v_pad)d:main_h-overlay_h-%(h_pad)d',
-    'nw': '%(v_pad)d:%(h_pad)d'
+    'nw': '%(v_pad)d:%(h_pad)d',
 }
 
 

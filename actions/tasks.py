@@ -12,12 +12,12 @@ from bson.objectid import ObjectId
 import settings
 import actions
 import connections
+import celeryconfig
 from file_utils import get_file_data
 from app.models import PendingFile, UpdatingPendingFile, RegularFile
 
 
 celery = Celery('tasks')
-import celeryconfig
 celery.config_from_object(celeryconfig)
 
 
