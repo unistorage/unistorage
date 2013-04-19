@@ -46,7 +46,7 @@ def validate_and_get_args(args, source_file=None):
 def perform(source_file, page, format):
     # -density 288 -resize 25% для «антиалиасинга» при растеризации
     args = (settings.CONVERT_BIN, '-density', '288', '-colorspace', 'RGB',
-            'PDF:-[2]', '-background', 'white', '-alpha', 'remove',
+            'PDF:-[2]', '-background', 'white', '-flatten',
             '-resize', '25%', '%s:-' % format.upper())
     imagemagick = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
     stdout_data, stderr_data = imagemagick.communicate(input=source_file.read())
