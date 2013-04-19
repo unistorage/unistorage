@@ -3,9 +3,8 @@ import subprocess
 from cStringIO import StringIO
 
 import settings
-from actions import ActionException
-
 from identify import identify_file
+from actions.utils import ActionError
 
 
 class ImageMagickWrapper(object):
@@ -55,11 +54,11 @@ class ImageMagickWrapper(object):
             proc = subprocess.Popen(self._args, stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except OSError:
-            raise ActionException('Failed to start ImageMagick\'s convert: %s' % self._args[0])
+            raise ActionError('Failed to start ImageMagick\'s convert: %s' % self._args[0])
 
         result, error = proc.communicate(input=proc_input.read())
         return_code = proc.wait()
         if return_code != 0:
-            raise ActionException('ImageMagick\'s convert (%s) failed.' % self._args[0])
+            raise ActionError('ImageMagick\'s convert (%s) failed.' % self._args[0])
 
         return StringIO(result), format.lower()

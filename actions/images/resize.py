@@ -6,8 +6,11 @@ from . import ImageMagickWrapper
 
 name = 'resize'
 applicable_for = 'image'
-result_unistorage_type = 'image'
 validate_and_get_args = common_resize_validate_and_get_args
+
+
+def get_result_unistorage_type(*args):
+    return 'image'
 
 
 def to_int(x):

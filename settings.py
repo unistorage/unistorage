@@ -49,7 +49,7 @@ AVPROBE_BIN = '/usr/bin/ffprobe'
 QT_FASTSTART_BIN = '/usr/bin/qt-faststart'
 
 # Остальные бинарники
-OO_WRAPPER_BIN = 'oowrapper.py'
+OO_WRAPPER_BIN = '/bin/oowrapper.py'
 FLVTOOL_BIN = '/usr/bin/flvtool2'
 
 # Путь к gridfs-serve

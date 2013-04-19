@@ -11,7 +11,10 @@ from actions.images.convert import perform as convert
 
 name = 'capture_frame'
 applicable_for = 'video'
-result_unistorage_type = 'image'
+
+
+def get_result_unistorage_type(*args):
+    return 'video'
 
 
 def validate_and_get_args(args, source_file=None):
