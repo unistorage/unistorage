@@ -19,5 +19,6 @@ install:
   - python ./manage.py compile_libmagic_db
   - python ./manage.py compile_avconv_db
   - python ./manage.py check_avconv_codecs
+  - mkdir ./tmp
 script:
-  - python ./manage.py test_cov
+  - TMPDIR=./tmp python ./manage.py test_cov
