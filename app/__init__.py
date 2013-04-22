@@ -67,6 +67,9 @@ def configure_app(app):
     app.request_class = CustomRequest
     app.config['PROPAGATE_EXCEPTIONS'] = settings.DEBUG
     
+    if settings.SERVER_NAME:
+        app.config['SERVER_NAME'] = settings.SERVER_NAME
+
     sentry_dsn = getattr(settings, 'SENTRY_DSN', False)
     if sentry_dsn:
         Sentry(app, dsn=sentry_dsn)
@@ -75,7 +78,10 @@ def configure_app(app):
 def register_blueprints(app):
     import admin
     import storage
-    app.register_blueprint(admin.bp, url_prefix='/admin')
+    if settings.SERVER_NAME:
+        app.register_blueprint(admin.bp)
+    else:
+        app.register_blueprint(admin.bp, url_prefix='/admin')
     app.register_blueprint(storage.bp)
 
 

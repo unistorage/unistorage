@@ -26,4 +26,4 @@ def parse_template_uri(uri):
 
 
 def get_resource_uri_for(resource_name, resource_id):
-    return url_for('.%s_view' % resource_name, _id=resource_id)
+    return url_for('.%s_view' % resource_name, _id=resource_id, _external=False)

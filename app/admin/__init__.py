@@ -2,8 +2,14 @@ from flask import Blueprint
 
 import who
 
+import settings
 
-bp = Blueprint('admin', __name__)
+
+kwargs = {}
+if settings.SERVER_NAME:
+    kwargs = {'subdomain': 'admin'}
+
+bp = Blueprint('admin', __name__, **kwargs)
 from views import *
 
 

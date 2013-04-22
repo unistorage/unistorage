@@ -1,10 +1,16 @@
 from flask.ext.principal import Principal, Identity, identity_loaded
 
 import who
+
+import settings
 from utils import StorageBlueprint, error
 
 
-bp = StorageBlueprint('storage', __name__)
+kwargs = {}
+if settings.SERVER_NAME:
+    kwargs = {'subdomain': 'api'}
+
+bp = StorageBlueprint('storage', __name__, **kwargs)
 principal = Principal(bp, use_sessions=False)
 who_api_factory = who.make_repoze_who_api_factory()
 

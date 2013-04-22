@@ -15,6 +15,7 @@ TESTING = False
 SECRET_KEY = 'qwertyuiop[]'
 ADMINS = ['anthony.romanovich@gmail.com']
 
+SERVER_NAME = 'locahost'
 SENTRY_DSN = ''
 
 # Логин и пароль от интерфейса администратора (/admin/)
