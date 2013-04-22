@@ -106,7 +106,7 @@ class Test(SmokeTest):
         results_dir = os.path.join(TEST_TARGET_DIR, 'captured_frames')
         os.makedirs(results_dir)
 
-        for format in ('gif', 'bmp', 'gif', 'jpeg', 'png', 'tiff'):
+        for format in ('gif', 'bmp', 'gif', 'jpeg', 'png'):
             for source_name, source_file in self.source_files():
                 result, ext = capture_frame(source_file, format, 1)
 
