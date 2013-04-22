@@ -316,7 +316,6 @@ def avprobe(fname):
 encoders = {
     'acodecs': {
         'vorbis': 'libvorbis',
-        'amrnb': 'libopencore_amrnb',
         'mp3': 'libmp3lame'
     },
     'vcodecs': {
