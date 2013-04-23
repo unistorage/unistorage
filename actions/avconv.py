@@ -69,8 +69,8 @@ def extract_video_data(stream, stderr_data):
             return parse_float(val)
 
     duration = parse_float(stream.get('duration')) or \
-               parse_float(stderr_data.get('duration'))
-    
+        parse_float(stderr_data.get('duration'))
+
     video_bitrate = stderr_data.get('video_bitrate')
     if not video_bitrate:
         file_bitrate = stderr_data.get('file_bitrate')
@@ -83,7 +83,7 @@ def extract_video_data(stream, stderr_data):
         'codec': stream.get('codec_name'),
         'bitrate': video_bitrate,
         'duration': duration,
-        'fps': parse_avg_frame_rate(stream.get('avg_frame_rate')) or 
+        'fps': parse_avg_frame_rate(stream.get('avg_frame_rate')) or
                parse_avg_frame_rate(stream.get('r_frame_rate')),
     }
 
@@ -150,7 +150,7 @@ def parse_stderr(stderr):
     match = re.search(regexp, stderr)
     if match:
         data['file_bitrate'] = int(match.group('bitrate')) * 1000
-    
+
     regexp = r'Stream.*Video:.*?\s(?P<size>\d+x\d+)(?:,|\n)'
     match = re.search(regexp, stderr)
     if match:
@@ -183,7 +183,7 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
 
     if not video:
         return result
-    
+
     if video['codec'] == 'vp6f':
         # 1. Битрейт и длительность находятся в секции format
         format_data = stdout_data['format']
@@ -233,9 +233,9 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
 
     # Если webm закачивается без расширения, ffmpeg выдаёт формат matroska
     if result['format'] == 'matroska':
-        m = magic.Magic(mime=True, magic_file=settings.MAGIC_FILE_PATH)
+        from file_utils import get_content_type_from_buffer
         with open(fname) as file:
-            content_type = m.from_buffer(file.read(1024))
+            content_type = get_content_type_from_buffer(file.read(1024))
 
         if content_type == 'video/webm':
             result['format'] = 'webm'
@@ -264,7 +264,7 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
             file_bitrate = int(float(file_size) * 8 / file_duration)
         except:
             pass
-    
+
     if file_bitrate and video and audio:
         video_bitrate = video['bitrate']
         audio_bitrate = audio['bitrate']
@@ -281,7 +281,7 @@ def avprobe(fname):
     args = [settings.AVPROBE_BIN, '-print_format', 'json',
             '-show_format', '-show_streams', fname]
     proc = subprocess.Popen(args, stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
 
     stdout_data = parse_stdout(stdout)
@@ -308,6 +308,13 @@ def avprobe(fname):
     }
     result = apply_hacks(result, stdout_data, stderr_data, fname)
     return result
+
+
+def avprobe_buffer(data):
+    with tempfile.NamedTemporaryFile(mode='wb') as tmp_file:
+        tmp_file.write(data)
+        tmp_file.flush()
+        return avprobe(tmp_file.name)
 
 
 """
@@ -389,14 +396,14 @@ def avconv(source_fname, target_fname, options):
 
     position = options.get('position')
     if position:
-        args.extend(['-ss', position ])
+        args.extend(['-ss', position])
 
     audio_options = options.get('audio')
     if audio_options:
         codec = audio_options['codec']
         encoder_name = encoders['acodecs'].get(codec, codec)
         args.extend(['-acodec', encoder_name])
-        
+
         bitrate = audio_options.get('bitrate')
         if bitrate:
             args.extend(['-ab', str(bitrate)])
@@ -439,10 +446,10 @@ def avconv(source_fname, target_fname, options):
 
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
-    
+
     if proc.wait() != 0:
         raise Exception(stdout + stderr)
-    
+
     if format == 'flv':
         proc = subprocess.Popen([settings.FLVTOOL_BIN, '-U', target_fname],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
