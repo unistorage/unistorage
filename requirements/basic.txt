@@ -22,6 +22,7 @@ celery==3.0.15
 # https://github.com/ahupp/python-magic/pull/28 не окажется в пакете на PyPi:
 git+https://github.com/aromanovich/python-magic.git@d529597e3d26e89f7f86c39a7959f582fd1b3c9e
 
+pyPdf==1.13
 pytz==2012f
 PyYAML==3.10
 pytils==0.2.3

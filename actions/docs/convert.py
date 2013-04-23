@@ -15,8 +15,7 @@ def get_result_unistorage_type(*args):
 
 
 def validate_and_get_args(args, source_file=None):
-    if 'to' not in args:
-        raise ValidationError('`to` must be specified.')
+    validate_presence(args, 'to')
     format = args['to']
 
     supported_formats = ('doc', 'docx', 'odt', 'pdf', 'rtf', 'txt', 'html')

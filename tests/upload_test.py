@@ -20,3 +20,8 @@ class FunctionalTest(StorageFunctionalTest):
         response = self.app.get(file_uri).json
         self.assertEquals(response['data']['unistorage_type'], 'audio')
         self.assertEquals(response['data']['extra']['duration'], 210.1)
+
+    def test_pdf(self):
+        file_uri = self.put_file('./docs/example.pdf')
+        response = self.app.get(file_uri).json
+        self.assertEquals(response['data']['extra']['pages'], 10)
