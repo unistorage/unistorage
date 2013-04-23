@@ -30,12 +30,8 @@ def validate_and_get_args(args, source_file=None):
 
 def perform(source_file, codec):
     format = acodec_to_format_map[codec]
-
-    source_file_ext = ''
-    if hasattr(source_file, 'filename'):
-        source_file_name, source_file_ext = os.path.splitext(source_file.filename)
-
-    tmp_source_file = tempfile.NamedTemporaryFile(suffix=source_file_ext, delete=False)
+    
+    tmp_source_file = tempfile.NamedTemporaryFile(delete=False)
     tmp_source_file.write(source_file.read())
     tmp_source_file.close()
 

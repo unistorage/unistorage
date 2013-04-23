@@ -3,7 +3,7 @@ from tests.utils import StorageFunctionalTest
 
 class FunctionalTest(StorageFunctionalTest):
     def test_extract_audio_from_3gp_to_mp3(self):
-        original_uri = self.put_file('videos/sample.3gp')
+        original_uri = self.put_file('videos/gizmo.mp4')
 
         self.check(original_uri, mime='video/3gpp')
         convert_action_url = '%s?action=extract_audio&to=mp3' % original_uri
