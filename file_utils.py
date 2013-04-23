@@ -81,7 +81,7 @@ def get_file_data(file, file_name=None):
     file.seek(0)
     file_content = file.read()
     file.seek(0)
-    
+
     content_type = m.from_buffer(file_content)
     file.seek(0)
 
@@ -90,7 +90,7 @@ def get_file_data(file, file_name=None):
         'crc32': binascii.crc32(file_content)
     }
     data.update(get_unistorage_type_and_extra(file, file_name, file_content, content_type))  # XXX!
-    
+
     if content_type == 'application/ogg':
         if data['unistorage_type'] == 'video':
             content_type = 'video/ogg'
