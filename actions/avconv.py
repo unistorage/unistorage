@@ -326,8 +326,8 @@ encoders = {
         'h263': 'h263p',
         'mpeg1': 'mpeg1video',
         'mpeg2': 'mpeg2video',
-        'jpeg': 'mjpeg'
-    }
+        'jpeg': 'mjpeg',
+    },
 }
 
 
@@ -336,7 +336,7 @@ encoders = {
 """
 encoder_args = {
     'acodecs': {
-        'aac': ['-strict', 'experimental']
+        'aac': ['-strict', 'experimental'],
     },
     'vcodecs': {
         'h263p': ['-threads', '1', '-vf', 'scale=trunc(iw/4)*4:trunc(ih/4)*4'],
@@ -346,8 +346,17 @@ encoder_args = {
                     '-coder', '0', '-me_range', '16', '-g', '300', '-keyint_min', '25',
                     '-sc_threshold', '40', '-i_qfactor', '0.71', '-rc_eq', "'blurCplx^(1-qComp)'",
                     '-qcomp', '0.6', '-qmin', '10', '-qmax', '51', '-qdiff', '4', '-level', '30',
-                    '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2']  # h264 поддерживает только четные длину и высоту
-    }
+                    '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2'],  # h264 поддерживает только четные длину и высоту
+    },
+}
+
+
+"""
+Некоторые форматы требуют специальных аргументов:
+"""
+format_args = {
+    'mov': ['-movflags', 'faststart'],
+    'mp4': ['-movflags', 'faststart'],
 }
 
 
@@ -358,7 +367,7 @@ format_aliases = {
     'mpeg': 'mpegts',
     'mpg': 'mpegts',
     'mkv': 'matroska',
-    'm4a': 'mov'
+    'm4a': 'mov',
 }
 
 
@@ -371,7 +380,7 @@ acodec_to_format_map = {
     'alac': 'm4a',
     'mp3': 'mp3',
     'aac': 'mp4',
-    'ac3': 'ac3'
+    'ac3': 'ac3',
 }
 
 
@@ -425,30 +434,21 @@ def avconv(source_fname, target_fname, options):
 
     format = options['format']
     avconv_format_name = format_aliases.get(format, format)
+    args.extend(format_args.get(avconv_format_name, []))
     args.extend(['-f', avconv_format_name, '-y', target_fname])
 
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
     
-    if proc.returncode:
+    if proc.wait() != 0:
         raise Exception(stdout + stderr)
     
     if format == 'flv':
         proc = subprocess.Popen([settings.FLVTOOL_BIN, '-U', target_fname],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = proc.communicate()
-        if proc.returncode:
+        if proc.wait() != 0:
             raise Exception(stdout + stderr)
-
-    if format in ('mov', 'mp4'):
-        tmp_target_fname = '%s_tmp' % target_fname
-        os.rename(target_fname, tmp_target_fname)
-        proc = subprocess.Popen([settings.QT_FASTSTART_BIN, tmp_target_fname, target_fname],
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = proc.communicate()
-        if proc.returncode:
-            raise Exception(stdout + stderr)
-        os.unlink(tmp_target_fname)
 
     return target_fname
 
