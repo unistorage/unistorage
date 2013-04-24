@@ -8,7 +8,7 @@ actions_table = defaultdict(dict)
 
 def register_action(action):
     """Валидирует и регистрирует `action` в качестве операции."""
-    for required_attr in ('name', 'result_unistorage_type', 'applicable_for',
+    for required_attr in ('name', 'get_result_unistorage_type', 'applicable_for',
                           'validate_and_get_args', 'perform'):
         assert hasattr(action, required_attr), \
             'Action %s validation failed: missing `%s`.' % (action, required_attr)
@@ -19,10 +19,6 @@ def get_action(unistorage_type, name):
     """Возвращает операцию с именем `name`, применимую к `unistorage_type`."""
     applicable_actions = actions_table.get(unistorage_type, {})
     return applicable_actions.get(name)
-
-
-class ActionException(Exception):  # XXX
-    pass
 
 
 actions_to_register = (
@@ -42,6 +38,9 @@ actions_to_register = (
     'audios.convert',
 
     'docs.convert',
+    'docs.extract_page',
+    
+    'presentations.convert',
 )
 
 for action in actions_to_register:

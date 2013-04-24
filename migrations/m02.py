@@ -48,7 +48,7 @@ def get_linearized_tree(file_, criteria, redo_needed):
             db.fs.files.update({'_id': child_id}, {
                 '$set': {
                     'pending': True,
-                    'ttl': int(settings.AVERAGE_TASK_TIME.total_seconds()),
+                    'ttl': settings.AVERAGE_TASK_TIME,
                 },
             })
 

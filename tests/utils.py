@@ -113,8 +113,8 @@ class StorageFunctionalTest(ContextMixin, WorkerMixin, FlaskTestCase):
         params = {}
         if type_id is not None:
             params.update({'type_id': type_id})
-
-        r = self.app.post('/', params, upload_files=files)
+        url = url_for('storage.file_create')
+        r = self.app.post(url, params, upload_files=files)
         self.assertEqual(r.json['status'], 'ok')
         return r.json['resource_uri']
 

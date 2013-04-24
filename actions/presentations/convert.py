@@ -7,18 +7,21 @@ from actions.utils import ValidationError, ActionError
 
 
 name = 'convert'
-applicable_for = 'doc'
+applicable_for = 'presentation'
 
 
-def get_result_unistorage_type(*args):
-    return 'doc'
+def get_result_unistorage_type(format):
+    if format == 'pdf':
+        return 'doc'
+    else:
+        return 'presentation'
 
 
 def validate_and_get_args(args, source_file=None):
     validate_presence(args, 'to')
     format = args['to']
 
-    supported_formats = ('doc', 'docx', 'odt', 'pdf', 'rtf', 'txt', 'html')
+    supported_formats = ('ppt', 'odp', 'pdf')
     if format not in supported_formats:
         raise ValidationError('Source file can be only converted to the one of '
                               'following formats: %s.' % ', '.join(supported_formats))

@@ -34,11 +34,11 @@ class User(ValidationMixin, modeling.Document):
     .. attribute:: token
 
         Токен для авторизации.
-    
+
     .. attribute:: needs
 
         Роли пользователя (Flask Principal needs).
-    
+
     .. attribute:: domains
 
         Домены-алиасы для gridfs-serve.
@@ -121,7 +121,7 @@ class Statistics(ValidationMixin, modeling.Document):
     .. attribute:: user_id
 
         :class:`ObjectId` пользователя, для которого собирается статистика.
-    
+
     .. attribute:: type_id
 
         :term:`Идентификатор контента` файлов, для которых собирается статистика.
@@ -173,7 +173,7 @@ class Statistics(ValidationMixin, modeling.Document):
     @classmethod
     def _get_conditions(cls, user_id=None, type_id=None, start=None, end=None):
         conditions = {}
-        
+ 
         if type_id:
             conditions['type_id'] = type_id
         if user_id:
@@ -196,7 +196,7 @@ class Statistics(ValidationMixin, modeling.Document):
         заданный :term:`идентификатор контента`; если `kwargs` содержит поле `user_id`, статистика
         считается по заданному пользователю. Если `kwargs` содержит поля `start` и/или `end`,
         агрегироваться будет статистика только между этими датами.
-        
+
         :rtype: list({'user_id': ..., 'files_count': ..., 'files_size: ...})
         """
         conditions = cls._get_conditions(**kwargs)
@@ -254,7 +254,7 @@ class ServableMixin(object):
         supported_types = ('image/gif', 'image/png', 'image/jpeg')
         if not original_content_type in supported_types or len(actions) > 1:
             return False
-        
+
         action_name, action_args = actions[0]
         if action_name == 'resize':
             mode, w, h = action_args
@@ -270,9 +270,9 @@ class File(ValidationMixin, ServableMixin, modeling.Document):
     """Реализация базовой сущности "файл" (см. :term:`временный файл` и :term:`обычный файл`).
 
     .. attribute:: user_id
-    
+
         :class:`ObjectId` владельца файла.
-    
+
     .. attribute:: type_id
 
         :term:`Идентификатор контента` файла.
@@ -328,7 +328,7 @@ class File(ValidationMixin, ServableMixin, modeling.Document):
         'pending': bool,
     }
     required = ('user_id', 'filename', 'content_type', 'unistorage_type')
-    
+
     def save(self, db):
         # TODO: Копипаста из monk.modelling
         assert self.collection
@@ -396,14 +396,18 @@ class RegularFile(File):
     })
 
     @classmethod
-    def find(cls, *args, **kwargs):
+    def find(cls, db, kwargs=None):
+        if not kwargs:
+            kwargs = {}
         kwargs.update({'pending': False})
-        return super(RegularFile, cls).find(*args, **kwargs)
+        return super(PendingFile, cls).find(db, kwargs)
 
     @classmethod
-    def get_one(cls, *args, **kwargs):
+    def get_one(cls, db, kwargs=None):
+        if not kwargs:
+            kwargs = {}
         kwargs.update({'pending': False})
-        return super(RegularFile, cls).get_one(*args, **kwargs)
+        return super(RegularFile, cls).get_one(db, kwargs)
 
     @classmethod
     def get_from_fs(cls, db, fs, **kwargs):
@@ -415,7 +419,7 @@ class RegularFile(File):
     def put_to_fs(cls, db, fs, file_name, file, **kwargs):
         """Обновляет поля `extra`, `content_type`, `filename` у kwargs, помещает `file` в GridFS
         и обновляет статистику.
-        
+
         Обычные файлы должны помещаться в GridFS исключительно посредством этого метода.
 
         :param db: база данных
@@ -431,7 +435,7 @@ class RegularFile(File):
 
         cls(**kwargs).validate()
         file_content = file.read()
-        
+
         # Если файл большой, увеличиваем размер чанков:
         if len(file_content) > 30 * 1024 * 1024:
             kwargs.update({'chunkSize': 8 * 1024 * 1024})
@@ -477,14 +481,18 @@ class PendingFile(File):
     required = ('user_id', 'actions', 'label', 'original', 'pending', 'ttl')
 
     @classmethod
-    def find(cls, *args, **kwargs):
+    def find(cls, db, kwargs=None):
+        if not kwargs:
+            kwargs = {}
         kwargs.update({'pending': True})
-        return super(PendingFile, cls).find(*args, **kwargs)
+        return super(PendingFile, cls).find(db, kwargs)
 
     @classmethod
-    def get_one(cls, *args, **kwargs):
+    def get_one(cls, db, kwargs=None):
+        if not kwargs:
+            kwargs = {}
         kwargs.update({'pending': True})
-        return super(PendingFile, cls).get_one(*args, **kwargs)
+        return super(PendingFile, cls).get_one(db, kwargs)
 
     @classmethod
     def get_from_fs(cls, db, fs, **kwargs):

@@ -9,7 +9,10 @@ from actions.common.codecs_validation import require_acodec_presence
 
 name = 'convert'
 applicable_for = 'audio'
-result_unistorage_type = 'audio'
+
+
+def get_result_unistorage_type(*args):
+    return 'audio'
 
 
 def validate_and_get_args(args, source_file=None):

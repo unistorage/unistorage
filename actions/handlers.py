@@ -3,14 +3,14 @@
 Применение операций и шаблонов
 ==============================
 """
-from flask import request
+from flask import request, abort
 
 import settings
 import actions
-from actions.tasks import perform_actions
 from app import db, fs
 from app.models import Template, File, PendingFile
 from app.perms import AccessPermission
+from actions.tasks import perform_actions
 from utils import ValidationError
 
 
@@ -18,7 +18,7 @@ def apply_actions(source_file, action_list, label):
     """Проверяет существование модификации `source_file` с меткой `label`.  Если она существует --
     возвращает её идентификатор; если нет -- ставит в очередь применение операций `action_list` к
     файлу `source_file` и вешает на результирующий файл метку `label`.
-    
+
     :param source_file: исходный файл
     :type source_file: :class:`app.models.File`
     :param label: метка, однозначно идентифицирующая набор операций `action_list`
@@ -28,26 +28,34 @@ def apply_actions(source_file, action_list, label):
     :rtype: :class:`ObjectId`
     """
     if source_file.modifications:
+        # Пытаемся найти модификацию с данной меткой. Если она существует --
+        # просто возращаем её идентификатор
         target_id = source_file.modifications.get(label)
         if target_id:
             return target_id
 
-    ttl_timedelta = settings.AVERAGE_TASK_TIME
-    ttl = int(ttl_timedelta.total_seconds())
-
     source_id = source_file.get_id()
-
-    target_id = PendingFile.put_to_fs(db, fs, **{
-        'user_id': request.user['_id'],
-        'type_id': source_file.type_id,
-        'original': source_id,
-        'label': label,
-        'ttl': ttl,
-        'actions': action_list,
-        'original_content_type': source_file.content_type,
-    })
-    perform_actions.delay(target_id)
-
+    # Помещаем в базу временный файл, содержащий всю необходимую информацию
+    # для выполнения операции
+    target_id = PendingFile.put_to_fs(db, fs,
+        user_id=request.user.get_id(),
+        type_id=source_file.type_id,
+        original=source_id,
+        label=label,
+        ttl=settings.AVERAGE_TASK_TIME,
+        actions=action_list,
+        original_content_type=source_file.content_type)
+    try:
+        # Посылаем воркеру сообщение с идентификатором временного файла
+        perform_actions.delay(target_id)
+    except:
+        # Если сообщение послать не удалось, удалим временный файл,
+        # так как он остаётся «потерянным» — он никогда не станет
+        # постоянным и о нём не узнает клиент
+        fs.delete(target_id)
+        abort(503)
+    
+    # Записываем информацию о модификации в оригинал
     db[File.collection].update(
         {'_id': source_id},
         {'$set': {'modifications.%s' % label: target_id}})
@@ -68,7 +76,7 @@ def apply_template(source_file, args):
     """
     template_uri = args['template']
     template = Template.get_by_resource_uri(db, template_uri)
-    
+
     if not template:
         raise ValidationError('Template %s does not exist.' % template_uri)
     AccessPermission(source_file).test(http_exception=403)

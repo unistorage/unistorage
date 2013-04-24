@@ -8,13 +8,16 @@ from actions.common.watermark_validation import \
     get_watermark_bbox_geometry, \
     validate_and_get_args as common_validate_and_get_args
 from identify import identify_file
-from actions import ActionException
+from actions.utils import ActionError
 
 
 name = 'watermark'
 applicable_for = 'image'
-result_unistorage_type = 'image'
 validate_and_get_args = common_validate_and_get_args
+
+
+def get_result_unistorage_type(*args):
+    return 'image'
 
 
 CORNER_MAP = {
@@ -47,5 +50,5 @@ def perform(source_file, watermark_file, w, h, h_pad, v_pad, corner):
     fd.close()
 
     if proc.returncode != 0:
-        raise ActionException('`composite` failed: %s' % stderr_data)
+        raise ActionError('`composite` failed: %s' % stderr_data)
     return StringIO(stdout_data), source_data['format']

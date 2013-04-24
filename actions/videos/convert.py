@@ -11,7 +11,10 @@ from actions.common.codecs_validation import \
 
 name = 'convert'
 applicable_for = 'video'
-result_unistorage_type = 'video'
+
+
+def get_result_unistorage_type(*args):
+    return 'video'
 
 
 def validate_and_get_args(args, source_file=None):
@@ -34,7 +37,7 @@ def validate_and_get_args(args, source_file=None):
 
     vcodec = args.get('vcodec', vcodec)
     acodec = args.get('acodec', acodec)
-    
+
     vcodec_restrictions = {
         'ogg': ('theora',),
         'webm': ('vp8',),
@@ -50,7 +53,7 @@ def validate_and_get_args(args, source_file=None):
     format_supported_vcodecs = vcodec_restrictions.get(format, all_supported_vcodecs)
     all_supported_acodecs = ('vorbis', 'mp3', 'aac')
     format_supported_acodecs = acodec_restrictions.get(format, all_supported_acodecs)
-    
+
     if vcodec is None:
         raise ValidationError('`vcodec` must be specified.')
     elif vcodec not in format_supported_vcodecs:
@@ -61,7 +64,7 @@ def validate_and_get_args(args, source_file=None):
     elif acodec not in format_supported_acodecs:
         raise ValidationError('Format %s allows only following audio codecs: %s' %
                               (format, ', '.join(format_supported_acodecs)))
-    
+
     if source_file:
         data = source_file.extra
         require_vcodec_presence(data['video']['codec'])
@@ -78,7 +81,7 @@ def perform(source_file, format, vcodec, acodec):
 
     tmp_target_file = tempfile.NamedTemporaryFile(delete=False)
     tmp_target_file.close()
-    
+
     try:
         source_data = avprobe(tmp_source_file.name)
 
@@ -89,7 +92,7 @@ def perform(source_file, format, vcodec, acodec):
                 'fps': source_data['video']['fps'],
             }
         }
-        
+
         if vcodec in ('mpeg1', 'mpeg2', 'divx'):
             # MPEG1/2 does not support 15/1 fps, например. Поэтому принудительно
             # ставим разумное значение в 25 fps

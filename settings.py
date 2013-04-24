@@ -49,16 +49,21 @@ AVCONV_BIN = '/usr/bin/ffmpeg'
 AVPROBE_BIN = '/usr/bin/ffprobe'
 
 # Остальные бинарники
-OO_WRAPPER_BIN = 'oowrapper.py'
+OO_WRAPPER_BIN = '/bin/oowrapper.py'
 FLVTOOL_BIN = '/usr/bin/flvtool2'
 
 # Путь к gridfs-serve
 GRIDFS_SERVE_URL = 'http://127.0.0.1/'
 
-TTL = int(timedelta(days=7).total_seconds())  # TTL ответов со статусом "ok"
-TTL_DEVIATION = int(timedelta(days=1).total_seconds())  # Плюс-минус разброс для TTL
-AVERAGE_TASK_TIME = timedelta(seconds=60)  # TTL ответов со статусом "wait"
-ZIP_COLLECTION_TTL = timedelta(days=1)  # TTL ZIP-коллекций
+to_seconds = lambda td: int(td.total_seconds())
+# TTL ответов со статусом "ok":
+TTL = to_seconds(timedelta(days=7))
+# Плюс-минус разброс для `TTL`
+TTL_DEVIATION = to_seconds(timedelta(days=1))
+# TTL ответов со статусом "wait"
+AVERAGE_TASK_TIME = to_seconds(timedelta(seconds=60))
+# TTL ZIP-коллекций
+ZIP_COLLECTION_TTL = to_seconds(timedelta(days=1))
 
 MAGIC_DB_PATH = os.path.join(PROJECT_PATH, 'magic.mgc')
 

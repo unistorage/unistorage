@@ -47,7 +47,7 @@ def file_create():
     file = request.files.get('file')
     if not file:
         return error({'msg': 'File wasn\'t found'}), 400
-    
+
     kwargs = {
         'user_id': request.user['_id']
     }
@@ -65,7 +65,7 @@ def file_create():
 
 def get_pending_file(user, file):
     """Возвращает JSON-ответ с информацией о `file`.
-    
+
     :param file: :term:`временный файл`
     :type file: :class:`app.models.File`
     """
@@ -83,7 +83,7 @@ def get_pending_file(user, file):
 
 def get_regular_file(user, file):
     """Возвращает JSON-ответ с информацией о `file`.
-    
+
     :param file: :term:`обычный файл`
     :type file: :class:`app.models.File`
     """
@@ -112,7 +112,7 @@ def get_regular_file(user, file):
                 jsonschema.validate(data, schema)
             except:
                 logger.warning('Schema validation failed!', exc_info=True,
-                        extra={'response': dict(data)})
+                               extra={'response': dict(data)})
 
     return jsonify(data)
 
@@ -129,7 +129,7 @@ def file_view(_id=None):
     """
     source_file = File.get_one(db, {'_id': _id}) or \
         UpdatingPendingFile.get_one(db, {'_id': _id})
-    
+
     if not source_file:
         return error({'msg': 'File wasn\'t found'}), 404
     AccessPermission(source_file).test(http_exception=403)
@@ -137,7 +137,7 @@ def file_view(_id=None):
     try:
         action_presented = 'action' in request.args
         template_presented = 'template' in request.args
-        
+
         apply_ = None
         if action_presented and not template_presented:
             apply_ = apply_action
@@ -145,7 +145,7 @@ def file_view(_id=None):
             apply_ = apply_template
         elif action_presented and template_presented:
             raise ValidationError('You can\'t specify both `action` and `template`.')
-        
+
         if apply_:
             target_id = apply_(source_file, request.args.to_dict())
             return ok({
@@ -172,7 +172,7 @@ def template_create():
         })
     except ValidationError as e:
         return error({'msg': str(e)}), 400
-    
+
     template_data.update({
         'user_id': request.user['_id']
     })
@@ -188,7 +188,7 @@ def template_create():
 def template_view(_id=None):
     """Вьюшка, показывавающая :term:`шаблон`."""
     template = Template.get_one(db, {'_id': _id})
-    
+
     if not template:
         return error({'msg': 'Template wasn\'t found'}), 404
     AccessPermission(template).test(http_exception=403)
@@ -209,7 +209,7 @@ def zip_create(_id=None):
     files_field = 'file[]'
     files = request.form.getlist(files_field)
     filename = request.form.get('filename')
-    
+
     try:
         if not filename:
             raise ValidationError('`filename` field is required.')
@@ -249,13 +249,13 @@ def zip_view(_id):
     AccessPermission(zip_collection).test(http_exception=403)
 
     to_timestamp = lambda d: time.mktime(d.timetuple())
-    will_expire_at = to_timestamp(zip_collection['created_at'] + settings.ZIP_COLLECTION_TTL)
+    will_expire_at = to_timestamp(zip_collection['created_at']) + settings.ZIP_COLLECTION_TTL
     now = to_timestamp(datetime.utcnow())
-    
+
     ttl = int(will_expire_at - now)
     if ttl < 0:
         return error({'msg': 'Zip collection wasn\'t found'}), 404
-    
+
     return ok({
         'ttl': ttl,
         'data': {

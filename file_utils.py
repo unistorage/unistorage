@@ -5,10 +5,12 @@ import binascii
 import tempfile
 import os.path
 from unicodedata import normalize
+from cStringIO import StringIO
 
 import magic
 import newrelic.agent
 from werkzeug.datastructures import FileStorage
+from pyPdf import PdfFileReader
 
 import settings
 from actions.utils import get_unistorage_type
@@ -44,7 +46,7 @@ def get_content_type(file):
 @newrelic.agent.function_trace()
 def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
     inaccurate_extra = {}
-    inaccurate_unistorage_type = get_unistorage_type(content_type)
+    inaccurate_unistorage_type = get_unistorage_type(content_type, file_name=file_name)
 
     try:
         if inaccurate_unistorage_type in ('audio', 'video'):
@@ -58,11 +60,16 @@ def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
     except:
         pass
 
-    unistorage_type = get_unistorage_type(content_type, extra=inaccurate_extra)
     extra = inaccurate_extra
+    unistorage_type = get_unistorage_type(content_type, extra=extra, file_name=file_name)
     if unistorage_type == 'audio':
         extra.update(inaccurate_extra['audio'])
         extra['format'] = inaccurate_extra['format']
+    elif unistorage_type == 'doc':
+        if content_type == 'application/pdf':
+            extra = {
+                'pages': PdfFileReader(StringIO(file_content)).getNumPages(),
+            }
 
     return {
         'unistorage_type': unistorage_type,

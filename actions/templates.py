@@ -36,12 +36,12 @@ def validate_and_get_template_actions(source_unistorage_type, action_args_list):
                 'is not supported for %(unistorage_type)s.' % {
                     'action_name': action_name,
                     'index': index,
-                    'unistorage_type': current_unistorage_type
+                    'unistorage_type': current_unistorage_type,
                 })
 
         action_cleaned_args = action.validate_and_get_args(action_args)
         result.append((action_name, action_cleaned_args))
-        current_unistorage_type = action.result_unistorage_type
+        current_unistorage_type = action.get_result_unistorage_type(*action_cleaned_args)
 
     return result
     

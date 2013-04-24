@@ -9,8 +9,11 @@ from actions.avconv import avprobe, avconv
 
 name = 'resize'
 applicable_for = 'video'
-result_unistorage_type = 'video'
 validate_and_get_args = common_resize_validate_and_get_args
+
+
+def get_result_unistorage_type(*args):
+    return 'video'
 
 
 def to_int(x):
@@ -32,7 +35,7 @@ def perform(source_file, mode, target_width, target_height):
 
         with tempfile.NamedTemporaryFile(mode='rb') as target_tmp:
             data = avprobe(source_tmp.name)
-            
+
             if mode == 'resize':
                 vfilters = 'scale=%i:%i' % (to_even(target_width), to_even(target_height))
             else:
