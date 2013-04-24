@@ -2,7 +2,7 @@
 git+https://github.com/mitsuhiko/jinja2.git
 
 Flask==0.9
-Flask-Assets==0.7
+Flask-Assets==0.8
 Flask-Script==0.5.1
 WTForms==1.0.2
 

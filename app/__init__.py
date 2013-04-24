@@ -87,30 +87,32 @@ def register_blueprints(app):
 
 def register_bundles(app):
     assets = Environment(app)
+    if settings.SERVER_NAME:
+        assets.url  = '/static/'
 
     bootstrap = Bundle(
-        'less/bootstrap/bootstrap.less',
-        'less/bootstrap-chosen.less',
+        'admin/less/bootstrap/bootstrap.less',
+        'admin/less/bootstrap-chosen.less',
         filters='less', output='gen/bootstrap.css')
     assets.register('bootstrap', bootstrap)
 
     css = Bundle(
-        'css/layout.css',
+        'admin/css/layout.css',
         output='gen/style.css')
     assets.register('css', css)
 
     jquery = Bundle(
-        'js/libs/jquery.min.js',
+        'admin/js/libs/jquery.min.js',
         output='gen/jquery.js')
     assets.register('jquery', jquery)
 
     common_js = Bundle(
-        'js/libs/chosen.jquery.js',
+        'admin/js/libs/chosen.jquery.js',
         output='gen/common.js')
     assets.register('common_js', common_js)
 
     statistics_js = Bundle(
-        'js/statistics.js',
-        'js/libs/moment.min.js',
+        'admin/js/statistics.js',
+        'admin/js/libs/moment.min.js',
         output='gen/statistics-js.js')
     assets.register('statistics_js', statistics_js)

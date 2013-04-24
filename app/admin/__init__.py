@@ -7,9 +7,9 @@ import settings
 
 kwargs = {}
 if settings.SERVER_NAME:
-    kwargs = {'subdomain': 'admin'}
+    kwargs['subdomain'] = 'admin'
 
-bp = Blueprint('admin', __name__, **kwargs)
+bp = Blueprint('admin', __name__, static_folder='static', **kwargs)
 from views import *
 
 
