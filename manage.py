@@ -1,6 +1,10 @@
 #!/usr/bin/env python
+import logging
+
 from flask.ext.script import Manager
 from flask.ext.assets import ManageAssets
+
+logging.getLogger('webassets.script').setLevel(logging.WARNING)
 
 from app import create_app
 
