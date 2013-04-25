@@ -5,9 +5,8 @@ from urlparse import urljoin
 
 import newrelic.agent
 from bson import ObjectId
-from monk import modeling
 from monk.validation import ValidationError
-from monk.modeling import dict_to_db
+from monk.mongo import Document, dict_to_db
 from flask.ext.principal import RoleNeed
 
 import settings
@@ -24,7 +23,7 @@ class ValidationMixin(object):
                 raise ValidationError('Field %s is required.' % field)
 
 
-class User(ValidationMixin, modeling.Document):
+class User(ValidationMixin, Document):
     """Реализация сущности :term:`пользователь`.
 
     .. attribute:: name
@@ -76,7 +75,7 @@ class User(ValidationMixin, modeling.Document):
         return implicit_needs + self.needs
 
 
-class Template(ValidationMixin, modeling.Document):
+class Template(ValidationMixin, Document):
     """Реализация сущности :term:`шаблон`.
 
     .. attribute:: user_id
@@ -111,7 +110,7 @@ class Template(ValidationMixin, modeling.Document):
         return cls.get_one(db, {'_id': template_id})
 
 
-class Statistics(ValidationMixin, modeling.Document):
+class Statistics(ValidationMixin, Document):
     """Статистика, отражающая суммарный объем и количество файлов, появившихся в хранилище в
     конкретную дату.
 
@@ -266,7 +265,7 @@ class ServableMixin(object):
         return False
 
 
-class File(ValidationMixin, ServableMixin, modeling.Document):
+class File(ValidationMixin, ServableMixin, Document):
     """Реализация базовой сущности "файл" (см. :term:`временный файл` и :term:`обычный файл`).
 
     .. attribute:: user_id
@@ -329,24 +328,27 @@ class File(ValidationMixin, ServableMixin, modeling.Document):
     }
     required = ('user_id', 'filename', 'content_type', 'unistorage_type')
 
-    def save(self, db):
-        # TODO: Копипаста из monk.modelling
-        assert self.collection
-        self._ensure_indexes(db)
-
+    def _get_outgoing_data(self):
+        extra = self.pop('extra', None)
         outgoing = dict(dict_to_db(self, self.structure))
-        # TODO Сделанная ради этого:
+        if extra is not None:
+            outgoing['extra'] = extra
         outgoing['contentType'] = outgoing.pop('content_type', None)
         outgoing['uploadDate'] = outgoing.pop('upload_date', None)
         outgoing['chunkSize'] = outgoing.pop('chunk_size', None)
+        return outgoing
 
+    def save(self, db):
+        # Копипаста из monk.modelling, сделанная ради возможности
+        # использовать `_get_outgoing_data`
+        assert self.collection
+        self._ensure_indexes(db)
+        outgoing = self._get_outgoing_data()
         object_id = db[self.collection].save(outgoing)
-
         if self.get('_id') is None:
             self['_id'] = object_id
         else:
             pass
-
         return object_id
 
     @classmethod
@@ -376,7 +378,7 @@ class File(ValidationMixin, ServableMixin, modeling.Document):
         return fs.get_version(**kwargs)
 
 
-class ZipCollection(ValidationMixin, ServableMixin, modeling.Document):
+class ZipCollection(ValidationMixin, ServableMixin, Document):
     collection = 'zip_collections'
     structure = {
         '_id': ObjectId,
@@ -394,6 +396,13 @@ class RegularFile(File):
         'pending': False,
         'crc32': int
     })
+
+    def _get_outgoing_data(self):
+        # Monk не умеет валидировать extra со вложенными словарями, если
+        # в структуре просто указано {'extra': dict}, поэтому такой workaround
+        outgoing = super(RegularFile, self)._get_outgoing_data()
+        assert isinstance(outgoing.get('extra'), dict)
+        return outgoing
 
     @classmethod
     def find(cls, db, kwargs=None):
@@ -528,7 +537,3 @@ class UpdatingPendingFile(PendingFile):
     По сути, является :class:`PendingFile`, но хранится в отдельной коллекции.
     """
     collection = 'updating_pending_files'
-#    structure = dict(PendingFile.structure, **{
-        ## TODO Переместить эту структуру в :class:`File`?
-
-    #})
