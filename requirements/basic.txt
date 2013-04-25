@@ -15,7 +15,7 @@ monk==0.6.0
 # Важно именно в таком порядке:
 git+git://github.com/ramm/py-amqp.git
 git+git://github.com/aromanovich/kombu.git
-celery==3.0.15
+celery==3.0.17
 # /
 
 # Временно взамен python-magic==0.4.2 до тех пор, пока 
