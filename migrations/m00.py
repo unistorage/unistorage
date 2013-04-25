@@ -34,7 +34,7 @@ def _update_extra(id_, file_):
     new_file_data = file_utils.get_file_data(gridout, file_['filename'])
     new_unistorage_type = new_file_data['unistorage_type']
     new_extra = new_file_data['extra']
-    
+
     _validate_extra(new_unistorage_type, new_extra)
 
     db.fs.files.update({'_id': id_}, {
@@ -42,7 +42,7 @@ def _update_extra(id_, file_):
             'unistorage_type': new_unistorage_type,
             'contentType': new_file_data['content_type'],
             'extra': new_extra,
-        }
+        },
     })
 
 
@@ -74,6 +74,4 @@ def get_callback(force=False):
                     log.write('%s %s\n' % (id_, message))
             else:
                 print u'  Данные исправлены.'
-        else:
-            print u'OK'
     return callback

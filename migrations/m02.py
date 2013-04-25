@@ -62,8 +62,4 @@ def get_callback(criteria):
             if redo_needed and chain_tasks:
                 print '  %i tasks enqueued' % len(chain_tasks)
                 chain(*chain_tasks)()
-            else:
-                print '  Skipped'
-        else:
-            print '  Skipped'
     return callback

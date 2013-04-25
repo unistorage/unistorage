@@ -1,4 +1,6 @@
+#!/usr/bin/env ipython
 from bson import ObjectId
+from fish import ProgressFish
 
 from app import db, fs
 from wsgi import app
@@ -12,7 +14,7 @@ def generic_migrate(query, callback, no_input=False):
     if count == 0:
         print 'No such entries found.'
         return
-    
+
     if not no_input:
         print '%i files to be updated. Are you sure? (y/N)' % count
         a = raw_input('> ')
@@ -26,10 +28,14 @@ def generic_migrate(query, callback, no_input=False):
         if a in ('y', 'Y'):
             log = open('./failed-fixes.txt', 'a+')
 
+    fish = ProgressFish(total=count)
     for i, file_ in enumerate(files_to_update, start=1):
+        if i > 0:
+            fish.ansi.clear_line_whole()
         id_ = file_['_id']
-        print 'Processing %s (%i/%i)' % (id_, i, count)
         callback(id_, file_, log=log)
+        fish.animate(amount=i)
+    print
 
     if log:
         log.close()

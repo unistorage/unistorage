@@ -89,7 +89,7 @@ def parse(label):
 
 def callback(id_, file_, log=None):
     label = file_.get('label')
-    if label == 'grayscale':
+    if label and not file_.get('actions'):
         try:
             action = parse(label)
             db.fs.files.update({'_id': id_}, {
@@ -101,8 +101,3 @@ def callback(id_, file_, log=None):
             print '  Not fixed!'
         else:
             print '  Fixed: %s -> %s' % (label, action)
-    else:
-        print '  Skip...'
-
-#from migrations.m01_grayscale import callback
-#migrate({}, callback)

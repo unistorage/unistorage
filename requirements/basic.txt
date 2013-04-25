@@ -28,6 +28,7 @@ PyYAML==3.10
 pytils==0.2.3
 sh==1.05
 jsonschema==0.8.0
+fish==1.1
 
 # Интеграция с Sentry:
 raven==3.1.6

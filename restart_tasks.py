@@ -1,3 +1,4 @@
+#!/usr/bin/env ipython
 import json
 
 import jsonschema
