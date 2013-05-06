@@ -1,6 +1,8 @@
 language: python
 python:
   - "2.7"
+services: 
+  - mongodb
 before_install:
   - sudo bash -c 'echo "deb http://79.172.49.99/debian/ squeeze main" >> /etc/apt/sources.list'
   - sudo apt-get update
