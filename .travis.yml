@@ -6,7 +6,7 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -t squeeze -y --force-yes $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
   - sudo apt-get install -t squeeze -y --force-yes openoffice.org-ure $(apt-cache --no-generate pkgnames openoffice.org3 | tr '\n' ' ')
-  - sudo apt-get install flvtool2 
+  - sudo apt-get install flvtool2 nodejs
   - sudo npm install -g less
   - wget https://raw.github.com/mediasite/openoffice-wrapper/master/oowrapper.py
   - chmod +x ./oowrapper.py
