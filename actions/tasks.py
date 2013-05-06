@@ -62,7 +62,7 @@ def perform_actions(target_id):
     for action_name, action_args in target_file.actions:
         action = actions.get_action(curr_unistorage_type, action_name)
         action_args = resolve_object_ids(fs, action_args)
-        
+
         try:
             next_file, next_file_ext = action.perform(curr_file, *action_args)
         finally:
