@@ -25,7 +25,7 @@ ADMIN_PASSWORD = 'admin'  # Should we put md5 here?
 MONGO_REPLICATION_ON = True
 
 # Настройки доступа к Mongo
-MONGO_HOST = 'localhost'
+MONGO_HOST = '127.0.0.1'
 MONGO_PORT = 27017
 MONGO_DB_NAME = 'grid_fs'
 
