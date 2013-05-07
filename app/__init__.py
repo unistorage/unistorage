@@ -49,7 +49,7 @@ def create_app():
         return storage.utils.error(
             {'msg': 'Something is wrong. We are working on it'}), 500
 
-    for error in (503, AutoReconnect, TimeoutError, ConnectionFailure):
+    for error in []: #(503, AutoReconnect, TimeoutError, ConnectionFailure):
         @app.errorhandler(error)
         def error_handler(e):
             response = app.make_response(
