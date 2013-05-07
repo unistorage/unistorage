@@ -3,6 +3,7 @@ python:
   - "2.7"
 services: 
   - mongodb
+  - rabbitmq
 before_install:
   - sudo bash -c 'echo "deb http://79.172.49.99/debian/ squeeze main" >> /etc/apt/sources.list'
   - sudo apt-get update
@@ -16,8 +17,6 @@ before_install:
   - cp ./settings_test.py ./settings_local.py
   - wget http://79.172.49.99/ffmpeg/ffmpeg.static.32bit.2013-04-22.tar.gz -O /tmp/ffmpeg.tar.gz
   - sudo tar xvfp /tmp/ffmpeg.tar.gz -C /usr/bin/
-  - sudo /bin/bash /etc/init.d/mongodb start
-  - mongo --eval 'print("HEY!");'
 install:
   - pip install --use-mirrors -r requirements/basic.txt
   - pip install --use-mirrors -r requirements/dev.txt
