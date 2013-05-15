@@ -3,9 +3,9 @@ from tests.utils import StorageFunctionalTest
 
 class FunctionalTest(StorageFunctionalTest):
     def test_capture_frame_to_jpeg(self):
-        original_uri = self.put_file('videos/sample.3gp')
+        original_uri = self.put_file('videos/gizmo.mp4')
 
-        self.check(original_uri, mime='video/3gpp')
+        self.check(original_uri, mime='video/mp4')
         convert_action_url = '%s?action=capture_frame&to=jpeg&position=1' % original_uri
         r = self.app.get(convert_action_url)
         self.assertEquals(r.json['status'], 'ok')

@@ -22,7 +22,7 @@ def validate_and_get_args(args, source_file=None):
     format = args['to']
 
     ### XXX Проверка идентична той, что производится в actions.images.convert
-    supported_formats = ('bmp', 'gif', 'jpeg', 'png', 'tiff')
+    supported_formats = ('bmp', 'gif', 'jpeg', 'png')
     if format not in supported_formats:
         raise ValidationError('Frame can be only saved to the one of '
                               'following formats: %s.' % ', '.join(supported_formats))
@@ -48,7 +48,7 @@ def perform(source_file, format, position):
 
     tmp_target_file = tempfile.NamedTemporaryFile(suffix='.%s' % format, delete=False)
     tmp_target_file.close()
-    
+
     try:
         options = {
             'format': 'image2',
@@ -64,7 +64,7 @@ def perform(source_file, format, position):
 
         result_file_name = avconv(tmp_source_file.name, tmp_target_file.name, options)
         result = open(result_file_name)
-        
+
         if format == 'gif':
             # Продолжение workaround-а
             old_result = result

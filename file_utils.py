@@ -14,7 +14,7 @@ from pyPdf import PdfFileReader
 
 import settings
 from actions.utils import get_unistorage_type
-from actions.avconv import avprobe
+from actions.avconv import avprobe, avprobe_buffer
 from identify import identify_buffer
 
 
@@ -32,49 +32,44 @@ def secure_filename(filename):
     return re.sub(r'^\.+', '_', filename.strip(' '))
 
 
+def get_content_type_from_buffer(data):
+    return m.from_buffer(data)
+
+
 def get_content_type(file):
     file.seek(0)
-    content_type = m.from_buffer(file.read())
+    content_type = get_content_type_from_buffer(file.read())
     file.seek(0)
     return content_type
 
 
-def get_avprobe_result(file_content, file_name=None):
-    with tempfile.NamedTemporaryFile(mode='wb') as tmp_file:
-        tmp_file.write(file_content)
-        tmp_file.flush()
-        return avprobe(tmp_file.name)
-
-
 @newrelic.agent.function_trace()
 def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
-    inaccurate_unistorage_type = get_unistorage_type(content_type, file_name=file_name)
     inaccurate_extra = {}
-    if inaccurate_unistorage_type in ('audio', 'video'):
-        if isinstance(file, FileStorage) and hasattr(file.stream, 'name') and \
-                os.path.exists(file.stream.name):
-            inaccurate_extra = avprobe(file.stream.name)
-        else:
-            inaccurate_extra = get_avprobe_result(file_content, file_name=file_name)
-    elif inaccurate_unistorage_type == 'image':
-        try:
-            inaccurate_extra = identify_buffer(file_content)
-        except:
-            pass
-    elif inaccurate_unistorage_type == 'doc':
-        if content_type == 'application/pdf':
-            inaccurate_extra = {
-                'pages': PdfFileReader(StringIO(file_content)).getNumPages(),
-            }
+    inaccurate_unistorage_type = get_unistorage_type(content_type, file_name=file_name)
 
-    unistorage_type = get_unistorage_type(content_type, file_name=file_name,
-                                          extra=inaccurate_extra)
-    extra = {}
+    try:
+        if inaccurate_unistorage_type in ('audio', 'video'):
+            if isinstance(file, FileStorage) and hasattr(file.stream, 'name') and \
+                    os.path.exists(file.stream.name):
+                inaccurate_extra = avprobe(file.stream.name)
+            else:
+                inaccurate_extra = avprobe_buffer(file_content)
+        elif inaccurate_unistorage_type == 'image':
+            inaccurate_extra = identify_buffer(file_content)
+    except:
+        pass
+
+    extra = inaccurate_extra
+    unistorage_type = get_unistorage_type(content_type, extra=extra, file_name=file_name)
     if unistorage_type == 'audio':
         extra.update(inaccurate_extra['audio'])
         extra['format'] = inaccurate_extra['format']
-    else:
-        extra = inaccurate_extra
+    elif unistorage_type == 'doc':
+        if content_type == 'application/pdf':
+            extra = {
+                'pages': PdfFileReader(StringIO(file_content)).getNumPages(),
+            }
 
     return {
         'unistorage_type': unistorage_type,
@@ -87,17 +82,17 @@ def get_file_data(file, file_name=None):
     file.seek(0)
     file_content = file.read()
     file.seek(0)
-    
+
     content_type = m.from_buffer(file_content)
     file.seek(0)
 
     data = {
         'filename': secure_filename(file_name),
-        'crc32': binascii.crc32(file_content)
+        'crc32': binascii.crc32(file_content),
     }
     data.update(get_unistorage_type_and_extra(
         file, file_name, file_content, content_type))
-    
+
     if content_type == 'application/ogg':
         if data['unistorage_type'] == 'video':
             content_type = 'video/ogg'

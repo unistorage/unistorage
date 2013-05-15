@@ -49,7 +49,7 @@ def create_app():
         return storage.utils.error(
             {'msg': 'Something is wrong. We are working on it'}), 500
 
-    for error in (503, AutoReconnect, TimeoutError, ConnectionFailure):
+    for error in []: #(503, AutoReconnect, TimeoutError, ConnectionFailure):
         @app.errorhandler(error)
         def error_handler(e):
             response = app.make_response(
@@ -66,6 +66,9 @@ def configure_app(app):
     app.teardown_appcontext(close_database_connection)
     app.request_class = CustomRequest
     app.config['PROPAGATE_EXCEPTIONS'] = settings.DEBUG
+    
+    if settings.SERVER_NAME:
+        app.config['SERVER_NAME'] = settings.SERVER_NAME
 
     sentry_dsn = getattr(settings, 'SENTRY_DSN', False)
     if sentry_dsn:
@@ -75,36 +78,41 @@ def configure_app(app):
 def register_blueprints(app):
     import admin
     import storage
-    app.register_blueprint(admin.bp, url_prefix='/admin')
+    if settings.SERVER_NAME:
+        app.register_blueprint(admin.bp)
+    else:
+        app.register_blueprint(admin.bp, url_prefix='/admin')
     app.register_blueprint(storage.bp)
 
 
 def register_bundles(app):
     assets = Environment(app)
+    if settings.SERVER_NAME:
+        assets.url  = '/static/'
 
     bootstrap = Bundle(
-        'less/bootstrap/bootstrap.less',
-        'less/bootstrap-chosen.less',
+        'admin/less/bootstrap/bootstrap.less',
+        'admin/less/bootstrap-chosen.less',
         filters='less', output='gen/bootstrap.css')
     assets.register('bootstrap', bootstrap)
 
     css = Bundle(
-        'css/layout.css',
+        'admin/css/layout.css',
         output='gen/style.css')
     assets.register('css', css)
 
     jquery = Bundle(
-        'js/libs/jquery.min.js',
+        'admin/js/libs/jquery.min.js',
         output='gen/jquery.js')
     assets.register('jquery', jquery)
 
     common_js = Bundle(
-        'js/libs/chosen.jquery.js',
+        'admin/js/libs/chosen.jquery.js',
         output='gen/common.js')
     assets.register('common_js', common_js)
 
     statistics_js = Bundle(
-        'js/statistics.js',
-        'js/libs/moment.min.js',
+        'admin/js/statistics.js',
+        'admin/js/libs/moment.min.js',
         output='gen/statistics-js.js')
     assets.register('statistics_js', statistics_js)

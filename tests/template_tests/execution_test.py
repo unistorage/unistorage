@@ -41,7 +41,7 @@ class FunctionalTest(StorageFunctionalTest):
         response = self.app.get(r.json['resource_uri'])
         self.assertEquals(response.json['status'], 'ok')
 
-        video_uri = self.put_file('videos/sample.3gp')
+        video_uri = self.put_file('videos/gizmo.mp4')
         apply_template_url = '%s?template=%s' % (video_uri, template_uri)
         r = self.app.get(apply_template_url, status='*')
         

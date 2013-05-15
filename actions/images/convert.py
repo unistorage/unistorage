@@ -15,7 +15,7 @@ def validate_and_get_args(args, source_file=None):
     validate_presence(args, 'to')
     format = args['to']
 
-    supported_formats = ('bmp', 'gif', 'jpeg', 'png', 'tiff')
+    supported_formats = ('bmp', 'gif', 'jpeg', 'png')
     if format not in supported_formats:
         raise ValidationError(
             'Source file can be only converted to the one of '

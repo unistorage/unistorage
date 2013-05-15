@@ -2,7 +2,7 @@ tests/smoke_tests/results
 cover
 docs/_build
 app/static/gen
-app/static/.webassets-cache
+.webassets-cache
 settings_local.py
 *.pyc
 .coverage
