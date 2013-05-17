@@ -1,11 +1,11 @@
-from flask import current_app, url_for
+from flask import current_app, url_for, request
 
 
 def parse_resource_uri(uri):
     endpoint = None
     endpoint_args = {}
     try:
-        endpoint, endpoint_args = current_app.url_map.bind('/').match(uri)
+        endpoint, endpoint_args = current_app.create_url_adapter(request).match(uri)
     except:
         pass
     return endpoint, endpoint_args
