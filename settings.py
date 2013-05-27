@@ -57,9 +57,9 @@ GRIDFS_SERVE_URL = 'http://127.0.0.1/'
 
 to_seconds = lambda td: int(td.total_seconds())
 # TTL ответов со статусом "ok":
-TTL = to_seconds(timedelta(days=7))
+TTL = to_seconds(timedelta(days=60))
 # Плюс-минус разброс для `TTL`
-TTL_DEVIATION = to_seconds(timedelta(days=1))
+TTL_DEVIATION = to_seconds(timedelta(days=7))
 # TTL ответов со статусом "wait"
 AVERAGE_TASK_TIME = to_seconds(timedelta(seconds=60))
 # TTL ZIP-коллекций
