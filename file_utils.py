@@ -46,7 +46,8 @@ def get_content_type(file):
 @newrelic.agent.function_trace()
 def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
     inaccurate_extra = {}
-    inaccurate_unistorage_type = get_unistorage_type(content_type, file_name=file_name)
+    inaccurate_unistorage_type = \
+        get_unistorage_type(content_type, file_name=file_name)
 
     try:
         if inaccurate_unistorage_type in ('audio', 'video'):

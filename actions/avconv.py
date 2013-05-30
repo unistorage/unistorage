@@ -228,7 +228,7 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
         result['audio']['duration'] = get_first_sane_duration(
             [audio_duration, format_duration, video_duration])
 
-    if not audio:
+    if video and (not audio) and (not video['bitrate']):
         result['video']['bitrate'] = stderr_data.get('file_bitrate')
 
     # Если webm закачивается без расширения, ffmpeg выдаёт формат matroska
@@ -240,7 +240,7 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
         if content_type == 'video/webm':
             result['format'] = 'webm'
 
-    # Для видео. коу которых известен только битрейт всего файла
+    # Для видео, у которых известен только битрейт всего файла
     if stderr_data.get('file_bitrate') and \
             (audio and not audio['bitrate']) and (video and not video['bitrate']):
 
@@ -276,6 +276,24 @@ def apply_hacks(result, stdout_data, stderr_data, fname):
     return result
 
 
+def get_sanest_stream(streams, stderr_data, parser):
+    """Возвращает распарсенным тот единственный поток,
+    который будет отображаться в метаданных файла.
+    """
+    prioritized_streams = []
+    for stream in streams:
+        priority = 0
+        parsed_stream = parser(stream, stderr_data)
+        if stream.get('profile') == 'Main':
+            priority += 5
+        if 0 < parsed_stream.get('fps', 0) < 100:  # Если разумный битрейт
+            priority += 3
+        prioritized_streams.append((priority, parsed_stream))
+    prioritized_streams.sort()
+    _, parsed_stream = prioritized_streams and prioritized_streams[-1] or (None, None)
+    return parsed_stream
+
+    
 @newrelic.agent.function_trace()
 def avprobe(fname):
     args = [settings.AVPROBE_BIN, '-print_format', 'json',
@@ -283,31 +301,27 @@ def avprobe(fname):
     proc = subprocess.Popen(args, stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
-
     stdout_data = parse_stdout(stdout)
     stderr_data = parse_stderr(stderr)
 
     formats = stdout_data['format']['format_name'].split(',')
     extension = get_extension(fname)
     format = extension in formats and extension or formats[0]
-
-    video = None
-    audio = None
+    video_streams = []
+    audio_streams = []
     for stream in stdout_data['streams']:
-        if not video and stream.get('codec_type') == 'video' \
-                and stream.get('codec_name', 'unknown') != 'unknown':
-            video = extract_video_data(stream, stderr_data)
-        if not audio and stream.get('codec_type') == 'audio' \
-                and stream.get('codec_name', 'unknown') != 'unknown':
-            audio = extract_audio_data(stream, stderr_data)
-
+        if stream.get('codec_name', 'unknown') == 'unknown':
+            continue
+        if stream.get('codec_type') == 'video':
+            video_streams.append(stream)
+        if stream.get('codec_type') == 'audio':
+            audio_streams.append(stream)
     result = {
-        'video': video,
-        'audio': audio,
-        'format': format
+        'video': get_sanest_stream(video_streams, stderr_data, extract_video_data),
+        'audio': get_sanest_stream(audio_streams, stderr_data, extract_audio_data),
+        'format': format,
     }
-    result = apply_hacks(result, stdout_data, stderr_data, fname)
-    return result
+    return apply_hacks(result, stdout_data, stderr_data, fname)
 
 
 def avprobe_buffer(data):

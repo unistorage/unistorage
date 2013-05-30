@@ -49,7 +49,7 @@ def create_app():
         return storage.utils.error(
             {'msg': 'Something is wrong. We are working on it'}), 500
 
-    for error in []: #(503, AutoReconnect, TimeoutError, ConnectionFailure):
+    for error in (503, AutoReconnect, TimeoutError, ConnectionFailure):
         @app.errorhandler(error)
         def error_handler(e):
             response = app.make_response(
@@ -66,7 +66,7 @@ def configure_app(app):
     app.teardown_appcontext(close_database_connection)
     app.request_class = CustomRequest
     app.config['PROPAGATE_EXCEPTIONS'] = settings.DEBUG
-    
+
     if settings.SERVER_NAME:
         app.config['SERVER_NAME'] = settings.SERVER_NAME
 
@@ -88,7 +88,7 @@ def register_blueprints(app):
 def register_bundles(app):
     assets = Environment(app)
     if settings.SERVER_NAME:
-        assets.url  = '/static/'
+        assets.url = '/static/'
 
     bootstrap = Bundle(
         'admin/less/bootstrap/bootstrap.less',
