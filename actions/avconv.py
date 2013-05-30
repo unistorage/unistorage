@@ -105,7 +105,7 @@ def extract_audio_data(stream, stderr_data):
     :param stderr_data: словарь, содержащие данные из stderr-а ffmpeg
     """
     duration = parse_float(stream.get('duration')) or \
-               parse_float(stderr_data.get('duration'))
+        parse_float(stderr_data.get('duration'))
     return {
         'channels': parse_int(stream.get('channels')),
         'sample_rate': parse_float(stream.get('sample_rate')),
@@ -293,7 +293,7 @@ def get_sanest_stream(streams, stderr_data, parser):
     _, parsed_stream = prioritized_streams and prioritized_streams[-1] or (None, None)
     return parsed_stream
 
-    
+
 @newrelic.agent.function_trace()
 def avprobe(fname):
     args = [settings.AVPROBE_BIN, '-print_format', 'json',
