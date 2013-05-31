@@ -3,6 +3,7 @@ import re
 import json
 import pipes
 import os.path
+import logging
 import tempfile
 import subprocess
 import cPickle as pickle
@@ -13,6 +14,9 @@ import newrelic.agent
 import magic
 
 import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 try:
@@ -440,10 +444,12 @@ def avconv(source_fname, target_fname, options):
             args.extend(encoder_args['vcodecs'].get(encoder_name, []))
         fps = video_options.get('fps')
         if fps:
+            if fps < 1:  # Хотим конвертить странные битые видео
+                fps = 1
             args.extend(['-r', '%.4f' % fps])
         bitrate = video_options.get('bitrate')
         if bitrate:
-            args.extend(['-b', str(bitrate)])
+            args.extend(['-v:b', str(bitrate)])
         filters = video_options.get('filters')
         if filters:
             args.extend(['-vf', filters])
@@ -457,12 +463,16 @@ def avconv(source_fname, target_fname, options):
     avconv_format_name = format_aliases.get(format, format)
     args.extend(format_args.get(avconv_format_name, []))
     args.extend(['-f', avconv_format_name, '-y', target_fname])
-
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
 
-    if proc.wait() != 0:
+    return_code = proc.wait()
+    if return_code not in (0, 254):
         raise Exception(stdout + stderr)
+
+    if return_code == 254:
+        logger.warning('Probably incorrect source file?',
+                       extra={'ffmpeg_command': ' '.join(args)})
 
     if format == 'flv':
         proc = subprocess.Popen([settings.FLVTOOL_BIN, '-U', target_fname],
