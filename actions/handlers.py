@@ -47,7 +47,8 @@ def apply_actions(source_file, action_list, label):
         original_content_type=source_file.content_type)
     try:
         # Посылаем воркеру сообщение с идентификатором временного файла
-        perform_actions.delay(target_id)
+        perform_actions.delay(
+            target_id, source_unistorage_type=source_file.unistorage_type)
     except:
         # Если сообщение послать не удалось, удалим временный файл,
         # так как он остаётся «потерянным» — он никогда не станет

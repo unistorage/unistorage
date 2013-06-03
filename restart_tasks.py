@@ -28,7 +28,9 @@ def restart(query, no_input=False):
     for i, action in enumerate(actions_to_update, start=1):
         id_ = action['_id']
         print 'Processing %s (%i/%i)' % (id_, i, count)
-        perform_actions.delay(id_)
+        original = db.fs.files.find_one(action['original'])
+        perform_actions.delay(
+            id_, source_unistorage_type=original['unistorage_type'])
         print 'OK'
 
 

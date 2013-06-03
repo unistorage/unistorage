@@ -1,9 +1,42 @@
 # coding: utf-8
 from raven import Client
 from raven.contrib.celery import register_signal
+from kombu import Exchange, Queue
 
 import settings
 
+
+default_exchange = Exchange('unistorage', type='direct')
+
+CELERY_QUEUES = (
+    Queue('ha.unistorage.low-priority', default_exchange, routing_key='low-priority'),
+    Queue('ha.unistorage.images', default_exchange, routing_key='images'),
+    Queue('ha.unistorage.non-images', default_exchange, routing_key='non-images'),
+)
+
+
+class Router(object):
+    def route_for_task(self, task, args=None, kwargs=None):
+        is_low_priority = kwargs.get('low_priority')
+        source_unistorage_type = kwargs.get('source_unistorage_type')
+
+        assert is_low_priority or source_unistorage_type
+
+        if is_low_priority:
+            routing_key = 'low-priority'
+        else:
+            if source_unistorage_type == 'image':
+                routing_key = 'images'
+            else:
+                routing_key = 'non-images'
+        return {
+            'exchange': 'unistorage',
+            'exchange_type': 'direct',
+            'routing_key': routing_key,
+        }
+
+
+CELERY_ROUTES = ('celeryconfig.Router',)
 
 CELERY_IMPORTS = ('actions.tasks',)
 
@@ -12,9 +45,6 @@ CELERYD_FORCE_EXECV = True
 
 # Важно, иначе Celery на каждый таск начнёт создавать новую очередь
 CELERY_IGNORE_RESULT = True
-
-# Очередь для сообщений
-CELERY_DEFAULT_QUEUE = 'ha.unistorage'
 
 # Включаем хартбиты, чтобы обнаруживать падение брокера
 BROKER_HEARTBEAT = 60
