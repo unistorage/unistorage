@@ -7,6 +7,9 @@ import settings
 
 CELERY_IMPORTS = ('actions.tasks',)
 
+# Пытаемся избавиться от зависания при перезапуске
+CELERYD_FORCE_EXECV = True
+
 # Важно, иначе Celery на каждый таск начнёт создавать новую очередь
 CELERY_IGNORE_RESULT = True
 
