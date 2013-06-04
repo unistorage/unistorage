@@ -138,13 +138,14 @@ def file_view(_id=None):
         action_presented = 'action' in request.args
         template_presented = 'template' in request.args
 
-        apply_ = None
-        if action_presented and not template_presented:
-            apply_ = apply_action
-        elif template_presented and not action_presented:
-            apply_ = apply_template
-        elif action_presented and template_presented:
+        if action_presented and template_presented:
             raise ValidationError('You can\'t specify both `action` and `template`.')
+        
+        apply_ = None
+        if action_presented:
+            apply_ = apply_action
+        elif template_presented:
+            apply_ = apply_template
 
         if apply_:
             target_id = apply_(source_file, request.args.to_dict())

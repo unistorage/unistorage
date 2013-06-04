@@ -26,18 +26,18 @@ def fixture_path(path):
 class WorkerMixin(object):
     def __call__(self, result=None):
         try:
-            self._sent_tasks = []
+            self.sent_tasks = []
             @task_sent.connect
             def task_sent_handler(sender=None, task_id=None, task=None, args=None,
                                   kwargs=None, **kwds):
-                self._sent_tasks.append((task, args, kwargs))
+                self.sent_tasks.append((task, args, kwargs))
             super(WorkerMixin, self).__call__(result)
         finally:
-            self._sent_tasks = []
+            self.sent_tasks = []
 
     def run_worker(self):
-        while self._sent_tasks:
-            (task, args, kwargs) = self._sent_tasks.pop(0)
+        while self.sent_tasks:
+            (task, args, kwargs) = self.sent_tasks.pop(0)
             self.assertEqual(task, 'actions.tasks.perform_actions')
             perform_actions(*args, **kwargs)
 

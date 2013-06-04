@@ -17,12 +17,12 @@ CELERY_QUEUES = (
 
 class Router(object):
     def route_for_task(self, task, args=None, kwargs=None):
-        is_low_priority = kwargs.get('low_priority')
+        with_low_priority = kwargs.get('with_low_priority')
         source_unistorage_type = kwargs.get('source_unistorage_type')
 
-        assert is_low_priority or source_unistorage_type
+        assert with_low_priority or source_unistorage_type
 
-        if is_low_priority:
+        if with_low_priority:
             routing_key = 'low-priority'
         else:
             if source_unistorage_type == 'image':

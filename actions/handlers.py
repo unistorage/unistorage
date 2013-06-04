@@ -14,7 +14,7 @@ from actions.tasks import perform_actions
 from utils import ValidationError
 
 
-def apply_actions(source_file, action_list, label):
+def apply_actions(source_file, action_list, label, with_low_priority=False):
     """Проверяет существование модификации `source_file` с меткой `label`.  Если она существует --
     возвращает её идентификатор; если нет -- ставит в очередь применение операций `action_list` к
     файлу `source_file` и вешает на результирующий файл метку `label`.
@@ -37,7 +37,8 @@ def apply_actions(source_file, action_list, label):
     source_id = source_file.get_id()
     # Помещаем в базу временный файл, содержащий всю необходимую информацию
     # для выполнения операции
-    target_id = PendingFile.put_to_fs(db, fs,
+    target_id = PendingFile.put_to_fs(
+        db, fs,
         user_id=request.user.get_id(),
         type_id=source_file.type_id,
         original=source_id,
@@ -47,15 +48,16 @@ def apply_actions(source_file, action_list, label):
         original_content_type=source_file.content_type)
     try:
         # Посылаем воркеру сообщение с идентификатором временного файла
-        perform_actions.delay(
-            target_id, source_unistorage_type=source_file.unistorage_type)
+        perform_actions.delay(target_id,
+                              source_unistorage_type=source_file.unistorage_type,
+                              with_low_priority=with_low_priority)
     except:
         # Если сообщение послать не удалось, удалим временный файл,
         # так как он остаётся «потерянным» — он никогда не станет
         # постоянным и о нём не узнает клиент
         fs.delete(target_id)
         abort(503)
-    
+
     # Записываем информацию о модификации в оригинал
     db[File.collection].update(
         {'_id': source_id},
@@ -95,7 +97,9 @@ def apply_template(source_file, args):
 
     label = str(template.get_id())
     action_list = template['cleaned_action_list']
-    return apply_actions(source_file, action_list, label)
+    with_low_priority = 'with_low_priority' in args
+    return apply_actions(source_file, action_list, label,
+                         with_low_priority=with_low_priority)
 
 
 def apply_action(source_file, args):
@@ -121,4 +125,6 @@ def apply_action(source_file, args):
     label = '_'.join(map(str, [action.name] + cleaned_args))
     label = label.replace('.', '_')
     action_list = [(action.name, cleaned_args)]
-    return apply_actions(source_file, action_list, label)
+    with_low_priority = 'with_low_priority' in args
+    return apply_actions(source_file, action_list, label,
+                         with_low_priority=with_low_priority)
