@@ -46,17 +46,17 @@ def apply_actions(source_file, action_list, label, with_low_priority=False):
         ttl=settings.AVERAGE_TASK_TIME,
         actions=action_list,
         original_content_type=source_file.content_type)
-    #try:
-    # Посылаем воркеру сообщение с идентификатором временного файла
-    perform_actions.delay(target_id,
-                          source_unistorage_type=source_file.unistorage_type,
-                          with_low_priority=with_low_priority)
-#    except:
-        ## Если сообщение послать не удалось, удалим временный файл,
-        ## так как он остаётся «потерянным» — он никогда не станет
-        ## постоянным и о нём не узнает клиент
-        #fs.delete(target_id)
-        #abort(503)
+    try:
+        # Посылаем воркеру сообщение с идентификатором временного файла
+        perform_actions.delay(target_id,
+                              source_unistorage_type=source_file.unistorage_type,
+                              with_low_priority=with_low_priority)
+    except:
+        # Если сообщение послать не удалось, удалим временный файл,
+        # так как он остаётся «потерянным» — он никогда не станет
+        # постоянным и о нём не узнает клиент
+        fs.delete(target_id)
+        abort(503)
 
     # Записываем информацию о модификации в оригинал
     db[File.collection].update(
