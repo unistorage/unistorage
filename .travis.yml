@@ -5,7 +5,6 @@ services:
   - mongodb
   - rabbitmq
 before_install:
-  - sudo rabbitmqadmin declare exchange name=unistorage type=direct
   - sudo bash -c 'echo "deb http://79.172.49.99/debian/ squeeze main" >> /etc/apt/sources.list'
   - sudo apt-get update
   - sudo apt-get install -t squeeze -y --force-yes $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
@@ -24,5 +23,6 @@ install:
   - python ./manage.py compile_libmagic_db
   - python ./manage.py compile_avconv_db
   - python ./manage.py check_avconv_codecs
+  - celery amqp exchange.declare unistorage direct
 script:
   - python ./manage.py test_cov
