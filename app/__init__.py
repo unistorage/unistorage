@@ -49,13 +49,13 @@ def create_app():
         return storage.utils.error(
             {'msg': 'Something is wrong. We are working on it'}), 500
 
-    for error in (503, AutoReconnect, TimeoutError, ConnectionFailure):
-        @app.errorhandler(error)
-        def error_handler(e):
-            response = app.make_response(
-                (storage.utils.error({'msg': 'Service unavailable, please try again later'}), 503))
-            response.headers['Retry-After'] = 60
-            return response
+#    for error in (503, AutoReconnect, TimeoutError, ConnectionFailure):
+        #@app.errorhandler(error)
+        #def error_handler(e):
+            #response = app.make_response(
+                #(storage.utils.error({'msg': 'Service unavailable, please try again later'}), 503))
+            #response.headers['Retry-After'] = 60
+            #return response
 
     return app
 
