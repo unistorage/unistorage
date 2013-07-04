@@ -8,6 +8,7 @@ from actions.common.watermark_validation import \
     get_watermark_bbox_geometry, \
     validate_and_get_args as common_validate_and_get_args
 from identify import identify_file
+from actions.images.resize import perform as image_resize
 from actions.utils import ActionError
 
 
@@ -28,20 +29,26 @@ CORNER_MAP = {
 }
 
 
+def resize_watermark(wm, wm_bbox):
+    resized_wm, resized_wm_ext = image_resize(wm, 'keep', *wm_bbox)
+    return resized_wm
+
+
 def perform(source_file, watermark_file, w, h, h_pad, v_pad, corner):
     source_data = identify_file(source_file)
     watermark_format = identify_file(watermark_file)['format']
-
-    watermark_bbox_geometry = '%dx%d+%d+%d' % get_watermark_bbox_geometry(
+    watermark_bbox_geometry = get_watermark_bbox_geometry(
         source_data['width'], source_data['height'], w, h, h_pad, v_pad)
+    watermark_bbox_geometry_str = '%dx%d+%d+%d' % watermark_bbox_geometry
 
     fd = os.tmpfile()
     args = [
         settings.CONVERT_BIN, '-', '-coalesce', '-gravity', CORNER_MAP[corner],
-        '-geometry', watermark_bbox_geometry, 'null:',
+        '-geometry', watermark_bbox_geometry_str, 'null:',
         '%s:fd:%d' % (watermark_format, fd.fileno()), '-layers', 'composite', '-',
     ]
-    fd.write(watermark_file.read())
+    resized_wm = resize_watermark(watermark_file, watermark_bbox_geometry[:2])
+    fd.write(resized_wm.read())
     fd.seek(0)
     proc = subprocess.Popen(
         args, stdin=subprocess.PIPE,

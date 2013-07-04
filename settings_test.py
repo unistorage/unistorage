@@ -6,4 +6,8 @@ SERVER_NAME = None
 
 MONGO_DB_NAME = 'grid_fs_test'
 MONGO_REPLICATION_ON = False
-CELERY_BROKER = 'mongodb://127.0.0.1:27017/q/'
+
+BROKER_HOSTS = ['127.0.0.1:5672']
+BROKER_USERNAME = 'guest'
+BROKER_PASSWORD = 'guest'
+BROKER_VHOST = '/'

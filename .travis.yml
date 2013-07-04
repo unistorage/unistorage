@@ -10,7 +10,7 @@ before_install:
   - sudo apt-get install -t squeeze -y --force-yes $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
   - sudo apt-get install -t squeeze -y --force-yes openoffice.org-ure $(apt-cache --no-generate pkgnames openoffice.org3 | tr '\n' ' ')
   - sudo apt-get install --force-yes flvtool2 nodejs
-  - sudo npm install -g less
+  - sudo npm install -g less@1.3.3
   - wget https://raw.github.com/mediasite/openoffice-wrapper/master/oowrapper.py
   - chmod +x ./oowrapper.py
   - sudo mv ./oowrapper.py /bin/
@@ -23,5 +23,6 @@ install:
   - python ./manage.py compile_libmagic_db
   - python ./manage.py compile_avconv_db
   - python ./manage.py check_avconv_codecs
+  - celery amqp exchange.declare unistorage direct
 script:
   - python ./manage.py test_cov
