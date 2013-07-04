@@ -34,7 +34,7 @@ def get_linearized_tree(file_, criteria, redo_needed):
     redo_needed = is_redo_needed(file_, criteria)
 
     if redo_needed:
-        chain_tasks.append(perform_actions.si(file_['_id']))
+        chain_tasks.append(perform_actions.si(file_['_id'], with_low_priority=True))
 
     modifications = file_.get('modifications', {})
 
