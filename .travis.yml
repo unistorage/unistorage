@@ -5,6 +5,7 @@ services:
   - mongodb
   - rabbitmq
 before_install:
+  - sudo rabbitmqadmin declare exchange name=unistorage type=direct
   - sudo bash -c 'echo "deb http://79.172.49.99/debian/ squeeze main" >> /etc/apt/sources.list'
   - sudo apt-get update
   - sudo apt-get install -t squeeze -y --force-yes $(apt-cache --no-generate pkgnames ooobasis3.4 | tr '\n' ' ')
