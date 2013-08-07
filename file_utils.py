@@ -102,3 +102,4 @@ def get_file_data(file, file_name=None):
     data['content_type'] = content_type
 
     return data
+
