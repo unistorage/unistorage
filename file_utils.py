@@ -94,11 +94,17 @@ def get_file_data(file, file_name=None):
     data.update(get_unistorage_type_and_extra(
         file, file_name, file_content, content_type))
 
+
+
     if content_type == 'application/ogg':
         if data['unistorage_type'] == 'video':
             content_type = 'video/ogg'
         elif data['unistorage_type'] == 'audio':
             content_type = 'audio/ogg'
+    if content_type.endswith('octet-stream'):
+        if data['unistorage_type'] == 'video':
+            if data['extra']['format'] in ('mov', 'mp4', 'm4a'):
+                content_type = 'video/mp4'
     data['content_type'] = content_type
 
     return data
