@@ -47,9 +47,12 @@ def get_unistorage_type(content_type, file_name=None, extra=None):
             else:
                 return 'unknown'
 
-    if content_type.startswith('video'):
+    if content_type.startswith('video') or content_type.endswith('octet-stream'):
         if extra is None:
-            return 'video'
+            if content_type.startswith('video'):
+                return 'video'
+            else:
+                return 'unknown'
         else:
             audio = extra.get('audio')
             video = extra.get('video')

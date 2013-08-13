@@ -50,7 +50,7 @@ def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
         get_unistorage_type(content_type, file_name=file_name)
 
     try:
-        if inaccurate_unistorage_type in ('audio', 'video'):
+        if inaccurate_unistorage_type in ('audio', 'video', 'unknown'):
             if isinstance(file, FileStorage) and hasattr(file.stream, 'name') and \
                     os.path.exists(file.stream.name):
                 inaccurate_extra = avprobe(file.stream.name)
