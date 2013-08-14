@@ -537,3 +537,9 @@ class UpdatingPendingFile(PendingFile):
     По сути, является :class:`PendingFile`, но хранится в отдельной коллекции.
     """
     collection = 'updating_pending_files'
+
+    def move_to_pending(self, db, fs):
+        """Перемещает обновляющийся временный файл обратно в коллекцию временных файлов"""
+        result = PendingFile(self).save(db)
+        UpdatingPendingFile.remove_from_fs(db, fs, _id=self.get_id())
+        return result

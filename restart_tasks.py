@@ -3,9 +3,13 @@ import json
 
 import jsonschema
 
-from app import db, fs
+from app import get_db, fs
 from wsgi import app
 from actions.tasks import perform_actions
+from pymongo.read_preferences import ReadPreference
+
+
+db = get_db(read_preference=ReadPreference.SECONDARY_PREFERRED)
 
 
 def restart(query, no_input=False):

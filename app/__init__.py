@@ -11,11 +11,11 @@ import connections
 from utils import ObjectIdConverter, CustomRequest
 
 
-def get_db():
+def get_db(read_preference=None):
     ctx = _app_ctx_stack.top
     connection = getattr(ctx, 'mongo_connection', None)
     if connection is None:
-        connection = connections.get_mongodb_connection()
+        connection = connections.get_mongodb_connection(read_preference=read_preference)
         ctx.mongo_connection = connection
     return connection[settings.MONGO_DB_NAME]
 
