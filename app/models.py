@@ -315,6 +315,7 @@ class File(ValidationMixin, ServableMixin, Document):
 
         'user_id': ObjectId,
         'type_id': basestring,
+        'crc32': int,
 
         'extra': dict,
         'original': ObjectId,
@@ -394,7 +395,6 @@ class RegularFile(File):
     """Реализация модели :term:`обычный файл`. Наследуется от :class:`File`."""
     structure = dict(File.structure, **{
         'pending': False,
-        'crc32': int
     })
 
     def _get_outgoing_data(self):
