@@ -9,11 +9,10 @@ from actions.tasks import perform_actions
 from pymongo.read_preferences import ReadPreference
 
 
-db = get_db(read_preference=ReadPreference.SECONDARY_PREFERRED)
-
-
 def restart(query, no_input=False):
     """Starts actions for pending files matching `query`."""
+    db = get_db(read_preference=ReadPreference.SECONDARY_PREFERRED)
+
     query.update({'pending': True})
     actions_to_update = db.fs.files.find(query, timeout=False)
 

@@ -540,6 +540,6 @@ class UpdatingPendingFile(PendingFile):
 
     def move_to_pending(self, db, fs):
         """Перемещает обновляющийся временный файл обратно в коллекцию временных файлов"""
-        result = PendingFile(self).put_to_fs(db, fs)
+        result = PendingFile.put_to_fs(db, fs, **self)
         db[self.collection].delete({'_id': self.get_id()})
         return result
