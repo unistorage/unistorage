@@ -258,7 +258,6 @@ class ServableMixin(object):
         supported_types = ('image/gif', 'image/png', 'image/jpeg')
         if not self.original_content_type in supported_types:
             return False
-        print 'hererere', self.original_content_type
         return all([self._is_action_can_be_served_by_nginx(name, args)
                     for name, args in self.actions])
 
