@@ -243,26 +243,24 @@ class ServableMixin(object):
         file_id = str(self.get_id())
         return urljoin(base_url, file_id)
 
+    def _is_action_can_be_served_by_nginx(self, action_name, action_args):
+        if action_name == 'resize':
+            mode, w, h = action_args
+            return mode in ('keep', 'crop')
+        elif action_name == 'rotate':
+            return True
+        return False
+
     def can_be_served_by_unistore_nginx_serve(self):
         """Возвращает True, если файл может быть отдан с помощью unistore-nginx-serve (например, в
         случае, если файл -- картинка, для которой заказан ресайз).
         """
-        original_content_type = self.original_content_type
-        actions = self.actions
-
         supported_types = ('image/gif', 'image/png', 'image/jpeg')
-        if not original_content_type in supported_types or len(actions) > 1:
+        if not self.original_content_type in supported_types:
             return False
-
-        action_name, action_args = actions[0]
-        if action_name == 'resize':
-            mode, w, h = action_args
-            if mode in ('keep', 'crop'):
-                return True
-        elif action_name == 'rotate':
-            return True
-
-        return False
+        print 'hererere', self.original_content_type
+        return all([self._is_action_can_be_served_by_nginx(name, args)
+                    for name, args in self.actions])
 
 
 class File(ValidationMixin, ServableMixin, Document):
@@ -454,11 +452,11 @@ class RegularFile(File):
         db[Statistics.collection].update({
             'user_id': kwargs.get('user_id'),
             'type_id': kwargs.get('type_id'),
-            'timestamp': get_today_utc_midnight()
+            'timestamp': get_today_utc_midnight(),
         }, {
             '$inc': {
                 'files_count': 1,
-                'files_size': fs.get(file_id).length
+                'files_size': fs.get(file_id).length,
             }
         }, upsert=True)
         return file_id

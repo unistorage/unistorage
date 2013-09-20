@@ -9,11 +9,11 @@ class Test(GridFSMixin, ContextMixin, unittest.TestCase):
     def create_user(self, token):
         user = User({
             'name': u'test_user',
-            'token': token
+            'token': token,
         })
         return user.save(db)
 
-    def test(self):
+    def test_statistics(self):
         user_id = self.create_user('1b908be28e2b869f90e44276304b656a')
         self.assertEquals(Statistics.find(db).count(), 0)
         

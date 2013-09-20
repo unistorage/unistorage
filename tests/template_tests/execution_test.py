@@ -62,3 +62,23 @@ class FunctionalTest(StorageFunctionalTest):
         r = self.apply_template(source_uri, template_uri)
         self.assertEquals(r.json['status'], 'error')
         self.assertEquals(r.json['msg'], 'Sorry, we can\'t handle video stream encoded using wmv3')
+
+    def test_nginx_template(self):
+        r = self.app.post('/template/', {
+            'applicable_for': 'image',
+            'action[]': [
+                'action=resize&mode=keep&w=400',
+                'action=rotate&angle=90'
+            ],
+        })
+        template_uri = r.json['resource_uri']
+        image_uri = self.put_file('images/some.png')
+
+        apply_template_url = '%s?template=%s' % (image_uri, template_uri)
+        r = self.apply_template(image_uri, template_uri)
+
+        self.assertEquals(r.json['status'], 'ok')
+        result_uri = r.json['resource_uri']
+        json = self.app.get(result_uri).json
+        self.assertIn('uns', json['data']['url'])
+        self.assertEqual(json['status'], 'just_uri')
