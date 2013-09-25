@@ -232,7 +232,7 @@ class ServableMixin(object):
         либо, в случае, если `through_nginx_serve` равно `True`, на unistore-nginx-serve.
         """
         user = User.get_one(db, {'_id': self.user_id})
-        base_url = user.domains and random.choice(user.domains) or settings.GRIDFS_SERVE_URL
+        base_url = random.choice(user.domains and user.domains or settings.GRIDFS_SERVE_URLS)
 
         if not base_url.endswith('/'):
             base_url += '/'
