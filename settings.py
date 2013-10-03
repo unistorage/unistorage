@@ -52,8 +52,8 @@ AVPROBE_BIN = '/usr/bin/ffprobe'
 OO_WRAPPER_BIN = '/bin/oowrapper.py'
 FLVTOOL_BIN = '/usr/bin/flvtool2'
 
-# Путь к gridfs-serve
-GRIDFS_SERVE_URL = 'http://127.0.0.1/'
+# Список URL-ов gridfs-serve
+GRIDFS_SERVE_URLS = ['http://127.0.0.1/']
 
 to_seconds = lambda td: int(td.total_seconds())
 # TTL ответов со статусом "ok":

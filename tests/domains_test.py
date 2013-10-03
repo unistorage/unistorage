@@ -14,7 +14,9 @@ class FunctionalTest(StorageFunctionalTest):
         # Берём адрес бинарного содержимого файла
         file_content_url = self.app.get(file_uri).json['data']['url']
         # Смотрим, что он начинается с адреса, указанного в настройках
-        self.assertTrue(file_content_url.startswith(settings.GRIDFS_SERVE_URL))
+
+        self.assertTrue(any([file_content_url.startswith(gridfs_serve_url)
+                             for gridfs_serve_url in settings.GRIDFS_SERVE_URLS]))
 
         # Указываем пользователю список доменов
         user = User.get_one(db, {})
