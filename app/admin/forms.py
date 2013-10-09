@@ -54,6 +54,7 @@ class UserForm(wtf.Form):
     name = wtf.TextField(u'Имя пользователя', [wtf.validators.Required()])
     token = wtf.TextField(u'Токен доступа', [wtf.validators.Regexp(r'\w{32}')],
                           default=get_random_token)
+    is_aware_of_api_changes = wtf.BooleanField(u'Готов к миграции на изменённый API')
     has_access_to = wtf.SelectMultipleField(
         u'Другие пользователи, к файлам которых разрешён доступ', coerce=ObjectId)
     domains = DomainList(wtf.TextField(u'', [wtf.validators.URL()]), label=u'Домены')

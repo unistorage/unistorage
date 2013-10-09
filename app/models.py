@@ -41,6 +41,10 @@ class User(ValidationMixin, Document):
     .. attribute:: domains
 
         Домены-алиасы для gridfs-serve.
+
+    .. attribute:: is_aware_of_api_changes
+
+        Готов ли пользователь к миграции на изменённый API?
     """
     collection = 'users'
     structure = {
@@ -49,6 +53,7 @@ class User(ValidationMixin, Document):
         'token': basestring,
         'needs': [tuple],
         'domains': [basestring],
+        'is_aware_of_api_changes': False,
     }
     required = ('token',)
 

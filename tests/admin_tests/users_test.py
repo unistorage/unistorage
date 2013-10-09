@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 from flask import url_for
 
 from app import db
@@ -19,7 +19,7 @@ class Test(AdminFunctionalTest):
         self.assertFalse(response.context['form'].validate())
 
         form = response.form
-        form.set('name', 'John Doe')
+        form['name'] = 'John Doe'
         response = form.submit().follow()
 
         self.assertTemplateUsed(response, 'users.html')
@@ -30,12 +30,12 @@ class Test(AdminFunctionalTest):
 
         # Создаём пользователя
         form = self.app.get(url_for('admin.user_create')).form
-        form.set('name', 'Test')
+        form['name'] = 'Test'
         response = form.submit().follow()
 
         # Открываем форму редактирования нашего единственного пользователя
         form = response.click(href='edit').form
-        form.set('name', 'John Doe')
+        form['name'] = 'John Doe'
         
         # Проверяем, что имя изменилось
         self.assertTrue('John Doe' in form.submit().follow())
@@ -45,12 +45,12 @@ class Test(AdminFunctionalTest):
 
         # Создаём первого пользователя
         form = self.app.get(url_for('admin.user_create')).form
-        form.set('name', 'Test1')
+        form['name'] = 'Test1'
         response = form.submit().follow()
 
         # Создаём второго пользователя
         form = self.app.get(url_for('admin.user_create')).form
-        form.set('name', 'Test2')
+        form['name'] = 'Test2'
         response = form.submit().follow()
 
         user1, user2 = User.find(db, {})
@@ -84,7 +84,7 @@ class Test(AdminFunctionalTest):
 
         # Создаём пользователя
         form = self.app.get(url_for('admin.user_create')).form
-        form.set('name', 'Test1')
+        form['name'] = 'Test1'
         response = form.submit().follow()
 
         user = User.find(db, {})[0]
@@ -119,12 +119,34 @@ class Test(AdminFunctionalTest):
         user_domains = User.get_one(db, {'_id': user_id}).domains
         self.assertNotIn(domain, user_domains)
 
+    def test_is_aware_of_api_changes(self):
+        self.login()
+
+        # Создаём пользователя
+        form = self.app.get(url_for('admin.user_create')).form
+        form.set('name', 'Test1')
+        response = form.submit().follow()
+
+        user = User.find(db, {})[0]
+        user_id = user.get_id()
+        self.assertFalse(user.is_aware_of_api_changes)
+
+        # Открываем форму редактирования пользователя
+        response = response.click(href='%s/edit' % user.get_id())
+        form = response.form
+        form['is_aware_of_api_changes'].checked = True
+        form.submit()
+        
+        user = User.find(db, {})[0]
+        user_id = user.get_id()
+        self.assertTrue(user.is_aware_of_api_changes) 
+    
     def test_remove(self):
         self.login()
         
         # Создаём пользователя
         form = self.app.get(url_for('admin.user_create')).form
-        form.set('name', 'Test')
+        form['name'] = 'Test'
         response = form.submit().follow()
         
         # Жмём "удалить"

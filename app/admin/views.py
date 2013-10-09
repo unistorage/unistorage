@@ -88,7 +88,8 @@ def users():
                 'name': form.data['name'],
                 'token': form.data['token'],
                 'needs': map(RoleNeed, form.data['has_access_to']),
-                'domains': form.data['domains']
+                'domains': form.data['domains'],
+                'is_aware_of_api_changes': form.data['is_aware_of_api_changes'],
             })
             user.save(db)
             return redirect(url_for('.users'))

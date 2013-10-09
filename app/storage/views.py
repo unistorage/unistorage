@@ -98,8 +98,10 @@ def get_regular_file(user, file):
             'url': file.get_binary_data_url(db),
             'extra': file.get('extra', {}),
         },
-        'ttl': settings.TTL + random.randint(-deviation, deviation),
     }
+
+    if not user.is_aware_of_api_changes:
+        data['ttl'] = settings.TTL + random.randint(-deviation, deviation)
 
     if file.unistorage_type in ('video', 'audio', 'image'):
         schema_path = os.path.join(
