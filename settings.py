@@ -20,7 +20,7 @@ SENTRY_DSN = ''
 
 # Логин и пароль от интерфейса администратора (/admin/)
 ADMIN_USERNAME = 'admin'
-ADMIN_PASSWORD = 'admin'  # Should we put md5 here?
+ADMIN_PASSWORD = 'zoo9Ohcu'  # Should we put md5 here?
 
 MONGO_REPLICATION_ON = True
 
