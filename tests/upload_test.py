@@ -1,6 +1,8 @@
+# coding: utf-8
 import random
 
-from app import fs
+from app import db, fs
+from app.models import User
 from tests.utils import StorageFunctionalTest, fixture_path
 
 
@@ -25,3 +27,19 @@ class FunctionalTest(StorageFunctionalTest):
         file_uri = self.put_file('./docs/example.pdf')
         response = self.app.get(file_uri).json
         self.assertEquals(response['data']['extra']['pages'], 10)
+
+    def test_is_aware_of_api_changes(self):
+        user = User.get_one(db, {})
+        self.assertFalse(user.is_aware_of_api_changes)
+
+        # Заливаем файл
+        file_uri = self.put_file('images/some.jpeg')
+        # Убеждаемся, что TTL на месте
+        self.assertIn('ttl', self.app.get(file_uri))
+        
+        # Говорим, что пользователь is_aware_of_api_changes
+        user.is_aware_of_api_changes = True
+        user.save(db)
+
+        # Убеждаемся, что TTL пропал
+        self.assertNotIn('ttl', self.app.get(file_uri).json['data'])
