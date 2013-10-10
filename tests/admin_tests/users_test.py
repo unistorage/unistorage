@@ -148,6 +148,13 @@ class Test(AdminFunctionalTest):
         form = self.app.get(url_for('admin.user_create')).form
         form['name'] = 'Test'
         response = form.submit().follow()
+
+        # Создаём второго пользователя
+        form = self.app.get(url_for('admin.user_create')).form
+        form['name'] = 'Test2'
+        response = form.submit().follow()
+
+        self.assertEqual(len(response.forms), 2)
         
         # Жмём "удалить"
         response = response.forms[0].submit()
@@ -156,4 +163,4 @@ class Test(AdminFunctionalTest):
         # Проверяем, что пользователей не осталось
         response = response.follow()
         ctx_users = response.context['users']
-        self.assertEquals(ctx_users.count(), 0)
+        self.assertEquals(ctx_users.count(), 1)
