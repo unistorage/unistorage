@@ -54,6 +54,10 @@ BROKER_HEARTBEAT = 60
 # тем самым гарантируя, что таск не потеряется
 BROKER_TRANSPORT_OPTIONS = {'block_for_ack': True}
 
+# The default timeout in seconds before we give up establishing
+# a connection to the AMQP server 
+BROKER_CONNECTION_TIMEOUT = 3
+
 # Формируем список URL-ов RabbitMQ. Если первый отпадёт, Celery
 # будет пробовать подключаться к последующим
 BROKER_URL = []
