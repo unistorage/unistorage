@@ -2,7 +2,7 @@
     "type" : "object",
     "properties" : {
         "status" : {"type" : "string", "required": true},
-        "ttl" : {"type" : "integer", "required": true},
+        "ttl" : {"type" : "integer"},
         "data": {
             "type" : "object",
             "required": true,
