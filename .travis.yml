@@ -15,6 +15,7 @@ before_install:
   - chmod +x ./oowrapper.py
   - sudo mv ./oowrapper.py /bin/
   - cp ./settings_test.py ./settings_local.py
+  - cp -f ./settings_test.py-travis ./settings_test.py
   - wget http://79.172.49.99/ffmpeg/ffmpeg.static.32bit.2013-04-22.tar.gz -O /tmp/ffmpeg.tar.gz
   - sudo tar xvfp /tmp/ffmpeg.tar.gz -C /usr/bin/
 install:
