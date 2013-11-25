@@ -1,3 +1,4 @@
+# coding: utf-8
 import os
 
 from actions.videos.convert import perform as convert
@@ -30,17 +31,28 @@ class Test(SmokeTest):
             'mkv': {'vcodec': ['h263', 'mpeg1', 'mpeg2'], 'acodec': ['mp3', 'aac']},
         }
 
+        def save(target_name, result):
+            target_path = os.path.join(results_dir, target_name)
+            with open(target_path, 'w') as target_file:
+                target_file.write(result.read())
+
         for format in convert_targets:
             for acodec in convert_targets[format]['acodec']:
                 for vcodec in convert_targets[format]['vcodec']:
                     for source_name, source_file in self.source_files():
                         result, ext = convert(source_file, format, vcodec, acodec)
-
                         target_name = '%s_using_vcodec_%s_acodec_%s.%s' % \
                             (source_name, vcodec, acodec, ext)
-                        target_path = os.path.join(results_dir, target_name)
-                        with open(target_path, 'w') as target_file:
-                            target_file.write(result.read())
+                        save(target_name, result)
+                        
+                        if vcodec == 'h264':
+                            # h264 конвертируется в baseline-профиль при 
+                            # max_compatibility, протестируем, что всё хорошо::
+                            result, ext = convert(source_file, format, vcodec, acodec,
+                                                  with_max_compatibility=True)
+                            target_name = '%s_using_vcodec_%s_acodec_%s_with_max_comp.%s' % \
+                                (source_name, vcodec, acodec, ext)
+                            save(target_name, result)
 
     def test_resize_crop(self):
         results_dir = os.path.join(TEST_TARGET_DIR, 'resize_crop')

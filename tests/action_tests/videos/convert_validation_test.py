@@ -31,10 +31,13 @@ class ValidationTest(ContextMixin, unittest.TestCase):
             validate({'to': 'webm', 'vcodec': 'vp8', 'acodec': 'mp3'})
         
         r = validate({'to': 'mkv', 'vcodec': 'h264', 'acodec': 'mp3'})
-        self.assertEquals(r, ['mkv', 'h264', 'mp3'])
+        self.assertEquals(r, ['mkv', 'h264', 'mp3', False])
         
         r = validate({'to': 'webm'})
-        self.assertEquals(r, ['webm', 'vp8', 'vorbis'])
+        self.assertEquals(r, ['webm', 'vp8', 'vorbis', False])
         
         r = validate({'to': 'ogg'})
-        self.assertEquals(r, ['ogg', 'theora', 'vorbis'])
+        self.assertEquals(r, ['ogg', 'theora', 'vorbis', False])
+        
+        r = validate({'to': 'ogg', 'with_max_compatibility': None})
+        self.assertEquals(r, ['ogg', 'theora', 'vorbis', True])
