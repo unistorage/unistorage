@@ -46,6 +46,7 @@ class Test(SmokeTest):
                         save(target_name, result)
                         
                         if vcodec == 'h264':
+                            source_file.seek(0)
                             # h264 конвертируется в baseline-профиль при 
                             # max_compatibility, протестируем, что всё хорошо::
                             result, ext = convert(source_file, format, vcodec, acodec,
