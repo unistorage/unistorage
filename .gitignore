@@ -4,6 +4,7 @@ docs/_build
 app/static/gen
 .webassets-cache
 settings_local.py
+settings_test.py
 *.pyc
 .coverage
 magic.mgc
