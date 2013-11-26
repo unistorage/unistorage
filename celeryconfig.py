@@ -52,7 +52,7 @@ BROKER_HEARTBEAT = 60
 # И включаем поддержку RabbitMQ-шных publisher confirms:
 # `task.delay()` будет блокироваться до получения подтверждения от брокера,
 # тем самым гарантируя, что таск не потеряется
-BROKER_TRANSPORT_OPTIONS = {'block_for_ack': True}
+BROKER_TRANSPORT_OPTIONS = {'confirm_publish': True}
 
 # The default timeout in seconds before we give up establishing
 # a connection to the AMQP server 
