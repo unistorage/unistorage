@@ -71,10 +71,11 @@ def validate_and_get_args(args, source_file=None):
         if data['audio']:
             require_acodec_presence(data['audio']['codec'])
 
-    return [format, vcodec, acodec]
+    with_max_compatibility = 'with_max_compatibility' in args
+    return [format, vcodec, acodec, with_max_compatibility]
 
 
-def perform(source_file, format, vcodec, acodec):
+def perform(source_file, format, vcodec, acodec, with_max_compatibility=False):
     tmp_source_file = tempfile.NamedTemporaryFile(delete=False)
     tmp_source_file.write(source_file.read())
     tmp_source_file.close()
@@ -90,7 +91,8 @@ def perform(source_file, format, vcodec, acodec):
             'video': {
                 'codec': vcodec,
                 'fps': source_data['video']['fps'],
-            }
+            },
+            'with_max_compatibility': with_max_compatibility,
         }
 
         if vcodec in ('mpeg1', 'mpeg2', 'divx'):

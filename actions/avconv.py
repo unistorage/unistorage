@@ -356,8 +356,18 @@ encoders = {
 }
 
 
+_libx264_args = [
+    '-pix_fmt',  'yuv420p',  # https://trac.ffmpeg.org/ticket/585
+    '-flags', '+loop', '-cmp', 'chroma', '-partitions',
+    'parti4x4+partp8x8+partb8x8', '-subq', '5', '-trellis', '1', '-refs', '1',
+    '-coder', '0', '-me_range', '16', '-g', '300', '-keyint_min', '25',
+    '-sc_threshold', '40', '-i_qfactor', '0.71', '-rc_eq', "'blurCplx^(1-qComp)'",
+    '-qcomp', '0.6', '-qmin', '10', '-qmax', '51', '-qdiff', '4', '-level', '30',
+    '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2']  # h264 поддерживает только четные длину и высоту
+
+
 """
-Некоторые енкодеры требуют специальных аргументов:
+Некоторые энкодеры требуют специальных аргументов:
 """
 encoder_args = {
     'acodecs': {
@@ -366,12 +376,19 @@ encoder_args = {
     'vcodecs': {
         'h263p': ['-threads', '1', '-vf', 'scale=trunc(iw/4)*4:trunc(ih/4)*4'],
         'libtheora': ['-qscale', '6'],
-        'libx264': ['-vprofile', 'main', '-flags', '+loop', '-cmp', 'chroma', '-partitions',
-                    'parti4x4+partp8x8+partb8x8', '-subq', '5', '-trellis', '1', '-refs', '1',
-                    '-coder', '0', '-me_range', '16', '-g', '300', '-keyint_min', '25',
-                    '-sc_threshold', '40', '-i_qfactor', '0.71', '-rc_eq', "'blurCplx^(1-qComp)'",
-                    '-qcomp', '0.6', '-qmin', '10', '-qmax', '51', '-qdiff', '4', '-level', '30',
-                    '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2'],  # h264 поддерживает только четные длину и высоту
+        'libx264': ['-vprofile', 'high'] + _libx264_args,
+    },
+}
+
+
+"""
+Словарь, задающий особые аргументы для некоторых энкодеров, включающие
+режим суперсовместимости.
+"""
+max_compatibility_encoder_args = {
+    'acodecs': {},
+    'vcodecs': {
+        'libx264': ['-vprofile', 'baseline'] + _libx264_args,
     },
 }
 
@@ -409,12 +426,25 @@ acodec_to_format_map = {
 }
 
 
+def get_encoder_args(encoder_type, encoder_name, with_max_compatibility=False):
+    assert encoder_type in ('vcodecs', 'acodecs')
+
+    rv = None
+    if with_max_compatibility:
+        rv = max_compatibility_encoder_args[encoder_type].get(encoder_name, None)
+    if rv is None:
+        rv = encoder_args[encoder_type].get(encoder_name, [])
+    return rv
+
+
 def avconv(source_fname, target_fname, options):
     args = [settings.AVCONV_BIN, '-i', source_fname]
 
     position = options.get('position')
     if position:
         args.extend(['-ss', position])
+    
+    with_max_compatibility = options.get('with_max_compatibility', False)
 
     audio_options = options.get('audio')
     if audio_options:
@@ -431,7 +461,10 @@ def avconv(source_fname, target_fname, options):
         channels = audio_options.get('channels')
         if channels:
             args.extend(['-ac', str(channels)])
-        args.extend(encoder_args['acodecs'].get(encoder_name, []))
+
+        args.extend(get_encoder_args(
+            'acodecs', encoder_name,
+            with_max_compatibility=with_max_compatibility))
     else:
         args.append('-an')
 
@@ -441,7 +474,9 @@ def avconv(source_fname, target_fname, options):
         if codec:
             encoder_name = encoders['vcodecs'].get(codec, codec)
             args.extend(['-vcodec', encoder_name])
-            args.extend(encoder_args['vcodecs'].get(encoder_name, []))
+            args.extend(get_encoder_args(
+                'vcodecs', encoder_name,
+                with_max_compatibility=with_max_compatibility))
         fps = video_options.get('fps')
         if fps:
             if fps < 1:  # Хотим конвертить странные битые видео
