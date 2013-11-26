@@ -58,8 +58,12 @@ def get_linearized_tree(file_, criteria, redo_needed):
 def get_callback(criteria):
     def callback(id_, file_, log=None):
         if not file_.get('original'):
+            # Стартуем миграцию только с оригиналов, чтобы избежать повторной
+            # миграции поддеревьев
             chain_tasks, redo_needed = get_linearized_tree(file_, criteria, False)
             if redo_needed and chain_tasks:
                 print '  %i tasks enqueued' % len(chain_tasks)
                 chain(*chain_tasks)()
+        else:
+            print '  %s is modification, skipping...' % id_
     return callback
