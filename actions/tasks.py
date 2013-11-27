@@ -8,6 +8,7 @@ import os.path
 import gridfs
 from celery import Celery
 from bson.objectid import ObjectId
+from pymongo.read_preferences import ReadPreference
 
 import settings
 import actions
@@ -21,16 +22,29 @@ celery = Celery('tasks')
 celery.config_from_object(celeryconfig)
 
 
-def resolve_object_ids(fs, args):
+def resolve_object_ids(secondary_fs, fs, args):
     """Проходит по списку `args`, заменяя встреченные `ObjectId` на соответствующие им
     GridOut-объекты.
     """
     def try_resolve(arg):
         if isinstance(arg, ObjectId):
-            return fs.get(arg)
+            try:
+                return secondary_fs.get(arg)
+            except gridfs.errors.NoFile:
+                return fs.get(arg)
         else:
             return arg
     return [try_resolve(arg) for arg in args]
+
+
+def get_db_and_fs(read_preference):
+    connection = connections.get_mongodb_connection(
+        read_preference=read_preference)
+
+    connection = connections.get_mongodb_connection()
+    db = connection[settings.MONGO_DB_NAME]
+    fs = gridfs.GridFS(db)
+    return db, fs
 
 
 @celery.task
@@ -45,13 +59,24 @@ def perform_actions(target_id, **kwargs):
     :param target_kwargs: словарь с атрибутами, которые появятся у результирующего файла после
     применения операций
     """
-    connection = connections.get_mongodb_connection()
-    db = connection[settings.MONGO_DB_NAME]
-    fs = gridfs.GridFS(db)
+    secondary_db, secondary_fs = get_db_and_fs(ReadPreference.SECONDARY_PREFERRED)
+    db, fs = get_db_and_fs(ReadPreference.PRIMARY)
 
-    target_file = PendingFile.get_from_fs(db, fs, _id=target_id)
+    try:
+        # С целью разгрузить primary, пытаемся прочитать сначала с secondary
+        target_file = PendingFile.get_from_fs(secondary_db, secondary_fs, _id=target_id)
+    except gridfs.errors.NoFile:
+        # И только если файла не оказалось на secondary (например, исходный
+        # файл был только-только залит и ещё не реплицировался),
+        # читаем с primary
+        target_file = PendingFile.get_from_fs(db, fs, _id=target_id)
+
     source_id = target_file.original
-    source_file = RegularFile.get_from_fs(db, fs, _id=source_id)
+    
+    try:
+        source_file = RegularFile.get_from_fs(secondary_db, secondary_fs, _id=source_id)
+    except gridfs.errors.NoFile:
+        source_file = RegularFile.get_from_fs(db, fs, _id=source_id)
 
     source_file_name, source_file_ext = os.path.splitext(source_file.name)
 
@@ -61,7 +86,7 @@ def perform_actions(target_id, **kwargs):
 
     for action_name, action_args in target_file.actions:
         action = actions.get_action(curr_unistorage_type, action_name)
-        action_args = resolve_object_ids(fs, action_args)
+        action_args = resolve_object_ids(secondary_fs, fs, action_args)
 
         try:
             next_file, next_file_ext = action.perform(curr_file, *action_args)
