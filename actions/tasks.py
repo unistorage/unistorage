@@ -59,7 +59,7 @@ def perform_actions(target_id, **kwargs):
     :param target_kwargs: словарь с атрибутами, которые появятся у результирующего файла после
     применения операций
     """
-    secondary_db, secondary_fs = get_db_and_fs(ReadPreference.SECONDARY)
+    secondary_db, secondary_fs = get_db_and_fs(ReadPreference.SECONDARY_PREFERRED)
     db, fs = get_db_and_fs(ReadPreference.PRIMARY)
 
     try:
