@@ -54,6 +54,8 @@ def get_unistorage_type(content_type, file_name=None, extra=None):
             else:
                 return 'unknown'
         else:
+            if extra.get('format') == 'bmp':
+                return 'image'
             audio = extra.get('audio')
             video = extra.get('video')
             if audio and not video:
