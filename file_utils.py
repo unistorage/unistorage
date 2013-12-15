@@ -56,8 +56,11 @@ def get_unistorage_type_and_extra(file, file_name, file_content, content_type):
                 inaccurate_extra = avprobe(file.stream.name)
             else:
                 inaccurate_extra = avprobe_buffer(file_content)
-        elif inaccurate_unistorage_type == 'image':
-            inaccurate_extra = identify_buffer(file_content)
+    except:
+        pass
+    try:
+        if inaccurate_unistorage_type in ('image', 'unknown'):
+            inaccurate_extra = inaccurate_extra or identify_buffer(file_content)
     except:
         pass
 
