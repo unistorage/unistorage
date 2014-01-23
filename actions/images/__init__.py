@@ -33,8 +33,8 @@ class ImageMagickWrapper(object):
         return self
 
     def crop(self, x1, y1, x2, y2):
-        width = x2 - x1
-        height = y2 - y1
+        width = x2 - x1 + 1
+        height = y2 - y1 + 1
         assert width > 0
         assert height > 0
         self._args.extend(['-crop', '%dx%d+%d+%d' % (width, height, x1, y1),
