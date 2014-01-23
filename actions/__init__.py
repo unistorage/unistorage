@@ -28,6 +28,7 @@ actions_to_register = (
     'images.grayscale',
     'images.rotate',
     'images.orient',
+    'images.crop',
 
     'videos.convert',
     'videos.resize',
