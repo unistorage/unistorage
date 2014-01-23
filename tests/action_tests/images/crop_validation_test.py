@@ -39,12 +39,12 @@ class ValidationTest(unittest.TestCase):
 
         args = self.get_valid_args()
         args.update({'x1': '100', 'x2': '10'})
-        with self.expect_validation_error('`x1` must be strictly less than `x2`.'):
+        with self.expect_validation_error('`x1` must be less or equal to `x2`.'):
             validate(args)
 
         args = self.get_valid_args()
         args.update({'y1': '100', 'y2': '10'})
-        with self.expect_validation_error('`y1` must be strictly less than `y2`.'):
+        with self.expect_validation_error('`y1` must be less or equal to `y2`.'):
             validate(args)
 
         args = self.get_valid_args()
