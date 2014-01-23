@@ -25,9 +25,9 @@ def validate_and_get_args(args, source_file=None):
         raise ValidationError('`x1`, `y1`, `x2`, `y2` must be positive integer values.')
 
     if x2 < x1:
-        raise ValidationError('`x1` must be strictly less than `x2`.')
+        raise ValidationError('`x1` must be less or equal to `x2`.')
     if y2 < y1:
-        raise ValidationError('`y1` must be strictly less than `y2`.')
+        raise ValidationError('`y1` must be less or equal to `y2`.')
 
     if source_file:
         assert source_file.unistorage_type == 'image'
