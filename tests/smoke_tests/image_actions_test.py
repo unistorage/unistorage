@@ -87,7 +87,7 @@ class Test(SmokeTest):
 
         for source_name, source_file in self.source_files():
             watermark_file = open(os.path.join(fixture_path('watermarks'), 'watermark.png'))
-            result, ext = crop(source_file, 10, 10, 50, 50)
+            result, ext = crop(source_file, 10, 10, 40, 40)
             
             target_name = '%s_cropped.%s' % (source_name, ext)
             target_path = os.path.join(results_dir, target_name)

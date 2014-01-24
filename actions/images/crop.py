@@ -12,32 +12,27 @@ def get_result_unistorage_type(*args):
 
 
 def validate_and_get_args(args, source_file=None):
-    arg_names = ('x1', 'y1', 'x2', 'y2')
+    arg_names = ('x', 'y', 'w', 'h')
     for arg_name in arg_names:
         validate_presence(args, arg_name)
 
     try:
-        x1, y1, x2, y2 = map(int, map(args.get, arg_names))
+        x, y, w, h = map(int, map(args.get, arg_names))
     except ValueError:
-        raise ValidationError('`x1`, `y1`, `x2`, `y2` must be integer values.')
+        raise ValidationError('`x`, `y`, `w`, `h` must be integer values.')
 
-    if x1 < 0 or y1 < 0 or x2 < 0 or y2 < 0:
-        raise ValidationError('`x1`, `y1`, `x2`, `y2` must be positive integer values.')
-
-    if x2 < x1:
-        raise ValidationError('`x1` must be less or equal to `x2`.')
-    if y2 < y1:
-        raise ValidationError('`y1` must be less or equal to `y2`.')
+    if x < 0 or y < 0 or w < 0 or h < 0:
+        raise ValidationError('`x`, `y`, `w`, `h` must be positive integer values.')
 
     if source_file:
         assert source_file.unistorage_type == 'image'
         width = source_file.extra['width']
         height = source_file.extra['height']
-        if x2 >= width or y2 >= height:
-            raise ValidationError('`(x2, y2)` is out of the image boundaries.')
+        if x + w > width or y + h > height:
+            raise ValidationError('The crop region is out of the image boundaries.')
 
-    return [x1, y1, x2, y2]
+    return [x, y, w, h]
 
 
-def perform(source_file, x1, y1, x2, y2):
-    return ImageMagickWrapper(source_file).crop(x1, y1, x2, y2).finalize()
+def perform(source_file, x, y, w, h):
+    return ImageMagickWrapper(source_file).crop(x, y, w, h).finalize()
