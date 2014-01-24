@@ -10,10 +10,10 @@ class ValidationTest(unittest.TestCase):
 
     def get_valid_args(self):
         return {
-            'x1': '50',
-            'y1': '50',
-            'x2': '90',
-            'y2': '120',
+            'x': '50',
+            'y': '50',
+            'w': '40',
+            'h': '70',
         }
 
     def test(self):
@@ -23,28 +23,18 @@ class ValidationTest(unittest.TestCase):
             validate({})
 
         args = self.get_valid_args()
-        del args['x1']
-        with self.expect_validation_error('`x1` must be specified'):
+        del args['x']
+        with self.expect_validation_error('`x` must be specified'):
             validate(args)
 
         args = self.get_valid_args()
-        args.update({'x2': 'bububu'})
+        args.update({'x': 'bububu'})
         with self.expect_validation_error('must be integer values'):
             validate(args)
 
         args = self.get_valid_args()
-        args.update({'y1': '-1'})
+        args.update({'y': '-1'})
         with self.expect_validation_error('must be positive integer values'):
-            validate(args)
-
-        args = self.get_valid_args()
-        args.update({'x1': '100', 'x2': '10'})
-        with self.expect_validation_error('`x1` must be less or equal to `x2`.'):
-            validate(args)
-
-        args = self.get_valid_args()
-        args.update({'y1': '100', 'y2': '10'})
-        with self.expect_validation_error('`y1` must be less or equal to `y2`.'):
             validate(args)
 
         args = self.get_valid_args()
