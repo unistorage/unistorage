@@ -28,6 +28,10 @@ class ImageMagickWrapper(object):
         self._args.extend(['-rotate', str(-angle)])
         return self
     
+    def strip_exif(self):
+        self._args.extend(['-strip'])
+        return self
+
     def auto_orient(self):
         self._args.extend(['-auto-orient'])
         return self
