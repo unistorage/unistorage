@@ -17,7 +17,17 @@
                         "height" : {"type" : "integer", "required": true},
                         "format" : {"type" : "string", "required": true},
                         "is_animated" : {"type" : "boolean", "required": true},
-                        "orientation" : {"type" : "integer", "required": true}
+                        "orientation" : {"type" : "integer", "required": true},
+                        "location" : {"type" : [
+                            {
+                                "type": "object",
+                                "properties" : {
+                                    "latitude" : {"type" : "number"},
+                                    "longitude" : {"type" : "number"}
+                                }
+                            },
+                            "null"
+                        ]}
                     }
                 }
             }
