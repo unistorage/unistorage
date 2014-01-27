@@ -1,3 +1,4 @@
+# coding: utf-8
 from actions.utils import ValidationError
 from actions.common import validate_presence
 from . import ImageMagickWrapper
@@ -22,4 +23,5 @@ def validate_and_get_args(args, source_file=None):
 
 
 def perform(source_file, angle):
-    return ImageMagickWrapper(source_file).rotate(angle).finalize()
+    # Удаляем EXIF-информацию, чтобы затереть тег Orientation
+    return ImageMagickWrapper(source_file).rotate(angle).strip_exif().finalize()
