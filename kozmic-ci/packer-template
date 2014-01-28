@@ -1,0 +1,17 @@
+{
+  "builders": [{
+    "type": "docker",
+    "image": "kozmic/debian:wheezy",
+    "export_path": "image.tar"
+  }],
+
+  "provisioners": [{
+    "type": "chef-solo",
+    "cookbook_paths": ["/path/to/chef/cookbooks"],
+    "install_command": "apt-get install -y wget && wget https://opscode-omnibus-packages.s3.amazonaws.com/debian/6/x86_64/chef_10.24.0-1.debian.6.0.5_amd64.deb && dpkg -i chef_10.24.0-1.debian.6.0.5_amd64.deb && mkdir -p /var/chef-solo /var/chef/cache",
+    "run_list": ["unistorage::ci"]
+  }, {
+    "type": "shell",
+    "script": "packer-script.sh"
+  }]
+}
