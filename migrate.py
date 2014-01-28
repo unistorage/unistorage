@@ -1,12 +1,12 @@
 #!/usr/bin/env ipython
 from bson import ObjectId
-from fish import ProgressFish
 
 from app import db, fs
 from wsgi import app
 
 
 def generic_migrate(query, callback, no_input=False):
+    from fish import ProgressFish
     files_to_update = db.fs.files.find(query, timeout=False)
 
     count = files_to_update.count()

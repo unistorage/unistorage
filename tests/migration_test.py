@@ -6,12 +6,19 @@ import mock
 from app import db
 from app.models import RegularFile
 from tests.utils import ContextMixin, GridFSMixin
-from migrate import migrate
 from migrations.m00 import get_callback
 
 
 class Test(GridFSMixin, ContextMixin, unittest.TestCase):
-    def test(self):
+    @mock.patch('sys.stdin')
+    @mock.patch('sys.stdout')
+    @mock.patch('sys.stderr')
+    def test(self, stdin, stdout, stderr):
+        stdin.fileno.return_value = 0
+        stdout.fileno.return_value = 1
+        stderr.fileno.return_value = 2
+        # run-time импорт, чтобы mock возымел силу:
+        from migrate import migrate
         f1_id = self.put_file('images/some.jpeg')
         f2_id = self.put_file('images/some.png')
         f1 = RegularFile.get_one(db, {'_id': f1_id})
