@@ -11,7 +11,8 @@ from migrations.m00 import get_callback
 
 
 class Test(GridFSMixin, ContextMixin, unittest.TestCase):
-    def test(self):
+    @mock.patch('migrate.ProgressFish')
+    def test(self, _):
         f1_id = self.put_file('images/some.jpeg')
         f2_id = self.put_file('images/some.png')
         f1 = RegularFile.get_one(db, {'_id': f1_id})
