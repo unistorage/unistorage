@@ -31,6 +31,14 @@ class Test(SmokeTest):
             'mkv': {'vcodec': ['h263', 'mpeg1', 'mpeg2'], 'acodec': ['mp3', 'aac']},
         }
 
+        reduced_convert_targets = {  # because `convert_targets` take too long
+            'ogg': {'vcodec': ['theora'], 'acodec': ['vorbis']},
+            'webm': {'vcodec': ['vp8'], 'acodec': ['vorbis']},
+            'flv': {'vcodec': ['flv'], 'acodec': ['aac']},
+            'mkv': {'vcodec': ['h264', 'h263', 'mpeg1', 'mpeg2'], 'acodec': ['mp3']},
+        }
+        convert_targets = reduced_convert_targets
+
         def save(target_name, result):
             target_path = os.path.join(results_dir, target_name)
             with open(target_path, 'w') as target_file:
