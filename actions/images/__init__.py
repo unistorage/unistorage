@@ -57,7 +57,6 @@ class ImageMagickWrapper(object):
         self._args.append('%s:-' % format.upper())
         proc_input = self._image
         proc_input.seek(0)
-
         try:
             proc = subprocess.Popen(self._args, stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -67,6 +66,7 @@ class ImageMagickWrapper(object):
         result, error = proc.communicate(input=proc_input.read())
         return_code = proc.wait()
         if return_code != 0:
-            raise ActionError('ImageMagick\'s convert (%s) failed.' % self._args[0])
+            raise ActionError(
+                'ImageMagick\'s convert (%s) failed: %s' % (self._args[0], error))
 
         return StringIO(result), format.lower()

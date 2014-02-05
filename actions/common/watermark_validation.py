@@ -86,4 +86,4 @@ def get_watermark_bbox_geometry(source_width, source_height, w, h, h_pad, v_pad)
     bbox_height = round(source_height * h) if is_float(h) else h
     bbox_h_offset = round(source_width * h_pad) if is_float(h_pad) else h_pad
     bbox_v_offset = round(source_height * v_pad) if is_float(v_pad) else v_pad
-    return (bbox_width, bbox_height, bbox_h_offset, bbox_v_offset)
+    return (max(1, bbox_width), max(1, bbox_height), bbox_h_offset, bbox_v_offset)

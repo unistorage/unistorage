@@ -8,8 +8,8 @@ class FunctionalTest(StorageFunctionalTest):
         original_uri = self.put_file('images/some.jpeg')
         original_id = self.get_id_from_uri(original_uri)
         self.check(original_uri, width=640, height=480, mime='image/jpeg')
-       
-        resize_action_url = '%s?action=resize&mode=keep&w=400' % original_uri
+
+        resize_action_url = '%s?action=resize&mode=keep&h=500' % original_uri  # upscale
         r = self.app.get(resize_action_url)
         self.assertEquals(r.json['status'], 'ok')
 
@@ -25,7 +25,7 @@ class FunctionalTest(StorageFunctionalTest):
         self.assertEquals(
             self.get_id_from_uri(r.json['resource_uri']),
             resized_image_id)
-        
+
         self.run_worker()
         # Make sure that original has resized image in modifications
         # and resized image points to it's original.
@@ -34,7 +34,7 @@ class FunctionalTest(StorageFunctionalTest):
         self.assertEquals(resized_image['original'], original_id)
         self.assertTrue(resized_image_id in original_image['modifications'].values())
 
-        r = self.check(resized_image_uri, width=400, height=300, mime='image/jpeg')
+        r = self.check(resized_image_uri, width=667, height=500, mime='image/jpeg')
         self.assertTrue(
             settings.TTL - settings.TTL_DEVIATION <=
             int(r.json['ttl']) <=
