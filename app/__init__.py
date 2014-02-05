@@ -1,4 +1,6 @@
 # coding: utf-8
+import logging
+
 from gridfs import GridFS
 from pymongo.errors import AutoReconnect, TimeoutError, ConnectionFailure
 from werkzeug.local import LocalProxy
@@ -36,6 +38,7 @@ def create_app():
     configure_app(app)
     register_blueprints(app)
     register_bundles(app)
+    configure_logging()
 
     import storage  # Ибо циклический импорт
 
@@ -73,6 +76,10 @@ def configure_app(app):
     sentry_dsn = getattr(settings, 'SENTRY_DSN', False)
     if sentry_dsn:
         Sentry(app, dsn=sentry_dsn)
+
+
+def configure_logging():
+    logging.getLogger('newrelic').setLevel(logging.ERROR)
 
 
 def register_blueprints(app):
