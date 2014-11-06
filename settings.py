@@ -77,6 +77,10 @@ MAGIC_FILE_PATH = ':'.join((
 AVCONV_DB_PATH = os.path.join(PROJECT_PATH, 'avconv.db')
 
 
+AWS_DEFAULT_ACCESS_KEY_ID = NotImplemented
+AWS_DEFAULT_SECRET_ACCESS_KEY = NotImplemented
+AWS_DEFAULT_BUCKET_NAME = NotImplemented
+
 try:
     from settings_local import *
 except ImportError:

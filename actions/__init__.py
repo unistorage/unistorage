@@ -40,7 +40,7 @@ actions_to_register = (
 
     'docs.convert',
     'docs.extract_page',
-    
+
     'presentations.convert',
 )
 

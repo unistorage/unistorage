@@ -12,6 +12,10 @@ CELERY_QUEUES = (
     Queue('ha.unistorage.low-priority', default_exchange, routing_key='low-priority'),
     Queue('ha.unistorage.images', default_exchange, routing_key='images'),
     Queue('ha.unistorage.non-images', default_exchange, routing_key='non-images'),
+
+    Queue('ha.unistorage.s3-low-priority', default_exchange, routing_key='s3-low-priority'),
+    Queue('ha.unistorage.s3-images', default_exchange, routing_key='s3-images'),
+    Queue('ha.unistorage.s3-non-images', default_exchange, routing_key='s3-non-images'),
 )
 
 
@@ -19,6 +23,7 @@ class Router(object):
     def route_for_task(self, task, args=None, kwargs=None):
         with_low_priority = kwargs.get('with_low_priority')
         source_unistorage_type = kwargs.get('source_unistorage_type')
+        s3 = kwargs.get('s3')
 
         assert with_low_priority or source_unistorage_type
 
@@ -29,6 +34,8 @@ class Router(object):
                 routing_key = 'images'
             else:
                 routing_key = 'non-images'
+        if s3:
+            routing_key = "s3-" + routing_key
         return {
             'exchange': 'unistorage',
             'exchange_type': 'direct',

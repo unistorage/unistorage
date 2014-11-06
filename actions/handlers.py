@@ -34,6 +34,8 @@ def apply_actions(source_file, action_list, label, with_low_priority=False):
         if target_id:
             return target_id
 
+    s3 = bool(source_file.get('aws_bucket_name'))
+
     source_id = source_file.get_id()
     # Помещаем в базу временный файл, содержащий всю необходимую информацию
     # для выполнения операции
@@ -50,7 +52,8 @@ def apply_actions(source_file, action_list, label, with_low_priority=False):
         # Посылаем воркеру сообщение с идентификатором временного файла
         perform_actions.delay(target_id,
                               source_unistorage_type=source_file.unistorage_type,
-                              with_low_priority=with_low_priority)
+                              with_low_priority=with_low_priority,
+                              s3=s3)
     except:
         # Если сообщение послать не удалось, удалим временный файл,
         # так как он остаётся «потерянным» — он никогда не станет

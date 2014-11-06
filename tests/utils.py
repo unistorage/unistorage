@@ -104,8 +104,13 @@ class StorageFunctionalTest(ContextMixin, WorkerMixin, FlaskTestCase):
         super(StorageFunctionalTest, self).setUp()
 
         token = get_random_token()
-        User({'name': 'Test', 'token': token}).save(db)
+        self.u = User({'name': 'Test', 'token': token})
+        self.u.save(db)
         self.app = StorageFlaskTestApp(app.create_app(), token)
+
+    def patch_user(self, args):
+        self.u.update(args)
+        self.u.save(db)
 
     def put_file(self, path, type_id=None):
         path = fixture_path(path)

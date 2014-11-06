@@ -54,6 +54,10 @@ class User(ValidationMixin, Document):
         'needs': [tuple],
         'domains': [basestring],
         'is_aware_of_api_changes': False,
+        's3': False,
+        'aws_access_key_id': basestring,
+        'aws_secret_access_key': basestring,
+        'aws_bucket_name': basestring,
     }
     required = ('token',)
 
@@ -177,7 +181,7 @@ class Statistics(ValidationMixin, Document):
     @classmethod
     def _get_conditions(cls, user_id=None, type_id=None, start=None, end=None):
         conditions = {}
- 
+
         if type_id:
             conditions['type_id'] = type_id
         if user_id:
@@ -244,6 +248,8 @@ class ServableMixin(object):
 
         if through_nginx_serve:
             base_url = urljoin(base_url, '/uns/')
+        elif self.get('aws_bucket_name'):
+            base_url = urljoin(base_url, '/s3/{}/'.format(self.aws_bucket_name))
 
         file_id = str(self.get_id())
         return urljoin(base_url, file_id)
@@ -304,6 +310,10 @@ class File(ValidationMixin, ServableMixin, Document):
     .. attribute:: pending
 
         Является ли файл временным.
+
+    .. attribute:: aws_bucket_name
+
+        Имя bucket'а в AWS S3, если тело файла хранится там
     """
     collection = 'fs.files'
     structure = {
@@ -328,6 +338,7 @@ class File(ValidationMixin, ServableMixin, Document):
         'content_type': basestring,
         'unistorage_type': basestring,
         'pending': bool,
+        'aws_bucket_name': basestring,
     }
     required = ('user_id', 'filename', 'content_type', 'unistorage_type')
 

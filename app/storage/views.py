@@ -9,7 +9,7 @@ import logging
 import random
 import functools
 import os.path
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import jsonschema
 from flask import request, abort
@@ -25,6 +25,7 @@ from app.uris import parse_file_uri, get_resource_uri_for
 from app.models import (File, RegularFile, PendingFile, UpdatingPendingFile,
                         Template, ZipCollection)
 from app.perms import AccessPermission
+from app.aws import AWSRegularFile, get_aws_credentials
 
 
 logger = logging.getLogger(__name__)
@@ -57,7 +58,12 @@ def file_create():
             return error({'msg': '`type_id` is too long. Maximum length is 32.'}), 400
         kwargs.update({'type_id': type_id})
 
-    file_id = RegularFile.put_to_fs(db, fs, file.filename, file, **kwargs)
+    FileClass = RegularFile
+    if request.user['s3']:
+        kwargs.update({'aws_credentials': get_aws_credentials(request.user)})
+        FileClass = AWSRegularFile
+
+    file_id = FileClass.put_to_fs(db, fs, file.filename, file, **kwargs)
     return ok({
         'resource_uri': get_resource_uri_for('file', file_id)
     })
@@ -142,7 +148,7 @@ def file_view(_id=None):
 
         if action_presented and template_presented:
             raise ValidationError('You can\'t specify both `action` and `template`.')
-        
+
         apply_ = None
         if action_presented:
             apply_ = apply_action

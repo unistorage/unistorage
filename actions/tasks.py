@@ -15,7 +15,8 @@ import actions
 import connections
 import celeryconfig
 from file_utils import get_file_data
-from app.models import PendingFile, UpdatingPendingFile, RegularFile
+from app.models import PendingFile, UpdatingPendingFile, RegularFile, User
+from app import aws
 
 
 celery = Celery('tasks')
@@ -72,7 +73,7 @@ def perform_actions(target_id, **kwargs):
         target_file = PendingFile.get_from_fs(db, fs, _id=target_id)
 
     source_id = target_file.original
-    
+
     try:
         source_file = RegularFile.get_from_fs(secondary_db, secondary_fs, _id=source_id)
     except gridfs.errors.NoFile:
@@ -81,6 +82,13 @@ def perform_actions(target_id, **kwargs):
     source_file_name, source_file_ext = os.path.splitext(source_file.name)
 
     curr_file = source_file
+    try:
+        source_file.aws_bucket_name
+    except AttributeError:
+        pass
+    else:
+        curr_file = aws.get_file(source_file.aws_bucket_name, source_id)
+
     curr_file_ext = source_file_ext
     curr_unistorage_type = source_file.unistorage_type
 
@@ -104,7 +112,7 @@ def perform_actions(target_id, **kwargs):
     # Необходимо обеспечить "атомарность" операции "удалить временный файл и
     # записать результат в обычный файл". Для этого операция производится как
     # "скопировать временный файл в отдельную коллекцию, удалить оригинальный
-    # временный файл, записать обычный файл". 
+    # временный файл, записать обычный файл".
     updating_pending_file_id = \
         PendingFile.get_one(db, {'_id': target_id}).move_to_updating(db, fs)
     kwargs = {
@@ -114,7 +122,7 @@ def perform_actions(target_id, **kwargs):
         'label': target_file.label,
         'actions': target_file.actions,
     }
-    
+
     # Если операция применяется к временному файлу, который ранее был постоянным
     # (такое случается при переделывании операций), нам необходимо сохранить
     # словарь с модификациями
@@ -122,6 +130,12 @@ def perform_actions(target_id, **kwargs):
     if modifications:
         kwargs['modifications'] = modifications
 
-    RegularFile.put_to_fs(db, fs, result_file_name, result_file, _id=target_id, **kwargs)
+    FileClass = RegularFile
+    user = User.get_one(db, source_file.user_id)
+    if user.get('s3'):
+        kwargs.update({'aws_credentials': aws.get_aws_credentials(user)})
+        FileClass = aws.AWSRegularFile
+
+    FileClass.put_to_fs(db, fs, result_file_name, result_file, _id=target_id, **kwargs)
     UpdatingPendingFile.get_one(db, {'_id': updating_pending_file_id}).remove(db)
     result_file.close()
