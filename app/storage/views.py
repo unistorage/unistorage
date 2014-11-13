@@ -109,6 +109,9 @@ def get_regular_file(user, file):
     if not user.is_aware_of_api_changes:
         data['ttl'] = settings.TTL + random.randint(-deviation, deviation)
 
+    if file.get('aws_bucket_name'):
+        data['data']['size'] = file.get('aws_size')
+
     if file.unistorage_type in ('video', 'audio', 'image'):
         schema_path = os.path.join(
             settings.PROJECT_PATH, './schemas/%s.json' % file.unistorage_type)

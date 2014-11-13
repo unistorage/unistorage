@@ -27,7 +27,7 @@ class FunctionalTest(StorageFunctionalTest):
         # Меняем настройки пользователя на s3
         self.patch_user({'s3': True})
 
-        with mock.patch('app.aws.put_file') as put_file_mock:
+        with mock.patch('app.aws.put_file', return_value=66) as put_file_mock:
             s3_uri = self.put_file('asdf.txt')
 
         self.assertTrue(put_file_mock.is_called)
@@ -37,6 +37,8 @@ class FunctionalTest(StorageFunctionalTest):
         # В урле есть префикс s3
         self.assertIn('/s3/test_unistorage/', rs.json['data']['url'])
 
+        self.assertEqual(8, rs.json['data']['size'])
+
         # У старого файла по прежнему нет
         rg = self.check(gridfs_uri)
         self.assertNotIn('/s3/', rg.json['data']['url'])
@@ -45,7 +47,7 @@ class FunctionalTest(StorageFunctionalTest):
         self.patch_user({'s3': True})
         self.patch_user(ac)
 
-        with mock.patch('app.aws.put_file') as put_file_mock:
+        with mock.patch('app.aws.put_file', return_value=1186681) as put_file_mock:
             s3_uri = self.put_file('audios/god-save-the-queen.mp3')
 
         self.assertTrue(put_file_mock.calles_with(ac, mock.ANY, mock.ANY))
@@ -60,7 +62,7 @@ class FunctionalTest(StorageFunctionalTest):
             get_file_mock.assert_called()
             self.assertEquals(r.json['status'], 'ok')
 
-            with mock.patch('app.aws.put_file') as put_file_mock:
+            with mock.patch('app.aws.put_file', return_value=66) as put_file_mock:
                 self.run_worker()
 
             put_file_mock.assert_called()
@@ -83,9 +85,10 @@ class FunctionalTest(StorageFunctionalTest):
         conn.create_bucket('unistorage1')
 
         with open('tests/fixtures/asdf.txt', 'r') as f:
-            put_file(ac, 'asdf', f)
+            length = put_file(ac, 'asdf', f)
 
-        assert conn.get_bucket('unistorage1').get_key('asdf').get_contents_as_string() == 'asdfasdf'
+        self.assertEqual(conn.get_bucket('unistorage1').get_key('asdf').get_contents_as_string(), 'asdfasdf')
+        self.assertEqual(length, 8)
 
     @httpretty.httprettified
     def test_get_file(self):

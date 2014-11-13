@@ -339,6 +339,7 @@ class File(ValidationMixin, ServableMixin, Document):
         'unistorage_type': basestring,
         'pending': bool,
         'aws_bucket_name': basestring,
+        'aws_size': int,
     }
     required = ('user_id', 'filename', 'content_type', 'unistorage_type')
 

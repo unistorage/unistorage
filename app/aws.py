@@ -4,7 +4,7 @@ import urllib2
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
-from models import RegularFile, Statistics
+from models import RegularFile, Statistics, File
 import file_utils
 from app.date_utils import get_today_utc_midnight
 
@@ -22,19 +22,17 @@ class AWSRegularFile(RegularFile):
         """Обновляет поля `extra`, `content_type`, `filename` у kwargs, помещает `file` в GridFS
         и обновляет статистику. Помещает тело файла в s3
 
-        Обычные файлы должны помещаться в GridFS исключительно посредством этого метода.
-
         :param aws_credentials: Данные для аутентификации в s3
         """
         kwargs.update(file_utils.get_file_data(file, file_name))
         kwargs.update({'pending': False})
+        kwargs.update({'aws_bucket_name': aws_credentials['aws_bucket_name']})
+        kwargs.update({'aws_size': len(file.read())})
+        file.seek(0)
 
         cls(**kwargs).validate()
 
-        kwargs.update({'aws_bucket_name': aws_credentials['aws_bucket_name']})
-
         file_id = fs.put('', **kwargs)
-
         put_file(aws_credentials, file_id, file, reduced_redundancy=reduced_redundancy)
 
         db[Statistics.collection].update({
@@ -43,8 +41,8 @@ class AWSRegularFile(RegularFile):
             'timestamp': get_today_utc_midnight(),
         }, {
             '$inc': {
-                'aws_files_count': 1,
-                'aws_files_size': fs.get(file_id).length,
+                'files_count': 1,
+                'files_size': kwargs['aws_size'],
             }
         }, upsert=True)
         return file_id
@@ -61,8 +59,9 @@ def put_file(aws_credentials, file_id, file_content, reduced_redundancy=False):
 
     k = Key(bucket)
     k.key = file_id
-    k.set_contents_from_file(file_content, reduced_redundancy=reduced_redundancy)
+    length = k.set_contents_from_file(file_content, reduced_redundancy=reduced_redundancy)
     k.make_public()
+    return length
 
 
 def get_file(aws_bucket_name, file_id):
