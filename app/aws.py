@@ -53,13 +53,13 @@ class AWSRegularFile(RegularFile):
         delete_file(aws_credentials, kwargs['_id'])
 
 
-def put_file(aws_credentials, file_id, file_content, reduced_redundancy=False):
+def put_file(aws_credentials, file_id, file, reduced_redundancy=False):
     """Кладет файл в s3"""
     bucket = get_bucket(aws_credentials)
 
     k = Key(bucket)
     k.key = file_id
-    length = k.set_contents_from_file(file_content, reduced_redundancy=reduced_redundancy)
+    length = k.set_contents_from_file(file, reduced_redundancy=reduced_redundancy)
     k.make_public()
     return length
 
