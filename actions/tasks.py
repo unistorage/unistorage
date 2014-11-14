@@ -72,7 +72,8 @@ def perform_actions(target_id, **kwargs):
         target_file = PendingFile.get_from_fs(db, fs, _id=target_id)
 
     source_id = target_file.original
-    
+    print "Processing {} from {}".format(target_id, source_id)
+
     try:
         source_file = RegularFile.get_from_fs(secondary_db, secondary_fs, _id=source_id)
     except gridfs.errors.NoFile:
