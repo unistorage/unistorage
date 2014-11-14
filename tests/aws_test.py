@@ -1,12 +1,13 @@
 # coding: utf-8
 import mock
+from bson import ObjectId
 
 from moto import mock_s3
 import boto
 import httpretty
 
 from tests.utils import StorageFunctionalTest
-from app.aws import get_aws_credentials, put_file, get_file
+from app.aws import get_aws_credentials, put_file, get_file, AWSRegularFile
 
 
 ac = {'aws_access_key_id': 'AKIAAAAAAAAAAAAAAUYA',
@@ -15,6 +16,10 @@ ac = {'aws_access_key_id': 'AKIAAAAAAAAAAAAAAUYA',
 
 
 class FunctionalTest(StorageFunctionalTest):
+    def test_AWSRegularFile(self):
+        f = open('tests/fixtures/audios/god-save-the-queen.mp3', 'r')
+        from app import db, fs
+        AWSRegularFile.put_to_fs(db, fs, 'asdf', f, ac, user_id=ObjectId('5464622fe5653b41120ddc5f'))
 
     def test_api_aws_url(self):
         # Заливаем файл в GridFS
@@ -82,12 +87,12 @@ class FunctionalTest(StorageFunctionalTest):
     @mock_s3
     def test_put_file(self):
         conn = boto.connect_s3(ac['aws_access_key_id'], ac['aws_secret_access_key'])
-        conn.create_bucket('unistorage1')
+        conn.create_bucket('unistorage2')
 
         with open('tests/fixtures/asdf.txt', 'r') as f:
             length = put_file(ac, 'asdf', f)
 
-        self.assertEqual(conn.get_bucket('unistorage1').get_key('asdf').get_contents_as_string(), 'asdfasdf')
+        self.assertEqual(conn.get_bucket('unistorage2').get_key('asdf').get_contents_as_string(), 'asdfasdf')
         self.assertEqual(length, 8)
 
     @httpretty.httprettified

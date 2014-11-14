@@ -1,5 +1,7 @@
 # coding: utf-8
 import urllib2
+from email.utils import encode_rfc2231
+from unidecode import unidecode
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -33,7 +35,7 @@ class AWSRegularFile(RegularFile):
         cls(**kwargs).validate()
 
         file_id = fs.put('', **kwargs)
-        put_file(aws_credentials, file_id, file, reduced_redundancy=reduced_redundancy)
+        put_file(aws_credentials, file_id, file, reduced_redundancy=reduced_redundancy, **kwargs)
 
         db[Statistics.collection].update({
             'user_id': kwargs.get('user_id'),
@@ -53,13 +55,25 @@ class AWSRegularFile(RegularFile):
         delete_file(aws_credentials, kwargs['_id'])
 
 
-def put_file(aws_credentials, file_id, file, reduced_redundancy=False):
+def put_file(aws_credentials, file_id, file, reduced_redundancy=False, **kwargs):
     """Кладет файл в s3"""
     bucket = get_bucket(aws_credentials)
 
     k = Key(bucket)
-    k.key = file_id
-    length = k.set_contents_from_file(file, reduced_redundancy=reduced_redundancy)
+    k.key = str(file_id)
+    k.content_type = kwargs.get('content_type')
+    headers = {}
+    filename = kwargs.get('filename')
+    if filename:
+        # Process non-latin filenames using technique described here:
+        # http://greenbytes.de/tech/tc2231/#encoding-2231-fb
+        rfc2231_filename = encode_rfc2231(filename.encode('utf-8'), 'UTF-8')
+        transliterated_filename = unidecode(filename)
+        content_disposition = 'inline; filename="{}"; filename*={};'.format(
+            transliterated_filename, rfc2231_filename)
+
+        headers = {'Content-Disposition': content_disposition}
+    length = k.set_contents_from_file(file, reduced_redundancy=reduced_redundancy, headers=headers)
     k.make_public()
     return length
 
@@ -74,6 +88,7 @@ def delete_file(aws_credentials, file_id):
     """Удаляет файл из s3"""
     bucket = get_bucket(aws_credentials)
     k = Key(bucket)
+    k.key = str(file_id)
     k.delete()
 
 
