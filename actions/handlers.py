@@ -8,10 +8,11 @@ from flask import request, abort
 import settings
 import actions
 from app import db, fs
-from app.models import Template, File, PendingFile
+from app.models import Template, File, PendingFile, User
 from app.perms import AccessPermission
 from actions.tasks import perform_actions
 from utils import ValidationError
+from app.aws import get_aws_credentials
 
 
 def apply_actions(source_file, action_list, label, with_low_priority=False):
@@ -39,6 +40,11 @@ def apply_actions(source_file, action_list, label, with_low_priority=False):
     source_id = source_file.get_id()
     # Помещаем в базу временный файл, содержащий всю необходимую информацию
     # для выполнения операции
+    kwargs = {}
+    if request.user.s3:
+        ac = get_aws_credentials(request.user)
+        kwargs = {'aws_bucket_name': ac['aws_bucket_name']}
+
     target_id = PendingFile.put_to_fs(
         db, fs,
         user_id=request.user.get_id(),
@@ -47,7 +53,8 @@ def apply_actions(source_file, action_list, label, with_low_priority=False):
         label=label,
         ttl=settings.AVERAGE_TASK_TIME,
         actions=action_list,
-        original_content_type=source_file.content_type)
+        original_content_type=source_file.content_type,
+        **kwargs)
     try:
         # Посылаем воркеру сообщение с идентификатором временного файла
         perform_actions.delay(target_id,
