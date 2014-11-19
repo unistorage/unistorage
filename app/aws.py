@@ -1,8 +1,9 @@
 # coding: utf-8
 import urllib2
 from email.utils import encode_rfc2231
-from unidecode import unidecode
+import io
 
+from unidecode import unidecode
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
@@ -81,7 +82,8 @@ def put_file(aws_credentials, file_id, file, reduced_redundancy=False, **kwargs)
 def get_file(aws_bucket_name, file_id):
     """Достает файл из s3. Т.к. все файлы публичные, используется простой http get
     """
-    return urllib2.urlopen('http://{}.s3.amazonaws.com/{}'.format(aws_bucket_name, file_id))
+    url_file = urllib2.urlopen('http://{}.s3.amazonaws.com/{}'.format(aws_bucket_name, file_id))
+    return io.BytesIO(url_file.read())  # [FixMe] Считываем весь файл в память
 
 
 def delete_file(aws_credentials, file_id):
