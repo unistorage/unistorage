@@ -13,7 +13,8 @@ class ImageMagickWrapper(object):
         image_data = identify_file(image)
         self._is_animated = image_data['is_animated']
         self._format = image_data['format'].upper()
-        self._args = [settings.CONVERT_BIN, '-']
+        self._args = []
+        self._common_args = [settings.CONVERT_BIN]
 
     def make_grayscale(self):
         self._args.extend(['-colorspace', 'gray'])
@@ -24,7 +25,7 @@ class ImageMagickWrapper(object):
         if self._format == 'JPEG':
             # Параметр jpeg:size оптимизирует расход ресурсов, актуален только для ресайза
             # Ресайз в рамках системы используется один раз для одного файла
-            self._args[1] = ['-define', 'jpeg:size={}x{}'.format(width, height) + self._args[1]]
+            self._common_args.extend(['-define', 'jpeg:size={}x{}'.format(width, height)])
         return self
 
     def rotate(self, angle):
@@ -52,17 +53,20 @@ class ImageMagickWrapper(object):
     def finalize(self, **kwargs):
         format = kwargs.get('format', self._format).upper()
 
+        self._common_args.append('-')
         if self._is_animated and format != self._format:
             # If converting from animated image to static, specify frame number
-            self._args[1] += '[0]'
+            self._common_args[-1] += '[0]'
         else:
-            self._args.insert(2, '-coalesce')
+            self._common_args.append('-coalesce')
 
         self._args.append('%s:-' % format.upper())
+        self._common_args.extend(self._args)
+
         proc_input = self._image
         proc_input.seek(0)
         try:
-            proc = subprocess.Popen(self._args, stdin=subprocess.PIPE,
+            proc = subprocess.Popen(self._common_args, stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except OSError:
             raise ActionError('Failed to start ImageMagick\'s convert: %s' % self._args[0])
