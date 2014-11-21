@@ -24,7 +24,7 @@ class ImageMagickWrapper(object):
         if self._format == 'JPEG':
             # Параметр jpeg:size оптимизирует расход ресурсов, актуален только для ресайза
             # Ресайз в рамках системы используется один раз для одного файла
-            self._args[1] = '-define jpeg:size={}x{} '.format(width, height) + self._args[1]
+            self._args[1] = ['-define', 'jpeg:size={}x{}'.format(width, height) + self._args[1]]
         return self
 
     def rotate(self, angle):
