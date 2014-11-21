@@ -14,20 +14,24 @@ class ImageMagickWrapper(object):
         self._is_animated = image_data['is_animated']
         self._format = image_data['format'].upper()
         self._args = [settings.CONVERT_BIN, '-']
-    
+
     def make_grayscale(self):
         self._args.extend(['-colorspace', 'gray'])
         return self
 
     def resize(self, width, height):
         self._args.extend(['-resize', '%dx%d!' % (width, height)])
+        if self._format == 'JPEG':
+            # Параметр jpeg:size оптимизирует расход ресурсов, актуален только для ресайза
+            # Ресайз в рамках системы используется один раз для одного файла
+            self._args[1] = '-define jpeg:size={}x{} '.format(width, height) + self._args[1]
         return self
 
     def rotate(self, angle):
         # 360 - angle, т.к. imagemagick поворачивает по часовой
         self._args.extend(['-rotate', str(-angle)])
         return self
-    
+
     def strip_exif(self):
         self._args.extend(['-strip'])
         return self
