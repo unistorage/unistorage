@@ -42,6 +42,14 @@
         $('select[name=has_access_to]').chosen({
             placeholder_text_multiple: 'Выберите пользователей'    
         });
+
+        $('#s3').change(function() {
+          if (!$('#s3')[0].checked) {
+            $('#aws_credentials').hide()
+          } else {
+            $('#aws_credentials').show()
+          }
+        }).change();
     });
 
 })();

@@ -16,6 +16,16 @@
         <a class="btn" id="add-domain"><i class="icon-plus"></i></a>
       </div>
     </div>
+
+    {{ render_field(form.s3) }}
+    <div class="control-group" id="aws_credentials">
+      <div class="well well-small">
+        Оставьте поля ниже пустыми, чтобы использовать значения по-умолчанию
+      </div>
+      {{ render_field(form.aws_access_key_id) }}
+      {{ render_field(form.aws_secret_access_key) }}
+      {{ render_field(form.aws_bucket_name) }}
+    </div>
     
     <div class="form-actions">
       <input type="submit" value="{{ submit }}" class="btn" />

@@ -90,6 +90,10 @@ def users():
                 'needs': map(RoleNeed, form.data['has_access_to']),
                 'domains': form.data['domains'],
                 'is_aware_of_api_changes': form.data['is_aware_of_api_changes'],
+                's3': form.data['s3'],
+                'aws_access_key_id': form.data['aws_access_key_id'],
+                'aws_secret_access_key': form.data['aws_secret_access_key'],
+                'aws_bucket_name': form.data['aws_bucket_name'],
             })
             user.save(db)
             return redirect(url_for('.users'))

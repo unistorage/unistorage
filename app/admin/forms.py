@@ -58,6 +58,10 @@ class UserForm(wtf.Form):
     has_access_to = wtf.SelectMultipleField(
         u'Другие пользователи, к файлам которых разрешён доступ', coerce=ObjectId)
     domains = DomainList(wtf.TextField(u'', [wtf.validators.URL()]), label=u'Домены')
+    s3 = wtf.BooleanField(u'Хранит содержимое файлов в S3', default=False)
+    aws_access_key_id = wtf.TextField(u'AWS ACCESS_KEY_ID')
+    aws_secret_access_key = wtf.TextField(u'AWS SECRET_ACCESS_KEY')
+    aws_bucket_name = wtf.TextField(u'AWS BUCKET')
 
     def __init__(self, *args, **kwargs):
         super(UserForm, self).__init__(*args, **kwargs)
