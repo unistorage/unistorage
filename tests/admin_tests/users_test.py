@@ -13,7 +13,7 @@ class Test(AdminFunctionalTest):
         response = self.app.get(users_url)
         self.assertEquals(response.context['users'].count(), 0)
         form = response.click(u'Добавить пользователя').form
-        
+
         response = form.submit()
         self.assertTemplateUsed(response, 'user_create.html')
         self.assertFalse(response.context['form'].validate())
@@ -36,7 +36,7 @@ class Test(AdminFunctionalTest):
         # Открываем форму редактирования нашего единственного пользователя
         form = response.click(href='edit').form
         form['name'] = 'John Doe'
-        
+
         # Проверяем, что имя изменилось
         self.assertTrue('John Doe' in form.submit().follow())
 
@@ -59,7 +59,7 @@ class Test(AdminFunctionalTest):
         # Открываем форму редактирования первого пользователя
         response = response.click(href='%s/edit' % user1.get_id())
         form = response.form
-       
+
         # Проверяем, что поле в выбора других пользователей только один элемент
         self.assertEquals(len(form.get('has_access_to').options), 1)
         opt_value, opt_selected = form.get('has_access_to').options[0]
@@ -74,7 +74,7 @@ class Test(AdminFunctionalTest):
         self.assertEquals(len(form.get('has_access_to').options), 1)
         opt_value, opt_selected = form.get('has_access_to').options[0]
         self.assertTrue(opt_selected)
-        
+
         # И отражены в поле needs первого пользователя
         user1_needs = User.get_one(db, {'_id': user1.get_id()}).needs
         self.assertEquals(user1_needs, [('role', user2.get_id())])
@@ -93,7 +93,7 @@ class Test(AdminFunctionalTest):
         # Открываем форму редактирования пользователя
         response = response.click(href='%s/edit' % user_id)
         form = response.form
-       
+
         # Добавляем домен
         domain = 'http://s.66.ru/'
         fields = form.submit_fields()
@@ -103,14 +103,14 @@ class Test(AdminFunctionalTest):
         # Удостоверимся, что он сохранился
         user_domains = User.get_one(db, {'_id': user_id}).domains
         self.assertIn(domain, user_domains)
-        
+
         # Открываем форму снова
         response = response.click(href='%s/edit' % user_id)
         form = response.form
         self.assertEquals(form.get('domains-0').value, domain)
 
         # Удаляем домен
-        fields = form.submit_fields()        
+        fields = form.submit_fields()
         fields.remove(('domains-0', domain))
         fields.append(('domains-0', ''))
         response = form.response.goto(form.action, method=form.method, params=fields).follow()
@@ -128,7 +128,6 @@ class Test(AdminFunctionalTest):
         response = form.submit().follow()
 
         user = User.find(db, {})[0]
-        user_id = user.get_id()
         self.assertFalse(user.is_aware_of_api_changes)
 
         # Открываем форму редактирования пользователя
@@ -136,14 +135,13 @@ class Test(AdminFunctionalTest):
         form = response.form
         form['is_aware_of_api_changes'].checked = True
         form.submit()
-        
+
         user = User.find(db, {})[0]
-        user_id = user.get_id()
-        self.assertTrue(user.is_aware_of_api_changes) 
-    
+        self.assertTrue(user.is_aware_of_api_changes)
+
     def test_remove(self):
         self.login()
-        
+
         # Создаём пользователя
         form = self.app.get(url_for('admin.user_create')).form
         form['name'] = 'Test'
@@ -155,7 +153,7 @@ class Test(AdminFunctionalTest):
         response = form.submit().follow()
 
         self.assertEqual(len(response.forms), 2)
-        
+
         # Жмём "удалить"
         response = response.forms[0].submit()
         self.assertEquals(response.status_code, 302)
@@ -164,3 +162,34 @@ class Test(AdminFunctionalTest):
         response = response.follow()
         ctx_users = response.context['users']
         self.assertEquals(ctx_users.count(), 1)
+
+    def test_s3(self):
+        self.login()
+
+        # Создаём пользователя
+        form = self.app.get(url_for('admin.user_create')).form
+        form.set('name', 'Test1')
+        response = form.submit().follow()
+
+        # Выставляем ему значения 's3' и другие поля
+        user = User.find(db, {})[0]
+        self.assertFalse(user.s3)
+
+        response = response.click(href='%s/edit' % user.get_id())
+        form = response.form
+        form['s3'].checked = True
+        form.submit()
+
+        user = User.find(db, {})[0]
+        self.assertTrue(user.s3)
+
+        form = response.form
+        form['aws_access_key_id'].value = 'key_id'
+        form['aws_secret_access_key'].value = 'secret_key'
+        form['aws_bucket_name'].value = 'bucket'
+        form.submit()
+
+        user = User.find(db, {})[0]
+        self.assertEqual(user.aws_access_key_id, 'key_id')
+        self.assertEqual(user.aws_secret_access_key, 'secret_key')
+        self.assertEqual(user.aws_bucket_name, 'bucket')

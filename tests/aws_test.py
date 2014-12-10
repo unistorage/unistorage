@@ -1,6 +1,5 @@
 # coding: utf-8
 import mock
-from bson import ObjectId
 
 from moto import mock_s3
 import boto
@@ -85,6 +84,16 @@ class FunctionalTest(StorageFunctionalTest):
 
     def test_get_aws_credentials(self):
         self.patch_user({'s3': True})
+
+        self.assertEqual(get_aws_credentials(self.u), {
+            'aws_access_key_id': 'test_id',
+            'aws_secret_access_key': 'test_access_key',
+            'aws_bucket_name': 'test_unistorage'})
+
+        self.patch_user({
+            'aws_access_key_id': '',
+            'aws_secret_access_key': '',
+            'aws_bucket_name': ''})
 
         self.assertEqual(get_aws_credentials(self.u), {
             'aws_access_key_id': 'test_id',
