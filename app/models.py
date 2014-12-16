@@ -461,7 +461,7 @@ class RegularFile(File):
 
         stat_dict = db[Statistics.collection].find_one(query)
         if stat_dict:
-            query.update({'_id': stat_dict['_id']})
+            query = {'_id': stat_dict['_id']}
 
         db[Statistics.collection].update(query, {
             '$inc': {
