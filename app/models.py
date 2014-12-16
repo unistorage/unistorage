@@ -463,12 +463,19 @@ class RegularFile(File):
         if stat_dict:
             query = {'_id': stat_dict['_id']}
 
-        db[Statistics.collection].update(query, {
-            '$inc': {
+            db[Statistics.collection].update(query, {
+                '$inc': {
+                    'files_count': 1,
+                    'files_size': fs.get(file_id).length,
+                }
+            }, upsert=True)
+        else:
+            query.update({
                 'files_count': 1,
                 'files_size': fs.get(file_id).length,
-            }
-        }, upsert=True)
+            })
+            db[Statistics.collection].insert(query)
+
         return file_id
 
 
