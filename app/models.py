@@ -453,11 +453,17 @@ class RegularFile(File):
 
         file_id = fs.put(file_content, **kwargs)
 
-        db[Statistics.collection].update({
+        query = {
             'user_id': kwargs.get('user_id'),
             'type_id': kwargs.get('type_id'),
             'timestamp': get_today_utc_midnight(),
-        }, {
+        }
+
+        stat_dict = db[Statistics.collection].find_one(query)
+        if stat_dict:
+            query.update({'_id': stat_dict['_id']})
+
+        db[Statistics.collection].update(query, {
             '$inc': {
                 'files_count': 1,
                 'files_size': fs.get(file_id).length,
