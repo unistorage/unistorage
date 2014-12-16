@@ -1,9 +1,6 @@
 import os.path
-import subprocess
-import time
 
 from flask import url_for
-from celery import current_app
 from celery.signals import task_sent
 from bson.objectid import ObjectId
 
@@ -27,6 +24,7 @@ class WorkerMixin(object):
     def __call__(self, result=None):
         try:
             self.sent_tasks = []
+
             @task_sent.connect
             def task_sent_handler(sender=None, task_id=None, task=None, args=None,
                                   kwargs=None, **kwds):

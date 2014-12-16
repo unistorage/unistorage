@@ -21,6 +21,7 @@ manager.command(test)
 manager.command(make_docs)
 manager.command(check_avconv_codecs)
 manager.command(expire_zip_collections)
+manager.command(migrate_user_data)
 manager.add_command('assets', ManageAssets())
 
 if __name__ == '__main__':
