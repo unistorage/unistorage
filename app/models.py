@@ -459,9 +459,9 @@ class RegularFile(File):
             'timestamp': get_today_utc_midnight(),
         }
 
-        stat_object = db[Statistics.collection].find_one(query)
-        if stat_object:
-            query.update({'_id': stat_object.get_id()})
+        stat_dict = db[Statistics.collection].find_one(query)
+        if stat_dict:
+            query.update({'_id': stat_dict['_id']})
 
         db[Statistics.collection].update(query, {
             '$inc': {
