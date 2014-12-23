@@ -55,7 +55,7 @@ def logout():
 @login_required
 def index():
     start = get_today_utc_midnight() - timedelta(days=6)
-    
+
     annotated_users = []
     for user in User.find(db):
         user_id = user.get_id()
@@ -140,7 +140,7 @@ def user_statistics(user_id):
         'user_id': user_id,
         'type_id': {'$ne': None}
     }).distinct('type_id')
-    
+
     kwargs = {
         'user_id': user_id,
         'start': get_today_utc_midnight() - timedelta(days=6)
@@ -170,18 +170,19 @@ def fill_missing_entries_with_zeroes(statistics, start=None):
     for entry in statistics:
         timestamp = entry['timestamp']
         entries[timestamp] = entry
-    
+
     result = []
     entry_timestamp = start or statistics[0]['timestamp']
     while entry_timestamp <= today_utc_midnight:
         entry = entries.get(entry_timestamp, {
             'timestamp': entry_timestamp,
             'files_count': 0,
-            'files_size': 0
+            'files_size': 0,
+            'aws_files_size': 0,
         })
         result.append(entry)
         entry_timestamp += timedelta(days=1)
-    
+
     return result
 
 

@@ -113,7 +113,7 @@ class Template(ValidationMixin, Document):
     def get_by_resource_uri(cls, db, template_uri):
         try:
             template_id = parse_template_uri(template_uri)
-        except ValueError as e:
+        except ValueError:
             return None
 
         return cls.get_one(db, {'_id': template_id})
@@ -154,28 +154,32 @@ class Statistics(ValidationMixin, Document):
         'timestamp': datetime,
         'files_count': int,
         'files_size': int,
+        'aws_files_size': int,
     }
     required = ['user_id', 'timestamp']
 
     @classmethod
     def aggregate_statistics(cls, db, group_by, conditions):
         """Агрегирует статистику, группируя по полям, указанным в `group_by`, и фильтруя по
-        условиям, указанным в `conditions`.  После агрегации приводит `files_size` к мегабайтам, а
-        `files_count` -- к целому числу.
+        условиям, указанным в `conditions`.  После агрегации приводит `files_size` и
+        `aws_files_size` к мегабайтам, а `files_count` -- к целому числу.
         """
         return db[Statistics.collection].group(
             group_by,
             conditions,
-            {'files_size': 0, 'files_count': 0},
-            'function(entry, summary) {'
-                'summary.files_size += entry.files_size;'
-                'summary.files_count += entry.files_count;'
-            '}',
-            finalize='function(entry) {'
-                'entry.files_size /= (1024 * 1024);'
-                'entry.files_size = parseFloat(entry.files_size.toFixed(2));'
-                'entry.files_count = parseInt(entry.files_count.toFixed(0));'
-            '}'
+            {'files_size': 0, 'files_count': 0, 'aws_files_size': 0},
+            """function(entry, summary) {
+                summary.aws_files_size += entry.aws_files_size,
+                summary.files_size += entry.files_size;
+                summary.files_count += entry.files_count;
+            }""",
+            finalize="""function(entry) {
+                entry.files_size /= (1024 * 1024);
+                entry.files_size = parseFloat(entry.files_size.toFixed(2));
+                entry.aws_files_size /= (1024 * 1024);
+                entry.aws_files_size = parseFloat(entry.aws_files_size.toFixed(2));
+                entry.files_count = parseInt(entry.files_count.toFixed(0));
+            }"""
         )
 
     @classmethod

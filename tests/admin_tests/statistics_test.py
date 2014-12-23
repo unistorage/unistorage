@@ -17,13 +17,14 @@ class FunctionalTest(AdminFunctionalTest):
         super(FunctionalTest, self).setUp()
         self.login()
 
-    def put_statistics(self, user_id, timestamp, type_id=None):
+    def put_statistics(self, user_id, timestamp, type_id=None, aws_files_size=0):
         db[Statistics.collection].insert({
             'user_id': user_id,
             'type_id': type_id,
             'timestamp': timestamp,
             'files_count': 1,
-            'files_size': self.FILE_SIZE_BYTES
+            'files_size': self.FILE_SIZE_BYTES,
+            'aws_files_size': aws_files_size*1024*1024
         })
 
     def create_user(self):
@@ -35,14 +36,14 @@ class FunctionalTest(AdminFunctionalTest):
 
     def fill_db(self):
         today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        
+
         self.user1_id = self.create_user()
         put_statistics = partial(self.put_statistics, self.user1_id)
         put_statistics(today)
         put_statistics(today, type_id='bubu')
-        put_statistics(today, type_id='lala')
+        put_statistics(today, type_id='lala', aws_files_size=2)
         put_statistics(today - timedelta(days=1), type_id='lala')
-        put_statistics(today - timedelta(days=2), type_id='lala')
+        put_statistics(today - timedelta(days=2), type_id='lala', aws_files_size=3)
         put_statistics(today - timedelta(days=3), type_id='lala')
         put_statistics(today - timedelta(days=10), type_id='lala')
 
@@ -71,7 +72,7 @@ class FunctionalTest(AdminFunctionalTest):
             if entry['files_count'] != 0 or entry['files_size'] != 0:
                 non_zero_entries_number += 1
         self.assertEquals(non_zero_entries_number, expected_non_zero_entries_number)
-    
+
     def test_empty(self):
         user_id = self.create_user()
         user_statistics_url = url_for('admin.user_statistics', user_id=user_id)
@@ -90,7 +91,7 @@ class FunctionalTest(AdminFunctionalTest):
 
         response = self.app.get(user1_statistics_url + '?type_id=bubu')
         self.assert_statistics(response, 1, 1)
-        
+
         user2_statistics_url = url_for('admin.user_statistics', user_id=self.user2_id)
         response = self.app.get(user2_statistics_url)
         self.assertEquals(len(response.context['type_ids']), 1)
@@ -113,5 +114,8 @@ class FunctionalTest(AdminFunctionalTest):
         self.assertAlmostEqual(
             user1_statistics_last_week['files_size'],
             self.to_mb(6 * self.FILE_SIZE_BYTES))
+
+        self.assertAlmostEqual(
+            user1_statistics_last_week['aws_files_size'], 5)
 
         self.assertEquals(user1_statistics_last_week['files_count'], 6)

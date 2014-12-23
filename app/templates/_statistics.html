@@ -5,11 +5,12 @@
       (function() {
 
       var statisticsData = google.visualization.arrayToDataTable([
-          ['День', 'Объем', 'Количество'],
+          ['День', 'Объем всего', 'Объем S3', 'Количество'],
           {% for entry in statistics -%}
               [
                   moment.utc({{ entry.timestamp.strftime('%s') }} * 1000).format('DD.MM'),
                   {{ entry.files_size }},
+                  {{ entry.aws_files_size }},
                   {{ entry.files_count|int }}
               ],
           {%- endfor %}
@@ -17,6 +18,7 @@
 
       {% for entry in statistics %}
           statisticsData.setFormattedValue({{ loop.index0 }}, 1, {{ entry.files_size }} + ' МБ');
+          statisticsData.setFormattedValue({{ loop.index0 }}, 2, {{ entry.aws_files_size }} + ' МБ');
       {%- endfor %}
 
       $(function () {

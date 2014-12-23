@@ -133,7 +133,8 @@ def perform_actions(target_id, **kwargs):
     FileClass = RegularFile
     user = User.get_one(db, source_file.user_id)
     if user.get('s3'):
-        kwargs.update({'aws_credentials': aws.get_aws_credentials(user)})
+        kwargs.update({'aws_credentials': aws.get_aws_credentials(user),
+                       'reduced_redundancy': True})
         FileClass = aws.AWSRegularFile
 
     FileClass.put_to_fs(db, fs, result_file_name, result_file, _id=target_id, **kwargs)

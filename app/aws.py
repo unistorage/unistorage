@@ -46,6 +46,7 @@ class AWSRegularFile(RegularFile):
             '$inc': {
                 'files_count': 1,
                 'files_size': kwargs['aws_size'],
+                'aws_files_size': kwargs['aws_size'],
             }
         }, upsert=True)
         return file_id
@@ -105,7 +106,6 @@ def get_aws_credentials(user):
     """ Возвращает словарь с данными для аутентификации и загрузки файла в
     AWS S3, специфичный для пользователя, либо дефолтный
     """
-    assert user.get('s3')
 
     return {'aws_access_key_id': user.get('aws_access_key_id') or AWS_DEFAULT_ACCESS_KEY_ID,
             'aws_secret_access_key': user.get('aws_secret_access_key') or AWS_DEFAULT_SECRET_ACCESS_KEY,
