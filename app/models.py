@@ -169,7 +169,9 @@ class Statistics(ValidationMixin, Document):
             conditions,
             {'files_size': 0, 'files_count': 0, 'aws_files_size': 0},
             """function(entry, summary) {
-                summary.aws_files_size += entry.aws_files_size,
+                if (entry.aws_files_size) {
+                    summary.aws_files_size += entry.aws_files_size;
+                }
                 summary.files_size += entry.files_size;
                 summary.files_count += entry.files_count;
             }""",
