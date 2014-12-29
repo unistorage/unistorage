@@ -478,7 +478,7 @@ class RegularFile(File):
                 'files_count': 1,
                 'files_size': fs.get(file_id).length,
             }
-        }, multi=True, upsert=True)
+        }, upsert=True)
         return file_id
 
 
