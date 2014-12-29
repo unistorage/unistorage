@@ -13,7 +13,8 @@ function drawVisualization(plot, data) {
             vAxes: [{'format': '# МБ'}, {'format': '#'}],
             series:{
                 0: {targetAxisIndex:0},
-                1: {targetAxisIndex:1}
+                1: {targetAxisIndex:0},
+                2: {targetAxisIndex:1}
             }
         });
     });

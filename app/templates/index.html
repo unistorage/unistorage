@@ -38,6 +38,7 @@
           {% set files_count = statistics.files_count|int %}
           {{ files_count }} {{ numeral.choose_plural(files_count, ('файл', 'файла', 'файлов')) }} объёмом
           {{ (statistics.files_size * 1024 * 1024)|filesizeformat }}
+          ({{ (statistics.aws_files_size * 1024 * 1024)|filesizeformat }} в S3)
         {%- endmacro %}
 
         {% for user, statistics_all_time, statistics_last_week in annotated_users %}

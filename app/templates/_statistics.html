@@ -35,5 +35,7 @@
     <dd>{{ summary.files_count|int }}</dd>
     <dt>Объём файлов</dt>
     <dd>{{ (summary.files_size * 1024 * 1024)|filesizeformat }}</dd>
+    <dt>Oбъем файлов в S3</dt>
+    <dd>{{ (summary.aws_files_size * 1024 * 1024)|filesizeformat }}</dd>
   </dl>
 {%- endmacro %}
