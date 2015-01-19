@@ -14,7 +14,7 @@ class ImageMagickWrapper(object):
         self._is_animated = image_data['is_animated']
         self._format = image_data['format'].upper()
         self._args = [settings.CONVERT_BIN, '-']
-    
+
     def make_grayscale(self):
         self._args.extend(['-colorspace', 'gray'])
         return self
@@ -27,7 +27,7 @@ class ImageMagickWrapper(object):
         # 360 - angle, т.к. imagemagick поворачивает по часовой
         self._args.extend(['-rotate', str(-angle)])
         return self
-    
+
     def strip_exif(self):
         self._args.extend(['-strip'])
         return self
@@ -56,7 +56,6 @@ class ImageMagickWrapper(object):
 
         self._args.append('%s:-' % format.upper())
         proc_input = self._image
-        proc_input.seek(0)
         try:
             proc = subprocess.Popen(self._args, stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)

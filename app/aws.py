@@ -84,7 +84,7 @@ def get_file(aws_bucket_name, file_id):
     """Достает файл из s3. Т.к. все файлы публичные, используется простой http get
     """
     url_file = urllib2.urlopen('http://{}.s3.amazonaws.com/{}'.format(aws_bucket_name, file_id))
-    return io.BytesIO(url_file.read())  # [FixMe] Считываем весь файл в память
+    return url_file
 
 
 def delete_file(aws_credentials, file_id):
