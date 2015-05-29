@@ -28,7 +28,7 @@ def _optimize(image, format):
         raise ActionError(
             '{} failed: {}' % (optimize_args[0], error))
 
-    return result
+    return StringIO(result)
 
 
 class ImageMagickWrapper(object):
@@ -107,6 +107,8 @@ class ImageMagickWrapper(object):
                 'ImageMagick\'s convert (%s) failed: %s' % (self._args[0], error))
 
         if self._optimize:
-            result = _optimize(StringIO(result), format.lower())
+            image = _optimize(StringIO(result), format.lower())
+        else:
+            image = StringIO(result)
 
-        return StringIO(result), format.lower()
+        return image, format.lower()
