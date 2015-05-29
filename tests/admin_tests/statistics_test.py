@@ -35,7 +35,7 @@ class FunctionalTest(AdminFunctionalTest):
 
     def fill_db(self):
         today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        
+
         self.user1_id = self.create_user()
         put_statistics = partial(self.put_statistics, self.user1_id)
         put_statistics(today)
@@ -71,7 +71,7 @@ class FunctionalTest(AdminFunctionalTest):
             if entry['files_count'] != 0 or entry['files_size'] != 0:
                 non_zero_entries_number += 1
         self.assertEquals(non_zero_entries_number, expected_non_zero_entries_number)
-    
+
     def test_empty(self):
         user_id = self.create_user()
         user_statistics_url = url_for('admin.user_statistics', user_id=user_id)
@@ -90,7 +90,7 @@ class FunctionalTest(AdminFunctionalTest):
 
         response = self.app.get(user1_statistics_url + '?type_id=bubu')
         self.assert_statistics(response, 1, 1)
-        
+
         user2_statistics_url = url_for('admin.user_statistics', user_id=self.user2_id)
         response = self.app.get(user2_statistics_url)
         self.assertEquals(len(response.context['type_ids']), 1)

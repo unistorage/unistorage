@@ -7,6 +7,30 @@ from identify import identify_file
 from actions.utils import ActionError
 
 
+def _optimize(image, format):
+    if format not in [f.lower() for f in settings.OPTIMIZE_EXEC.keys()]:
+        return image
+
+    proc_input = image
+    proc_input.seek(0)
+
+    optimize_args = settings.OPTIMIZE_EXEC[format].split()
+
+    try:
+        proc = subprocess.Popen(optimize_args, stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError:
+        raise ActionError('Failed to run {}'.format(optimize_args[0]))
+
+    result, error = proc.communicate(input=proc_input.read())
+    return_code = proc.wait()
+    if return_code != 0:
+        raise ActionError(
+            '{} failed: {}' % (optimize_args[0], error))
+
+    return result
+
+
 class ImageMagickWrapper(object):
     def __init__(self, image):
         self._image = image
@@ -15,6 +39,7 @@ class ImageMagickWrapper(object):
         self._format = image_data['format'].upper()
         self._args = []
         self._common_args = [settings.CONVERT_BIN]
+        self._optimize = False
 
     def make_grayscale(self):
         self._args.extend(['-colorspace', 'gray'])
@@ -50,6 +75,10 @@ class ImageMagickWrapper(object):
                            '-crop', '%dx%d+0+0' % (width, height), '+repage'])
         return self
 
+    def optimize(self):
+        self._optimize = True
+        return self
+
     def finalize(self, **kwargs):
         format = kwargs.get('format', self._format).upper()
 
@@ -76,5 +105,8 @@ class ImageMagickWrapper(object):
         if return_code != 0:
             raise ActionError(
                 'ImageMagick\'s convert (%s) failed: %s' % (self._args[0], error))
+
+        if self._optimize:
+            result = _optimize(StringIO(result), format.lower())
 
         return StringIO(result), format.lower()
