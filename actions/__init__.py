@@ -29,6 +29,7 @@ actions_to_register = (
     'images.rotate',
     'images.orient',
     'images.crop',
+    'images.optimize',
 
     'videos.convert',
     'videos.resize',
@@ -40,7 +41,7 @@ actions_to_register = (
 
     'docs.convert',
     'docs.extract_page',
-    
+
     'presentations.convert',
 )
 

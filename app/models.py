@@ -254,6 +254,8 @@ class ServableMixin(object):
             return mode in ('keep', 'crop')
         elif action_name == 'rotate':
             return True
+        elif action_name == 'optimize':
+            return True
         return False
 
     def can_be_served_by_unistore_nginx_serve(self):
