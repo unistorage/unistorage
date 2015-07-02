@@ -52,6 +52,10 @@ AVPROBE_BIN = '/usr/bin/ffprobe'
 OO_WRAPPER_BIN = '/bin/oowrapper.py'
 FLVTOOL_BIN = '/usr/bin/flvtool2'
 
+# Команды для оптимизации изображений. Изображение передается через pipe
+OPTIMIZE_EXEC = {"jpeg": "/usr/bin/jpegtran -copy all -progressive -optimize",
+                 "png": "/usr/local/bin/pngquant -"}
+
 # Список URL-ов gridfs-serve
 GRIDFS_SERVE_URLS = ['http://127.0.0.1/']
 
