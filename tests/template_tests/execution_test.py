@@ -12,7 +12,7 @@ class FunctionalTest(StorageFunctionalTest):
         corrupted_template_uri = '/template/asds123'
         r = self.apply_template(image_uri, corrupted_template_uri)
         expected_error = 'Template %s does not exist.' % corrupted_template_uri
-        
+
         self.assertEquals(r.json['status'], 'error')
         self.assertEquals(r.json['msg'], expected_error)
 
@@ -27,7 +27,7 @@ class FunctionalTest(StorageFunctionalTest):
     def test(self):
         r = self.app.post('/template/', {
             'applicable_for': 'image',
-            'action[]': ['action=resize&mode=keep&w=400', 'action=grayscale']
+            'action[]': ['action=resize&mode=keep&w=40', 'action=grayscale']
         })
         template_uri = r.json['resource_uri']
         image_uri = self.put_file('images/some.png')
@@ -36,7 +36,7 @@ class FunctionalTest(StorageFunctionalTest):
         r = self.apply_template(image_uri, template_uri)
 
         self.run_worker()
-        
+
         self.assertEquals(r.json['status'], 'ok')
         response = self.app.get(r.json['resource_uri'])
         self.assertEquals(response.json['status'], 'ok')
@@ -44,7 +44,7 @@ class FunctionalTest(StorageFunctionalTest):
         video_uri = self.put_file('videos/gizmo.mp4')
         apply_template_url = '%s?template=%s' % (video_uri, template_uri)
         r = self.app.get(apply_template_url, status='*')
-        
+
         self.assertEquals(r.status_code, 400)
         self.assertTrue('not applicable' in r.json['msg'])
 
@@ -67,7 +67,7 @@ class FunctionalTest(StorageFunctionalTest):
         r = self.app.post('/template/', {
             'applicable_for': 'image',
             'action[]': [
-                'action=resize&mode=keep&w=400',
+                'action=resize&mode=keep&w=40',
                 'action=rotate&angle=90'
             ],
         })

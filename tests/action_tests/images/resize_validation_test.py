@@ -14,13 +14,13 @@ class ValidationTest(ContextMixin, unittest.TestCase):
             'mode': 'keep',
             'w': '500'
         }
-    
+
     def test(self):
         validate = resize.validate_and_get_args
 
         with self.expect_validation_error('must be specified'):
             validate({})
-        
+
         args = self.get_valid_args()
         del args['mode']
         with self.expect_validation_error('`mode` must be specified'):

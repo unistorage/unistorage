@@ -23,14 +23,14 @@ class Test(GridFSMixin, ContextMixin, unittest.TestCase):
         f2_id = self.put_file('images/some.png')
         f1 = RegularFile.get_one(db, {'_id': f1_id})
         f2 = RegularFile.get_one(db, {'_id': f2_id})
-        
+
         # Миграция всех файлов с force=True
         with mock.patch('migrations.m00._update_extra') as _update_extra:
             migrate({}, get_callback(force=True), no_input=True)
             self.assertEqual(_update_extra.call_count, 2)
-        
+
         # Миграция всех файлов с force=False (все файлы корректны)
-        with mock.patch('migrations.m00._validate') as _validate:
+        with mock.patch('migrations.m00._validate'):
             with mock.patch('migrations.m00._update_extra') as _update_extra:
                 migrate({}, get_callback(), no_input=True)
                 self.assertEqual(_update_extra.call_count, 0)
@@ -44,11 +44,11 @@ class Test(GridFSMixin, ContextMixin, unittest.TestCase):
         with mock.patch('migrations.m00._update_extra') as _update_extra:
             migrate({'filename': f1.filename}, get_callback(), no_input=True)
             self.assertEqual(_update_extra.call_count, 1)
-        
+
         # Настоящая миграция:
         f1 = RegularFile.get_one(db, {'_id': f1_id})
         self.assertIsNone(f1.extra['format'])
-        
+
         migrate({'filename': f1.filename}, get_callback(), no_input=True)
 
         f1 = RegularFile.get_one(db, {'_id': f1_id})

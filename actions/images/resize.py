@@ -22,8 +22,8 @@ def validate_and_get_args(args, source_file=None):
     if source_file:
         width = source_file.extra['width']
         height = source_file.extra['height']
-        if width > w or height > h:
-            raise ValidationError('Upscale is forbidden.')
+        if w > width or h > height:
+            raise ValidationError('Upscale is forbidden')
 
     return [mode, w, h]
 
