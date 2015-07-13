@@ -2,11 +2,11 @@ from actions.common.resize_validation import validate_and_get_args \
     as common_resize_validate_and_get_args
 from identify import identify_file
 from . import ImageMagickWrapper
+from actions.utils import ValidationError
 
 
 name = 'resize'
 applicable_for = 'image'
-validate_and_get_args = common_resize_validate_and_get_args
 
 
 def get_result_unistorage_type(*args):
@@ -17,13 +17,24 @@ def to_int(x):
     return int(round(x, 0))
 
 
+def validate_and_get_args(args, source_file=None):
+    mode, w, h = common_resize_validate_and_get_args(args, source_file)
+    if source_file:
+        width = source_file.extra['width']
+        height = source_file.extra['height']
+        if width > w or height > h:
+            raise ValidationError('Upscale is forbidden.')
+
+    return [mode, w, h]
+
+
 def perform(source_file, mode, target_width, target_height):
     target_image = ImageMagickWrapper(source_file)
 
     if mode == 'resize':
         return target_image.resize(
             to_int(target_width), to_int(target_height)).finalize()
-    
+
     image_data = identify_file(source_file)
     source_width, source_height = image_data['width'], image_data['height']
 
