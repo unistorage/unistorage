@@ -109,7 +109,7 @@ class Template(ValidationMixin, Document):
     def get_by_resource_uri(cls, db, template_uri):
         try:
             template_id = parse_template_uri(template_uri)
-        except ValueError as e:
+        except ValueError:
             return None
 
         return cls.get_one(db, {'_id': template_id})
@@ -163,21 +163,21 @@ class Statistics(ValidationMixin, Document):
             group_by,
             conditions,
             {'files_size': 0, 'files_count': 0},
-            'function(entry, summary) {'
-                'summary.files_size += entry.files_size;'
-                'summary.files_count += entry.files_count;'
-            '}',
-            finalize='function(entry) {'
-                'entry.files_size /= (1024 * 1024);'
-                'entry.files_size = parseFloat(entry.files_size.toFixed(2));'
-                'entry.files_count = parseInt(entry.files_count.toFixed(0));'
-            '}'
+            '''function(entry, summary) {
+                summary.files_size += entry.files_size;
+                summary.files_count += entry.files_count;
+            }''',
+            finalize='''function(entry) {
+                entry.files_size /= (1024 * 1024);
+                entry.files_size = parseFloat(entry.files_size.toFixed(2));
+                entry.files_count = parseInt(entry.files_count.toFixed(0));
+            }'''
         )
 
     @classmethod
     def _get_conditions(cls, user_id=None, type_id=None, start=None, end=None):
         conditions = {}
- 
+
         if type_id:
             conditions['type_id'] = type_id
         if user_id:
@@ -263,7 +263,7 @@ class ServableMixin(object):
         случае, если файл -- картинка, для которой заказан ресайз).
         """
         supported_types = ('image/gif', 'image/png', 'image/jpeg')
-        if not self.original_content_type in supported_types:
+        if self.original_content_type not in supported_types:
             return False
         return all([self._is_action_can_be_served_by_nginx(name, args)
                     for name, args in self.actions])
@@ -330,6 +330,7 @@ class File(ValidationMixin, ServableMixin, Document):
         'content_type': basestring,
         'unistorage_type': basestring,
         'pending': bool,
+        'blocked': bool,
     }
     required = ('user_id', 'filename', 'content_type', 'unistorage_type')
 
@@ -355,6 +356,11 @@ class File(ValidationMixin, ServableMixin, Document):
         else:
             pass
         return object_id
+
+    def block(self, db):
+        # Помечает файл как 'блокированный'
+        self.blocked = True
+        self.save(db)
 
     @classmethod
     def wrap_incoming(cls, data, db):

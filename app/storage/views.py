@@ -142,9 +142,15 @@ def file_view(_id=None):
 
         if action_presented and template_presented:
             raise ValidationError('You can\'t specify both `action` and `template`.')
-        
+
         apply_ = None
         if action_presented:
+
+            if request.args.get('action') == 'block':
+                # Блокировка - особая операция. Не нужно ставить файл в очередь
+                source_file.block(db)
+                return ok({})
+
             apply_ = apply_action
         elif template_presented:
             apply_ = apply_template
@@ -225,7 +231,7 @@ def zip_create(_id=None):
         except ValueError:
             raise ValidationError('Not all `%s` are correct file URIs.' % files_field)
 
-        # TODO Проверять, что файлы с указанными URI существуют и не временные?
+        # TODO Проверять, что файлы с указанными URI существуют и не временные или заблокированные?
     except ValidationError as e:
         return error({'msg': str(e)}), 400
 
