@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import random
+import re
 
 import wtforms as wtf
 from bson.objectid import ObjectId
@@ -39,7 +40,7 @@ class DomainListWidget(object):
 
 class DomainList(wtf.fields.FieldList):
     widget = DomainListWidget()
-    
+
     def _extract_indices(self, prefix, formdata):
         offset = len(prefix) + 1
         for k, v in formdata.iteritems():
@@ -70,3 +71,13 @@ class UserForm(wtf.Form):
             self.id.process(formdata, obj.get_id())
             users = [user_id for _, user_id in obj.needs]
             self.has_access_to.process(formdata, users)
+
+
+class BlockForm(wtf.Form):
+    """Форма для блокировки файла"""
+    id = wtf.TextField(u'ID файла', [
+        wtf.validators.Required(),
+        wtf.validators.Regexp(
+            '^[a-f\d]{24}$', re.IGNORECASE,
+            message=u"ID файла должен стостоять из 24 символов (цифры и буквы a-f)")])
+    recursive = wtf.BooleanField(u'Заблокировать все модификации файла', default=False)

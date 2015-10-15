@@ -357,10 +357,21 @@ class File(ValidationMixin, ServableMixin, Document):
             pass
         return object_id
 
-    def block(self, db):
-        # Помечает файл как 'блокированный'
+    def block(self, db, recursive=False):
+        """Помечает файл как 'блокированный'. В случае, когда`recursive` равно
+        `True`, помечает блокированными все модификации файла."""
         self.blocked = True
         self.save(db)
+        files = [self['_id'], ]
+
+        if recursive:
+            modifications = self.get('modifications') or {}
+
+            for modification in modifications.values():
+                m = File.get_one(db, {'_id': modification})
+                files.extend(m.block(db, recursive=True))
+
+        return files
 
     @classmethod
     def wrap_incoming(cls, data, db):

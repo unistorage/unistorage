@@ -148,8 +148,14 @@ def file_view(_id=None):
 
             if request.args.get('action') == 'block':
                 # Блокировка - особая операция. Не нужно ставить файл в очередь
-                source_file.block(db)
-                return ok({})
+                if request.args.get('recursive', False) == u'yes':
+                    recursive = True
+                else:
+                    recursive = False
+
+                blocked_files_ids = source_file.block(db, recursive=recursive)
+                blocked_files_urls = [get_resource_uri_for('file', id) for id in blocked_files_ids]
+                return ok({'blocked': blocked_files_urls})
 
             apply_ = apply_action
         elif template_presented:

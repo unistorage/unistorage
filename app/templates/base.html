@@ -3,6 +3,7 @@
 {% set navigation_bar = [
     (url_for('admin.index'), 'index', 'Главная'),
     (url_for('admin.users'), 'users', 'Клиенты'),
+    (url_for('admin.file_block'), 'block', 'Блокировка файлов'),
     (url_for('admin.logout'), 'logout', 'Выйти'),
 ] -%}
 
@@ -25,6 +26,12 @@
       </div>
     </div>
   </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}"> {{ message.decode('utf-8') }} </div>
+    {% endfor %}
+  {% endwith %}
 
   <div class="container">
     {% block content %}

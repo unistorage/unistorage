@@ -136,14 +136,14 @@ class Test(AdminFunctionalTest):
         form = response.form
         form['is_aware_of_api_changes'].checked = True
         form.submit()
-        
+
         user = User.find(db, {})[0]
         user_id = user.get_id()
-        self.assertTrue(user.is_aware_of_api_changes) 
-    
+        self.assertTrue(user.is_aware_of_api_changes)
+
     def test_remove(self):
         self.login()
-        
+
         # Создаём пользователя
         form = self.app.get(url_for('admin.user_create')).form
         form['name'] = 'Test'
@@ -155,7 +155,7 @@ class Test(AdminFunctionalTest):
         response = form.submit().follow()
 
         self.assertEqual(len(response.forms), 2)
-        
+
         # Жмём "удалить"
         response = response.forms[0].submit()
         self.assertEquals(response.status_code, 302)
