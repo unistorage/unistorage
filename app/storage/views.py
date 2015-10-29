@@ -9,7 +9,7 @@ import logging
 import random
 import functools
 import os.path
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import jsonschema
 from flask import request, abort
@@ -146,16 +146,16 @@ def file_view(_id=None):
         apply_ = None
         if action_presented:
 
-            if request.args.get('action') == 'block':
-                # Блокировка - особая операция. Не нужно ставить файл в очередь
+            if request.args.get('action') == 'delete':
+                # Удаление - особая операция. Не нужно ставить файл в очередь
                 if request.args.get('recursive', False) == u'yes':
                     recursive = True
                 else:
                     recursive = False
 
-                blocked_files_ids = source_file.block(db, recursive=recursive)
-                blocked_files_urls = [get_resource_uri_for('file', id) for id in blocked_files_ids]
-                return ok({'blocked': blocked_files_urls})
+                deleted_files_ids = source_file.delete(db, recursive=recursive)
+                deleted_files_urls = [get_resource_uri_for('file', id) for id in deleted_files_ids]
+                return ok({'deleted': deleted_files_urls})
 
             apply_ = apply_action
         elif template_presented:

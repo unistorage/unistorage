@@ -330,7 +330,7 @@ class File(ValidationMixin, ServableMixin, Document):
         'content_type': basestring,
         'unistorage_type': basestring,
         'pending': bool,
-        'blocked': bool,
+        'deleted': bool,
     }
     required = ('user_id', 'filename', 'content_type', 'unistorage_type')
 
@@ -357,11 +357,25 @@ class File(ValidationMixin, ServableMixin, Document):
             pass
         return object_id
 
-    def block(self, db, recursive=False):
-        """Помечает файл как 'блокированный'. В случае, когда`recursive` равно
-        `True`, помечает блокированными все модификации файла."""
-        self.blocked = True
+    def delete(self, db, recursive=False):
+        """Помечает файл как 'удаленный'. В случае, когда `recursive` равно
+        `True`, помечает удаленными все модификации файла."""
+        self.deleted = True
+        self.pending = True
         self.save(db)
+
+        query = {
+            'user_id': self.get('user_id'),
+            'type_id': self.get('type_id'),
+            'timestamp': get_today_utc_midnight(self.get('upload_date')),
+        }
+
+        db[Statistics.collection].update(query, {
+            '$inc': {
+                'files_count': -1,
+                'files_size': -self.get('length'),
+            }
+        }, upsert=True)
         files = [self['_id'], ]
 
         if recursive:
@@ -369,7 +383,7 @@ class File(ValidationMixin, ServableMixin, Document):
 
             for modification in modifications.values():
                 m = File.get_one(db, {'_id': modification})
-                files.extend(m.block(db, recursive=True))
+                files.extend(m.delete(db, recursive=True))
 
         return files
 

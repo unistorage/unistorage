@@ -73,11 +73,11 @@ class UserForm(wtf.Form):
             self.has_access_to.process(formdata, users)
 
 
-class BlockForm(wtf.Form):
-    """Форма для блокировки файла"""
+class DeleteForm(wtf.Form):
+    """Форма для удаления файла"""
     id = wtf.TextField(u'ID файла', [
         wtf.validators.Required(),
         wtf.validators.Regexp(
             '^[a-f\d]{24}$', re.IGNORECASE,
             message=u"ID файла должен стостоять из 24 символов (цифры и буквы a-f)")])
-    recursive = wtf.BooleanField(u'Заблокировать все модификации файла', default=False)
+    recursive = wtf.BooleanField(u'Удалить все модификации файла', default=False)

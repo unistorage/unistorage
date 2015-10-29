@@ -189,11 +189,11 @@ def update_timezone_to_local(statistics):
     return statistics
 
 
-@bp.route('/block', methods=['POST', 'GET'])
+@bp.route('/delete', methods=['POST', 'GET'])
 @login_required
-def file_block():
+def file_delete():
     if request.method == 'POST':
-        form = forms.BlockForm(request.form)
+        form = forms.DeleteForm(request.form)
         if form.validate():
             _id = form.data.get('id')
             recursive = form.data.get('recursive')
@@ -202,14 +202,14 @@ def file_block():
             if not file:
                 flash(u"File {} not found".format(_id), category='error')
             else:
-                blocked_files_ids = file.block(db, recursive=recursive)
-                for file_id in blocked_files_ids:
-                    flash(u"File {} blocked".format(file_id), category='info')
+                deleted_files_ids = file.delete(db, recursive=recursive)
+                for file_id in deleted_files_ids:
+                    flash(u"File {} deleted".format(file_id), category='info')
 
-                form = forms.BlockForm()
+                form = forms.DeleteForm()
     else:
-        form = forms.BlockForm()
+        form = forms.DeleteForm()
 
-    return render_template('file_block.html', **{
+    return render_template('file_delete.html', **{
         'form': form
     })
