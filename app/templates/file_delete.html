@@ -1,0 +1,17 @@
+{% from 'utils.html' import render_field %}
+
+{% extends 'base.html' %}
+
+{% set active_page = 'block' %}
+
+    {% block content %}
+    <form method="POST" action="{{ url_for('admin.file_delete') }}" class="form-horizontal  user-form">
+      <legend>Введите ID фйла для удаления</legend>
+      {{ render_field(form.id) }}
+      {{ render_field(form.recursive) }}
+      
+      <div class="form-actions">
+        <input type="submit" value="Удалить" class="btn" />
+      </div>
+    </form>  
+{% endblock %}
