@@ -45,6 +45,10 @@ class User(ValidationMixin, Document):
     .. attribute:: is_aware_of_api_changes
 
         Готов ли пользователь к миграции на изменённый API?
+
+    .. attribute:: blocked
+
+        Заблокирован ли пользователь
     """
     collection = 'users'
     structure = {
@@ -54,6 +58,7 @@ class User(ValidationMixin, Document):
         'needs': [tuple],
         'domains': [basestring],
         'is_aware_of_api_changes': False,
+        'blocked': False
     }
     required = ('token',)
 
@@ -109,7 +114,7 @@ class Template(ValidationMixin, Document):
     def get_by_resource_uri(cls, db, template_uri):
         try:
             template_id = parse_template_uri(template_uri)
-        except ValueError as e:
+        except ValueError:
             return None
 
         return cls.get_one(db, {'_id': template_id})
@@ -163,21 +168,21 @@ class Statistics(ValidationMixin, Document):
             group_by,
             conditions,
             {'files_size': 0, 'files_count': 0},
-            'function(entry, summary) {'
-                'summary.files_size += entry.files_size;'
-                'summary.files_count += entry.files_count;'
-            '}',
-            finalize='function(entry) {'
-                'entry.files_size /= (1024 * 1024);'
-                'entry.files_size = parseFloat(entry.files_size.toFixed(2));'
-                'entry.files_count = parseInt(entry.files_count.toFixed(0));'
-            '}'
+            '''function(entry, summary) {
+                summary.files_size += entry.files_size;
+                summary.files_count += entry.files_count;
+            }''',
+            finalize='''function(entry) {
+                entry.files_size /= (1024 * 1024);
+                entry.files_size = parseFloat(entry.files_size.toFixed(2));
+                entry.files_count = parseInt(entry.files_count.toFixed(0));
+            }'''
         )
 
     @classmethod
     def _get_conditions(cls, user_id=None, type_id=None, start=None, end=None):
         conditions = {}
- 
+
         if type_id:
             conditions['type_id'] = type_id
         if user_id:
@@ -263,7 +268,7 @@ class ServableMixin(object):
         случае, если файл -- картинка, для которой заказан ресайз).
         """
         supported_types = ('image/gif', 'image/png', 'image/jpeg')
-        if not self.original_content_type in supported_types:
+        if self.original_content_type not in supported_types:
             return False
         return all([self._is_action_can_be_served_by_nginx(name, args)
                     for name, args in self.actions])
@@ -330,6 +335,7 @@ class File(ValidationMixin, ServableMixin, Document):
         'content_type': basestring,
         'unistorage_type': basestring,
         'pending': bool,
+        'deleted': bool,
     }
     required = ('user_id', 'filename', 'content_type', 'unistorage_type')
 
@@ -355,6 +361,36 @@ class File(ValidationMixin, ServableMixin, Document):
         else:
             pass
         return object_id
+
+    def delete(self, db, recursive=False):
+        """Помечает файл как 'удаленный'. В случае, когда `recursive` равно
+        `True`, помечает удаленными все модификации файла."""
+        self.deleted = True
+        self.pending = True
+        self.save(db)
+
+        query = {
+            'user_id': self.get('user_id'),
+            'type_id': self.get('type_id'),
+            'timestamp': get_today_utc_midnight(self.get('upload_date')),
+        }
+
+        db[Statistics.collection].update(query, {
+            '$inc': {
+                'files_count': -1,
+                'files_size': -self.get('length'),
+            }
+        }, upsert=True)
+        files = [self['_id'], ]
+
+        if recursive:
+            modifications = self.get('modifications') or {}
+
+            for modification in modifications.values():
+                m = File.get_one(db, {'_id': modification})
+                files.extend(m.delete(db, recursive=True))
+
+        return files
 
     @classmethod
     def wrap_incoming(cls, data, db):

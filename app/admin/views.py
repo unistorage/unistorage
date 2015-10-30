@@ -12,7 +12,7 @@ import forms
 import who
 from . import bp
 from app import db
-from app.models import User, Statistics
+from app.models import User, Statistics, File
 from app.date_utils import get_today_utc_midnight
 
 
@@ -55,7 +55,7 @@ def logout():
 @login_required
 def index():
     start = get_today_utc_midnight() - timedelta(days=6)
-    
+
     annotated_users = []
     for user in User.find(db):
         user_id = user.get_id()
@@ -90,6 +90,7 @@ def users():
                 'needs': map(RoleNeed, form.data['has_access_to']),
                 'domains': form.data['domains'],
                 'is_aware_of_api_changes': form.data['is_aware_of_api_changes'],
+                'blocked': form.data['blocked']
             })
             user.save(db)
             return redirect(url_for('.users'))
@@ -136,7 +137,7 @@ def user_statistics(user_id):
         'user_id': user_id,
         'type_id': {'$ne': None}
     }).distinct('type_id')
-    
+
     kwargs = {
         'user_id': user_id,
         'start': get_today_utc_midnight() - timedelta(days=6)
@@ -166,7 +167,7 @@ def fill_missing_entries_with_zeroes(statistics, start=None):
     for entry in statistics:
         timestamp = entry['timestamp']
         entries[timestamp] = entry
-    
+
     result = []
     entry_timestamp = start or statistics[0]['timestamp']
     while entry_timestamp <= today_utc_midnight:
@@ -177,7 +178,7 @@ def fill_missing_entries_with_zeroes(statistics, start=None):
         })
         result.append(entry)
         entry_timestamp += timedelta(days=1)
-    
+
     return result
 
 
@@ -187,3 +188,29 @@ def update_timezone_to_local(statistics):
         entry['timestamp'] = entry['timestamp'].replace(
             tzinfo=tz.tzutc()).astimezone(local_zone)
     return statistics
+
+
+@bp.route('/delete', methods=['POST', 'GET'])
+@login_required
+def file_delete():
+    if request.method == 'POST':
+        form = forms.DeleteForm(request.form)
+        if form.validate():
+            _id = form.data.get('id')
+            recursive = form.data.get('recursive')
+
+            file = File.get_one(db, {'_id': ObjectId(_id)})
+            if not file:
+                flash(u"File {} not found".format(_id), category='error')
+            else:
+                deleted_files_ids = file.delete(db, recursive=recursive)
+                for file_id in deleted_files_ids:
+                    flash(u"File {} deleted".format(file_id), category='info')
+
+                form = forms.DeleteForm()
+    else:
+        form = forms.DeleteForm()
+
+    return render_template('file_delete.html', **{
+        'form': form
+    })

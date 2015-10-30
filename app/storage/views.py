@@ -9,7 +9,7 @@ import logging
 import random
 import functools
 import os.path
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import jsonschema
 from flask import request, abort
@@ -142,9 +142,21 @@ def file_view(_id=None):
 
         if action_presented and template_presented:
             raise ValidationError('You can\'t specify both `action` and `template`.')
-        
+
         apply_ = None
         if action_presented:
+
+            if request.args.get('action') == 'delete':
+                # Удаление - особая операция. Не нужно ставить файл в очередь
+                if request.args.get('recursive', False) == u'yes':
+                    recursive = True
+                else:
+                    recursive = False
+
+                deleted_files_ids = source_file.delete(db, recursive=recursive)
+                deleted_files_urls = [get_resource_uri_for('file', id) for id in deleted_files_ids]
+                return ok({'deleted': deleted_files_urls})
+
             apply_ = apply_action
         elif template_presented:
             apply_ = apply_template
@@ -225,7 +237,7 @@ def zip_create(_id=None):
         except ValueError:
             raise ValidationError('Not all `%s` are correct file URIs.' % files_field)
 
-        # TODO Проверять, что файлы с указанными URI существуют и не временные?
+        # TODO Проверять, что файлы с указанными URI существуют и не временные или заблокированные?
     except ValidationError as e:
         return error({'msg': str(e)}), 400
 

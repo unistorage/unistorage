@@ -12,6 +12,8 @@ from compile_avconv_db import compile_avconv_db
 from compile_libmagic_db import compile_libmagic_db
 from check_avconv_codecs import check_avconv_codecs
 from expire_zip_collections import expire_zip_collections
+from delete_user_files import delete_user_files
+from delete_file_contents import empty_trash
 
 
 missing_dev_reqs_message = 'Please install dev requirements (`pip -r requirments/dev.txt`).'

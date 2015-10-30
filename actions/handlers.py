@@ -103,7 +103,8 @@ def apply_template(source_file, args):
 
 
 def apply_action(source_file, args):
-    """Проверяет применимость действия, указанного в `args`, к `source_file`, ставит операцию в
+    """Проверяет, не является ли исходный файл 'удаленным'
+    Проверяет применимость действия, указанного в `args`, к `source_file`, ставит операцию в
     очередь (используя в качестве `label` сконкатенированные имя операции и её аргументы) и
     возвращает идентификатор временного файла.
 
@@ -114,6 +115,8 @@ def apply_action(source_file, args):
     :raises: ValidationError
     :rtype: :class:`ObjectId`
     """
+    if source_file.deleted:
+        raise ValidationError('Source file is deleted')
     action_name = args['action']
     source_unistorage_type = source_file.unistorage_type
     action = actions.get_action(source_unistorage_type, action_name)
