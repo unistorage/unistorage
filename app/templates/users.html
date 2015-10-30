@@ -16,7 +16,7 @@
         <tr>
           <td>
             <a href="{{ url_for('.user_statistics', user_id=user._id) }}">
-              {{ user.name }}
+              {{ user.name }} {% if user.blocked %}<i class="icon-ban-circle"></i>{% endif %}
             </a>
           </td>
           <td>{{ user.token }}</td>

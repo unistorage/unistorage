@@ -59,6 +59,7 @@ class UserForm(wtf.Form):
     has_access_to = wtf.SelectMultipleField(
         u'Другие пользователи, к файлам которых разрешён доступ', coerce=ObjectId)
     domains = DomainList(wtf.TextField(u'', [wtf.validators.URL()]), label=u'Домены')
+    blocked = wtf.BooleanField(u'Заблокирован')
 
     def __init__(self, *args, **kwargs):
         super(UserForm, self).__init__(*args, **kwargs)

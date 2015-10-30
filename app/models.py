@@ -45,6 +45,10 @@ class User(ValidationMixin, Document):
     .. attribute:: is_aware_of_api_changes
 
         Готов ли пользователь к миграции на изменённый API?
+
+    .. attribute:: blocked
+
+        Заблокирован ли пользователь
     """
     collection = 'users'
     structure = {
@@ -54,6 +58,7 @@ class User(ValidationMixin, Document):
         'needs': [tuple],
         'domains': [basestring],
         'is_aware_of_api_changes': False,
+        'blocked': False
     }
     required = ('token',)
 
