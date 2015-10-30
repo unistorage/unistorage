@@ -16,7 +16,7 @@ def delete_user_files(user_token):
     })
 
     db[File.collection].update(
-        {'user_id': user['_id'], 'deleted': False},
+        {'user_id': user['_id'], 'deleted': {'$in', [None, False]}},
         {'$set': {'deleted':  True, 'pending': True}},
         multi=True
     )
