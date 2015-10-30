@@ -39,3 +39,17 @@ class FunctionalTest(StorageFunctionalTest):
         
         # ...он получает доступ к файлам пользователя user1
         self.assertEquals(self.app.get(user1_file_uri).status_code, 200)
+
+        # ...блокируем доступ пользователю user1
+        user1 = User.get_one(db, {'_id': user1_id})
+        user1.update({'blocked': True})
+        user1.save(db)
+
+        # ...у него больше нет доступа
+        self.set_token(user1_token)
+        r = self.app.get(user1_file_uri, status='*')
+        self.assertEquals(r.status_code, 401)
+
+        # ...но у user2 есть
+        self.set_token(user2_token)
+        self.assertEquals(self.app.get(user1_file_uri).status_code, 200)
