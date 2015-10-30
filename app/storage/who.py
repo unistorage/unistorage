@@ -25,7 +25,7 @@ class TokenPlugin(object):
 
     def authenticate(self, environ, identity):
         token = identity['token']
-        if User.get_one(db, {'token': token, 'blocked': False}):
+        if User.get_one(db, {'token': token, 'blocked': {'$in': [None, False]}}):
             return token
         else:
             return None
