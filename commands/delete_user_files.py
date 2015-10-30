@@ -4,8 +4,7 @@ from app.models import File, User, Statistics
 
 
 def delete_user_files(user_name):
-    """Удаляет статистику файлов пользователя. Помечает ВСЕ файлы пользователя
-    как 'deleted' и 'pending'
+    """Deletes user stats. Marks all files as 'deleted&pending'
     """
     # Flask-Script неявно пушит application context, поэтому мы можем использовать db
     user = db[User.collection].find_one({'name': user_name})
