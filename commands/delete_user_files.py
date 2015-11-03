@@ -19,8 +19,10 @@ def delete_user_files(user_token, statistics_delete=False, number_of_querying_fi
                 ).limit(int(number_of_querying_files))
         return [f['_id'] for f in files]
 
-    ids = _get_files_ids()
-    while ids:
+    while True:
+        ids = _get_files_ids()
+        if len(ids) == 0:
+            break
 
         db['fs.chunks'].remove({
             'files_id': {
@@ -36,10 +38,6 @@ def delete_user_files(user_token, statistics_delete=False, number_of_querying_fi
 
         sys.stdout.write('.')
         sys.stdout.flush()
-        if len(ids) < number_of_querying_files:
-            ids = []
-        else:
-            ids = _get_files_ids()
 
     if statistics_delete:
         sys.stdout.write('Deleting statistics...')
