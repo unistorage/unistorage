@@ -4,7 +4,7 @@ from app import db
 from app.models import File, User, Statistics
 
 
-def delete_user_files(user_token, statistics_delete=False, number_of_querying_files=100):
+def delete_user_files(user_token, statistics_delete=False, number_of_querying_files='100'):
     """Marks user as 'blocked', then deletes files. With '-s' deletes user
     statistics too. Use '-n NUMBER' to set number of files in query to delete
     """
@@ -16,7 +16,7 @@ def delete_user_files(user_token, statistics_delete=False, number_of_querying_fi
     def _get_files_ids():
         files = db[File.collection].find(
                 {'user_id': user['_id'], 'deleted': {'$in': [None, False]}}
-                ).limit(number_of_querying_files)
+                ).limit(int(number_of_querying_files))
         return [f['_id'] for f in files]
 
     ids = _get_files_ids()
