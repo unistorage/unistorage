@@ -1,23 +1,39 @@
 # coding: utf-8
 import sys
 from app import db
+from wsgi import app
 from app.models import File, User, Statistics
 
 
-def delete_user_files(user_token, statistics_delete=False, number_of_querying_files='100'):
-    """Marks user as 'blocked', then deletes files. With '-s' deletes user
-    statistics too. Use '-n NUMBER' to set number of files in query to delete
+def delete_user_files(user_token, statistics_delete=False, number_of_querying_files='100', query=False, block=False):
+    """'-b' marks user as 'blocked', then deletes files. With '-s' deletes user
+    statistics too. Use '-n NUMBER' to set number of files in query to delete.
+    Use '-q' for specifying additional query
     """
     # Flask-Script неявно пушит application context, поэтому мы можем использовать db
     user = User.get_one(db, {'token': user_token})
-    user['blocked'] = True
-    user.save(db)
+    if block:
+        user['blocked'] = True
+        user.save(db)
+
+    if query is True:
+        with app.app_context():
+            import code
+            code.InteractiveConsole(locals=globals()).interact("call delete_user_files with 'query'")
+        return
+
+    search_query = {'user_id': user['_id'], 'deleted': {'$in': [None, False]}}
+    if query is not False:
+        search_query.update(query)
 
     def _get_files_ids():
-        files = db[File.collection].find(
-                {'user_id': user['_id'], 'deleted': {'$in': [None, False]}}
-                ).limit(int(number_of_querying_files))
+        files = db[File.collection].find(search_query).limit(int(number_of_querying_files))
         return [f['_id'] for f in files]
+
+    print 'Files for query {} will be deleted. Are you sure? (y/N)'.format(str(search_query))
+    a = raw_input('> ')
+    if a not in ('y', 'Y'):
+        exit()
 
     while True:
         ids = _get_files_ids()
